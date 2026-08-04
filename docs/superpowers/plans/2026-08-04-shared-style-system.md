@@ -14,8 +14,8 @@
 - In scope: every file under `src/screens/` and `src/components/` that has a `StyleSheet.create` block, **except** `src/components/BottomTabs.tsx` (dead code, superseded by `OwnerTabs.tsx`, consumed only by the orphaned root-level mockups — leave untouched).
 - Out of scope: `App.tsx`, `src/navigation/`, `src/auth/`, `src/api/`, and the 10 orphaned legacy mockup files at `src/` root (`HomeScreen.tsx`, `ShelterDashboardScreens.tsx`, etc. — see `CLAUDE.md`).
 - No new npm/pnpm dependencies.
-- `pnpm typecheck` and `pnpm test` must pass after every task.
-- Commit after every task (small, reviewable commits — not one giant commit at the end).
+- `pnpm typecheck` and `pnpm test` must pass after every task — no task may land in a state where the project doesn't compile, even temporarily. This is why Task 9 below migrates `AuthFormKit.tsx` together with every file that imports its `PrimaryButton`/`authColors` in one task, rather than splitting them (splitting would leave 11 files with dangling imports until later tasks land).
+- Commit after every task (small, reviewable commits — not one giant commit at the end). Task 9 is a deliberate exception in size (12 files) because it's the smallest atomic unit that keeps the project compiling.
 
 ---
 
@@ -281,7 +281,7 @@ git commit -m "refactor(theme): add theme barrel export"
 
 **Interfaces:**
 - Consumes: `colors`, `radii`, `spacing`, `typography` from `../theme`.
-- Produces: `Button` component and `ButtonVariant` type (`"primary" | "secondary" | "danger"`). Props: `{ label: string; onPress: () => void; variant?: ButtonVariant; disabled?: boolean; loading?: boolean; style?: StyleProp<ViewStyle> }`. This replaces `AuthFormKit`'s `PrimaryButton` (same gradient/loading behavior for the `primary` variant) — every later task that imports `PrimaryButton` switches to this.
+- Produces: `Button` component and `ButtonVariant` type (`"primary" | "secondary" | "danger"`). Props: `{ label: string; onPress: () => void; variant?: ButtonVariant; disabled?: boolean; loading?: boolean; style?: StyleProp<ViewStyle> }`. This replaces `AuthFormKit`'s `PrimaryButton` (same gradient/loading behavior for the `primary` variant) — Task 9 and every later task that imports `PrimaryButton` switches to this.
 
 - [ ] **Step 1: Create the file**
 
@@ -603,16 +603,29 @@ git commit -m "refactor(components): add shared Card and Section primitives"
 
 ---
 
-### Task 9: Migrate `src/screens/AuthFormKit.tsx`
+### Task 9: Migrate `AuthFormKit.tsx` and its 11 consumers
+
+**This task is intentionally larger than the others.** `AuthFormKit.tsx` exports `PrimaryButton` and `authColors`, which 11 other files import. Deleting those exports and updating the 11 consumers cannot be split across separate tasks without leaving the project in a non-compiling state in between (violates the Global Constraint that typecheck must pass after every task) — so this task does both atomically: migrate `AuthFormKit.tsx` itself, then migrate every one of its 11 consumers in the same task, ending with one green typecheck and one commit.
 
 **Files:**
 - Modify: `src/screens/AuthFormKit.tsx`
+- Modify: `src/components/SignupWall.tsx`
+- Modify: `src/screens/AccountTypeScreen.tsx`
+- Modify: `src/screens/SigninScreen.tsx`
+- Modify: `src/screens/SignupScreen.tsx`
+- Modify: `src/screens/ForgotPasswordScreen.tsx`
+- Modify: `src/screens/ResetOtpScreen.tsx`
+- Modify: `src/screens/ResetPasswordScreen.tsx`
+- Modify: `src/screens/PasswordChangedScreen.tsx`
+- Modify: `src/screens/OtpScreen.tsx`
+- Modify: `src/screens/OtpLockedScreen.tsx`
+- Modify: `src/screens/SignupSuccessScreen.tsx`
 
 **Interfaces:**
-- Consumes: `colors`, `radii`, `spacing`, `typography` (`../theme/*`).
-- Produces: same exports as before **minus** `authColors` and `PrimaryButton` (now `theme.colors` and the shared `Button`, Task 5) — `AuthHeader`, `SimpleHeader`, `FormField`, `AUTH_STEP_COUNT` are unchanged in signature, only restyled internally. Every task from Task 15 onward that currently does `import { ..., PrimaryButton, authColors } from "./AuthFormKit"` (or `"../screens/AuthFormKit"`) must drop those two names from that import and instead import `Button` from `../components/Button` (or `./Button` from `src/components/`) and `colors` from `../theme/colors`.
+- Consumes: `colors`, `radii`, `spacing`, `typography` (`../theme/*`), `Button` (`../components/Button`, Task 5).
+- Produces: `AuthFormKit.tsx` keeps exporting `AuthHeader`, `SimpleHeader`, `FormField`, `AUTH_STEP_COUNT` (unchanged signatures, restyled internally) but **no longer exports** `authColors` or `PrimaryButton`. Every consumer imports `Button` from `../components/Button` and `colors` from `../theme/colors` instead.
 
-- [ ] **Step 1: Replace the imports at the top of the file**
+- [ ] **Step 1: Migrate `src/screens/AuthFormKit.tsx` — replace the imports at the top of the file**
 
 Remove the `LinearGradient` import and drop `ActivityIndicator`, `StyleProp`, `ViewStyle` from the `react-native` import (only `PrimaryButton` used them, and it's being deleted). Add the theme imports.
 
@@ -651,15 +664,15 @@ export const authColors = {
 
 `AUTH_STEP_COUNT` (the line right after it) stays as-is.
 
-- [ ] **Step 3: Replace every `authColors.X` reference with `colors.X` in `AuthHeader`, `SimpleHeader`, and `FormField`**
+- [ ] **Step 3: `AuthHeader`, `SimpleHeader`, and `FormField` function bodies are unchanged**
 
-These three functions' JSX is unchanged — only the `styles` object they reference changes in Step 5. No edits needed inside the function bodies themselves (they reference `styles.*`, not `authColors.*` directly).
+They reference `styles.*`, not `authColors.*` directly — only the `styles` object they use changes, in Step 5.
 
 - [ ] **Step 4: Delete the `PrimaryButton` component entirely**
 
-Delete `PrimaryButtonProps` and the `PrimaryButton` function (the `TouchableOpacity` + `LinearGradient` + `ActivityIndicator` block). Consumers now import `Button` from `../components/Button` directly (handled per-file in later tasks).
+Delete `PrimaryButtonProps` and the `PrimaryButton` function (the `TouchableOpacity` + `LinearGradient` + `ActivityIndicator` block).
 
-- [ ] **Step 5: Replace the `styles` block**
+- [ ] **Step 5: Replace the `styles` block in `AuthFormKit.tsx`**
 
 ```tsx
 const styles = StyleSheet.create({
@@ -800,19 +813,92 @@ const styles = StyleSheet.create({
 });
 ```
 
-- [ ] **Step 6: Typecheck**
+- [ ] **Step 6: Migrate `src/components/SignupWall.tsx`**
+
+Color table: `#AAA69D`→`colors.neutralMuted`, `#FFFFFF`→`colors.white`.
+
+Update the import (currently `import { PrimaryButton, authColors } from "../screens/AuthFormKit";`) to import `Button` from `../components/Button`... actually from this file's own location (`src/components/`) that's `./Button`, and `colors` from `../theme/colors`. Replace every `authColors.X` (e.g. in `getCopy`'s icon color) with `colors.X`, and the `<PrimaryButton ...>` usage with `<Button ...>` (same `label`/`onPress` props). Migrate the rest of the file per the Migration Protocol (spacing/radii/typography).
+
+- [ ] **Step 7: Migrate `src/screens/AccountTypeScreen.tsx`**
+
+Color table: `#1F3A5F`→`colors.ink`, `#FFFFFF`→`colors.white`.
+
+Update the import (`import { AuthHeader, authColors } from "./AuthFormKit";`) — drop `authColors`, add `import { colors } from "../theme/colors";`, replace `authColors.X` → `colors.X`. This file doesn't import `PrimaryButton`. Migrate the rest per the Migration Protocol. It's in the `shadowColor` group found during the codebase survey — check for a white/shadowed card block (the two account-type option cards) and replace with `Card` (Task 8) if it matches the shape (white background, `borderRadius`, `shadowColor`/`shadowOpacity`/`shadowOffset`/`elevation`); keep the selection-state styling (border color change on the selected option) as file-specific logic layered on top via the `style` prop.
+
+- [ ] **Step 8: Migrate `src/screens/SigninScreen.tsx`**
+
+Color table: `#08716D`→`colors.teal`, `#12524C`→`colors.tealDark`, `#1C7876`→`colors.teal`.
+
+Update the import (`import { FormField, PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `Button` (`../components/Button`) and `colors` (`../theme/colors`) imports. This file has its own `LinearGradient` usage (found during the codebase survey) — if it's a second, independent gradient button rather than reusing `PrimaryButton`, replace it with `<Button variant="primary" ...>` the same way, and remove the now-unused `LinearGradient` import once nothing else in the file uses it. Migrate the rest per the Migration Protocol.
+
+- [ ] **Step 9: Migrate `src/screens/SignupScreen.tsx`**
+
+Color table: `#08716D`→`colors.teal`, `#9A988F`→`colors.neutralMuted`.
+
+Update the import (`import { AuthHeader, FormField, PrimaryButton, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `Button`/`colors` imports. Migrate the rest per the Migration Protocol.
+
+- [ ] **Step 10: Migrate `src/screens/ForgotPasswordScreen.tsx`**
+
+Color table: `#08716D`→`colors.teal`.
+
+Update the import (`import { FormField, PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `Button`/`colors` imports. Migrate the rest per the Migration Protocol.
+
+- [ ] **Step 11: Migrate `src/screens/ResetOtpScreen.tsx`**
+
+Color table: `#08716D`→`colors.teal`, `#B6B0A7`→`colors.neutralMuted`, `#FFFFFF`→`colors.white`.
+
+Update the import (`import { PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `Button`/`colors` imports. Migrate the rest per the Migration Protocol.
+
+- [ ] **Step 12: Migrate `src/screens/ResetPasswordScreen.tsx`**
+
+Color table: `#08716D`→`colors.teal`, `#3F6B26`→`colors.success`, `#8FBB6E`→`colors.successAccent`, `#E3EFD8`→`colors.successTint`.
+
+Update the import (`import { FormField, PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `Button`/`colors` imports. This screen has a password-strength indicator using the success-green family — map each color to the token above; don't collapse them into one token, they're deliberately different intensities for the strength meter. Migrate the rest per the Migration Protocol.
+
+- [ ] **Step 13: Migrate `src/screens/PasswordChangedScreen.tsx`**
+
+Color table: `#08716D`→`colors.teal`, `#1F3A5F`→`colors.ink`, `#2E5B1E`→`colors.success`, `#DCEED0`→`colors.successTint`, `#FFFFFF`→`colors.white`.
+
+Update the import (`import { PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `Button`/`colors` imports. Migrate the rest per the Migration Protocol.
+
+- [ ] **Step 14: Migrate `src/screens/OtpScreen.tsx`**
+
+Color table: `#08716D`→`colors.teal`, `#7A5310`→`colors.warning`, `#B6B0A7`→`colors.neutralMuted`, `#FBE9CF`→`colors.warningTint`, `#FFFFFF`→`colors.white`.
+
+Update the import (`import { AuthHeader, PrimaryButton, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `Button`/`colors` imports. The warning family (`#7A5310`/`#FBE9CF`) is the resend-countdown/attempts-remaining messaging. Migrate the rest per the Migration Protocol.
+
+- [ ] **Step 15: Migrate `src/screens/OtpLockedScreen.tsx`**
+
+Color table: `#8A3A33`→`colors.dangerText`, `#9A988F`→`colors.neutralMuted`, `#B6B0A7`→`colors.neutralMuted`, `#EDECE7`→`colors.neutralTint`, `#FBE4E1`→`colors.dangerTint`.
+
+Update the import (`import { PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `Button`/`colors` imports. Note this file has no plain `danger` (`#B3261E`) usage, only the darker `dangerText` variant — don't introduce `colors.danger` here. Migrate the rest per the Migration Protocol.
+
+- [ ] **Step 16: Migrate `src/screens/SignupSuccessScreen.tsx`**
+
+Color table: `#1F3A5F`→`colors.ink`, `#2E5B1E`→`colors.success`, `#7A5310`→`colors.warning`, `#DCEED0`→`colors.successTint`, `#F3DFB0`→`colors.warningTint`, `#FFFFFF`→`colors.white`.
+
+Update the import (`import { PrimaryButton, authColors } from "./AuthFormKit";`) — drop both, add `Button`/`colors` imports. This is in the `shadowColor` survey group — check for a card-shaped block and use `Card` (Task 8) if it matches. Migrate the rest per the Migration Protocol.
+
+- [ ] **Step 17: Typecheck**
 
 Run: `pnpm typecheck`
-Expected: FAILS — every file importing `PrimaryButton`/`authColors` from this module now has a type error. This is expected; those files get fixed in Tasks 15–24, 13. Confirm the errors are only "has no exported member 'PrimaryButton'/'authColors'" in the files listed in this task's Interfaces section, nothing else.
+Expected: exits 0 — no remaining "has no exported member 'PrimaryButton'/'authColors'" errors anywhere in the project.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 18: Test**
+
+Run: `pnpm test`
+Expected: passes.
+
+- [ ] **Step 19: Commit**
 
 ```bash
-git add src/screens/AuthFormKit.tsx
-git commit -m "refactor(theme): migrate AuthFormKit to theme tokens, drop PrimaryButton/authColors"
+git add src/screens/AuthFormKit.tsx src/components/SignupWall.tsx src/screens/AccountTypeScreen.tsx src/screens/SigninScreen.tsx src/screens/SignupScreen.tsx src/screens/ForgotPasswordScreen.tsx src/screens/ResetOtpScreen.tsx src/screens/ResetPasswordScreen.tsx src/screens/PasswordChangedScreen.tsx src/screens/OtpScreen.tsx src/screens/OtpLockedScreen.tsx src/screens/SignupSuccessScreen.tsx
+git commit -m "refactor(theme): migrate AuthFormKit and its 11 consumers to theme tokens and shared Button"
 ```
 
-(The typecheck failure from Step 6 is resolved once Tasks 13, 15–24 land — don't merge/ship this task alone in a real PR without them, but for this plan's per-task commit cadence it's fine as an intermediate state.)
+- [ ] **Step 20: Manual spot-check — auth/onboarding flow**
+
+Run `pnpm start`, open in Expo Go/simulator, and walk through: welcome → account type → signup → OTP → signup success → signin → forgot password → reset OTP → reset password → password changed. Confirm no visual regressions beyond the intentional spacing snaps (Migration Protocol step 4), and that the primary buttons still show the teal gradient.
 
 ---
 
@@ -897,35 +983,7 @@ git commit -m "refactor(theme): migrate ShelterTabs to theme tokens"
 
 ---
 
-### Task 13: Migrate `src/components/SignupWall.tsx`
-
-**Files:**
-- Modify: `src/components/SignupWall.tsx`
-
-**Color table:** `#AAA69D`→`colors.neutralMuted`, `#FFFFFF`→`colors.white`
-
-- [ ] **Step 1: Update the `AuthFormKit` import.** Currently: `import { PrimaryButton, authColors } from "../screens/AuthFormKit";`. Change to importing `Button` from `../components/Button` and `colors` from `../theme/colors`, and update every `authColors.X` reference (e.g. `authColors.teal` in `getCopy`'s icon color) to `colors.X`, and the `<PrimaryButton ...>` usage to `<Button ...>` (same props: `label`, `onPress`; drop any prop `Button` doesn't have).
-
-- [ ] **Step 2: Migrate the rest of the file per the Migration Protocol** (colors, spacing/radii, typography).
-
-- [ ] **Step 3: Typecheck**
-
-Run: `pnpm typecheck`
-
-- [ ] **Step 4: Test**
-
-Run: `pnpm test`
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/components/SignupWall.tsx
-git commit -m "refactor(theme): migrate SignupWall to theme tokens and shared Button"
-```
-
----
-
-### Task 14: Migrate `src/screens/AdoptScreen.tsx` and `src/screens/VolunteerScreen.tsx`
+### Task 13: Migrate `src/screens/AdoptScreen.tsx` and `src/screens/VolunteerScreen.tsx`
 
 **Files:**
 - Modify: `src/screens/AdoptScreen.tsx`
@@ -998,295 +1056,7 @@ git commit -m "refactor(theme): migrate AdoptScreen and VolunteerScreen to Scree
 
 ---
 
-### Task 15: Migrate `src/screens/AccountTypeScreen.tsx`
-
-**Files:**
-- Modify: `src/screens/AccountTypeScreen.tsx`
-
-**Color table:** `#1F3A5F`→`colors.ink`, `#FFFFFF`→`colors.white`
-
-- [ ] **Step 1: Update the `AuthFormKit` import** (`import { AuthHeader, authColors } from "./AuthFormKit";`) — drop `authColors`, add `import { colors } from "../theme/colors";`, replace `authColors.X` → `colors.X`.
-
-- [ ] **Step 2: Migrate the rest of the file per the Migration Protocol.** This file is in the `shadowColor` group found during the codebase survey — check for a white/shadowed card block (the two account-type option cards) and replace it with `Card` (Task 8) if it matches the shape (white background, `borderRadius`, `shadowColor`/`shadowOpacity`/`shadowOffset`/`elevation`); keep the selection-state styling (border color change on the selected option) as file-specific logic layered on top of `Card` via the `style` prop.
-
-- [ ] **Step 3: Typecheck**
-
-Run: `pnpm typecheck`
-
-- [ ] **Step 4: Test**
-
-Run: `pnpm test`
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/screens/AccountTypeScreen.tsx
-git commit -m "refactor(theme): migrate AccountTypeScreen to theme tokens"
-```
-
----
-
-### Task 16: Migrate `src/screens/SigninScreen.tsx`
-
-**Files:**
-- Modify: `src/screens/SigninScreen.tsx`
-
-**Color table:** `#08716D`→`colors.teal`, `#12524C`→`colors.tealDark`, `#1C7876`→`colors.teal`
-
-- [ ] **Step 1: Update the `AuthFormKit` import** (`import { FormField, PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `import { Button } from "../components/Button";` and `import { colors } from "../theme/colors";`.
-
-- [ ] **Step 2: This file has its own `LinearGradient` usage** (found during the codebase survey) — if it's a second, independent gradient button (rather than reusing `PrimaryButton`), replace it with `<Button variant="primary" ...>` the same way, and remove the now-unused `LinearGradient` import once nothing else in the file uses it.
-
-- [ ] **Step 3: Migrate the rest of the file per the Migration Protocol.**
-
-- [ ] **Step 4: Typecheck**
-
-Run: `pnpm typecheck`
-
-- [ ] **Step 5: Test**
-
-Run: `pnpm test`
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add src/screens/SigninScreen.tsx
-git commit -m "refactor(theme): migrate SigninScreen to theme tokens and shared Button"
-```
-
----
-
-### Task 17: Migrate `src/screens/SignupScreen.tsx`
-
-**Files:**
-- Modify: `src/screens/SignupScreen.tsx`
-
-**Color table:** `#08716D`→`colors.teal`, `#9A988F`→`colors.neutralMuted`
-
-- [ ] **Step 1: Update the `AuthFormKit` import** (`import { AuthHeader, FormField, PrimaryButton, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `Button` and `colors` imports as in Task 16.
-
-- [ ] **Step 2: Migrate the rest of the file per the Migration Protocol.**
-
-- [ ] **Step 3: Typecheck**
-
-Run: `pnpm typecheck`
-
-- [ ] **Step 4: Test**
-
-Run: `pnpm test`
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/screens/SignupScreen.tsx
-git commit -m "refactor(theme): migrate SignupScreen to theme tokens and shared Button"
-```
-
----
-
-### Task 18: Migrate `src/screens/ForgotPasswordScreen.tsx`
-
-**Files:**
-- Modify: `src/screens/ForgotPasswordScreen.tsx`
-
-**Color table:** `#08716D`→`colors.teal`
-
-- [ ] **Step 1: Update the `AuthFormKit` import** (`import { FormField, PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `Button` and `colors` imports.
-
-- [ ] **Step 2: Migrate the rest of the file per the Migration Protocol.**
-
-- [ ] **Step 3: Typecheck**
-
-Run: `pnpm typecheck`
-
-- [ ] **Step 4: Test**
-
-Run: `pnpm test`
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/screens/ForgotPasswordScreen.tsx
-git commit -m "refactor(theme): migrate ForgotPasswordScreen to theme tokens and shared Button"
-```
-
----
-
-### Task 19: Migrate `src/screens/ResetOtpScreen.tsx`
-
-**Files:**
-- Modify: `src/screens/ResetOtpScreen.tsx`
-
-**Color table:** `#08716D`→`colors.teal`, `#B6B0A7`→`colors.neutralMuted`, `#FFFFFF`→`colors.white`
-
-- [ ] **Step 1: Update the `AuthFormKit` import** (`import { PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `Button` and `colors` imports.
-
-- [ ] **Step 2: Migrate the rest of the file per the Migration Protocol.**
-
-- [ ] **Step 3: Typecheck**
-
-Run: `pnpm typecheck`
-
-- [ ] **Step 4: Test**
-
-Run: `pnpm test`
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/screens/ResetOtpScreen.tsx
-git commit -m "refactor(theme): migrate ResetOtpScreen to theme tokens and shared Button"
-```
-
----
-
-### Task 20: Migrate `src/screens/ResetPasswordScreen.tsx`
-
-**Files:**
-- Modify: `src/screens/ResetPasswordScreen.tsx`
-
-**Color table:** `#08716D`→`colors.teal`, `#3F6B26`→`colors.success`, `#8FBB6E`→`colors.successAccent`, `#E3EFD8`→`colors.successTint`
-
-- [ ] **Step 1: Update the `AuthFormKit` import** (`import { FormField, PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `Button` and `colors` imports.
-
-- [ ] **Step 2: Migrate the rest of the file per the Migration Protocol.** This screen has a password-strength indicator using the success-green family (`#3F6B26`/`#8FBB6E`/`#E3EFD8`) — map each to the token above; don't collapse them into one token, they're deliberately different intensities for the strength meter.
-
-- [ ] **Step 3: Typecheck**
-
-Run: `pnpm typecheck`
-
-- [ ] **Step 4: Test**
-
-Run: `pnpm test`
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/screens/ResetPasswordScreen.tsx
-git commit -m "refactor(theme): migrate ResetPasswordScreen to theme tokens and shared Button"
-```
-
----
-
-### Task 21: Migrate `src/screens/PasswordChangedScreen.tsx`
-
-**Files:**
-- Modify: `src/screens/PasswordChangedScreen.tsx`
-
-**Color table:** `#08716D`→`colors.teal`, `#1F3A5F`→`colors.ink`, `#2E5B1E`→`colors.success`, `#DCEED0`→`colors.successTint`, `#FFFFFF`→`colors.white`
-
-- [ ] **Step 1: Update the `AuthFormKit` import** (`import { PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `Button` and `colors` imports.
-
-- [ ] **Step 2: Migrate the rest of the file per the Migration Protocol.**
-
-- [ ] **Step 3: Typecheck**
-
-Run: `pnpm typecheck`
-
-- [ ] **Step 4: Test**
-
-Run: `pnpm test`
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/screens/PasswordChangedScreen.tsx
-git commit -m "refactor(theme): migrate PasswordChangedScreen to theme tokens and shared Button"
-```
-
----
-
-### Task 22: Migrate `src/screens/OtpScreen.tsx`
-
-**Files:**
-- Modify: `src/screens/OtpScreen.tsx`
-
-**Color table:** `#08716D`→`colors.teal`, `#7A5310`→`colors.warning`, `#B6B0A7`→`colors.neutralMuted`, `#FBE9CF`→`colors.warningTint`, `#FFFFFF`→`colors.white`
-
-- [ ] **Step 1: Update the `AuthFormKit` import** (`import { AuthHeader, PrimaryButton, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `Button` and `colors` imports.
-
-- [ ] **Step 2: Migrate the rest of the file per the Migration Protocol.** The warning family (`#7A5310`/`#FBE9CF`) is the resend-countdown/attempts-remaining messaging — map to `colors.warning`/`colors.warningTint`.
-
-- [ ] **Step 3: Typecheck**
-
-Run: `pnpm typecheck`
-
-- [ ] **Step 4: Test**
-
-Run: `pnpm test`
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/screens/OtpScreen.tsx
-git commit -m "refactor(theme): migrate OtpScreen to theme tokens and shared Button"
-```
-
----
-
-### Task 23: Migrate `src/screens/OtpLockedScreen.tsx`
-
-**Files:**
-- Modify: `src/screens/OtpLockedScreen.tsx`
-
-**Color table:** `#8A3A33`→`colors.dangerText`, `#9A988F`→`colors.neutralMuted`, `#B6B0A7`→`colors.neutralMuted`, `#EDECE7`→`colors.neutralTint`, `#FBE4E1`→`colors.dangerTint`
-
-- [ ] **Step 1: Update the `AuthFormKit` import** (`import { PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";`) — drop `PrimaryButton`/`authColors`, add `Button` and `colors` imports. Note this file has no plain `danger` (`#B3261E`) usage, only the darker `dangerText` variant — don't introduce `colors.danger` here, use `colors.dangerText` for the lockout messaging text/icon.
-
-- [ ] **Step 2: Migrate the rest of the file per the Migration Protocol.**
-
-- [ ] **Step 3: Typecheck**
-
-Run: `pnpm typecheck`
-
-- [ ] **Step 4: Test**
-
-Run: `pnpm test`
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/screens/OtpLockedScreen.tsx
-git commit -m "refactor(theme): migrate OtpLockedScreen to theme tokens and shared Button"
-```
-
----
-
-### Task 24: Migrate `src/screens/SignupSuccessScreen.tsx`
-
-**Files:**
-- Modify: `src/screens/SignupSuccessScreen.tsx`
-
-**Color table:** `#1F3A5F`→`colors.ink`, `#2E5B1E`→`colors.success`, `#7A5310`→`colors.warning`, `#DCEED0`→`colors.successTint`, `#F3DFB0`→`colors.warningTint`, `#FFFFFF`→`colors.white`
-
-- [ ] **Step 1: Update the `AuthFormKit` import** (`import { PrimaryButton, authColors } from "./AuthFormKit";`) — drop both, add `Button` and `colors` imports.
-
-- [ ] **Step 2: Migrate the rest of the file per the Migration Protocol.** This is in the `shadowColor` group from the survey — check for a card-shaped block and use `Card` (Task 8) if it matches.
-
-- [ ] **Step 3: Typecheck**
-
-Run: `pnpm typecheck`
-
-Expected: this is the **last** file importing `PrimaryButton`/`authColors` from `AuthFormKit.tsx` (Task 9) — typecheck must now exit 0 with no remaining "has no exported member" errors anywhere in the project.
-
-- [ ] **Step 4: Test**
-
-Run: `pnpm test`
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/screens/SignupSuccessScreen.tsx
-git commit -m "refactor(theme): migrate SignupSuccessScreen to theme tokens and shared Button"
-```
-
-- [ ] **Step 6: Manual spot-check — auth/onboarding flow**
-
-Run `pnpm start`, open in Expo Go/simulator, and walk through: welcome → account type → signup → OTP → signup success → signin → forgot password → reset OTP → reset password → password changed. Confirm no visual regressions beyond the intentional spacing snaps (Migration Protocol step 4), and that the primary buttons still show the teal gradient.
-
----
-
-### Task 25: Migrate `src/screens/HomeScreen.tsx`
+### Task 14: Migrate `src/screens/HomeScreen.tsx`
 
 **Files:**
 - Modify: `src/screens/HomeScreen.tsx`
@@ -1312,14 +1082,14 @@ git commit -m "refactor(theme): migrate HomeScreen to theme tokens and shared pr
 
 ---
 
-### Task 26: Migrate `src/screens/HomeGuestScreen.tsx`
+### Task 15: Migrate `src/screens/HomeGuestScreen.tsx`
 
 **Files:**
 - Modify: `src/screens/HomeGuestScreen.tsx`
 
 **Color table:** `#12213A`→`colors.inkStrong`, `#126B69`→`colors.teal`, `#14504F`→`colors.tealDark`, `#1C6B6B`→`colors.teal`, `#1F3A5F`→`colors.ink`, `#356A24`→`colors.success`, `#5F5E5A`→`colors.muted`, `#AAA69D`→`colors.neutralMuted`, `#C9CEC7`→`colors.inactive`, `#D5ECE8`→`colors.tealTint`, `#E1F2D3`→`colors.successTint`, `#E3E1D9`→`colors.border`, `#E7F0EE`→`colors.tealTint`, `#F4F5F2`→`colors.page`, `#FFFFFF`→`colors.white`
 
-- [ ] **Step 1: Migrate per the Migration Protocol.** This is the highest-`TouchableOpacity`-count file in the codebase (15) — it renders the `SignupWall` (Task 13) for gated actions plus its own tab bar and pet grid. Look specifically for any submit/CTA-style `TouchableOpacity` that duplicates `Button`'s shape and for the guest-mode bottom tab bar; if the bottom tab bar here is structurally the same as `OwnerTabs`/`BottomTabs` (just rendered for a signed-out user), leave it as-is unless it's byte-for-byte identical markup — don't force a shared component onto a guest-specific tab bar that has different behavior (opens `SignupWall` instead of navigating).
+- [ ] **Step 1: Migrate per the Migration Protocol.** This is the highest-`TouchableOpacity`-count file in the codebase (15) — it renders the `SignupWall` (migrated in Task 9) for gated actions plus its own tab bar and pet grid. Look specifically for any submit/CTA-style `TouchableOpacity` that duplicates `Button`'s shape and for the guest-mode bottom tab bar; if the bottom tab bar here is structurally the same as `OwnerTabs`/`BottomTabs` (just rendered for a signed-out user), leave it as-is unless it's byte-for-byte identical markup — don't force a shared component onto a guest-specific tab bar that has different behavior (opens `SignupWall` instead of navigating).
 
 - [ ] **Step 2: Typecheck**
 
@@ -1338,7 +1108,7 @@ git commit -m "refactor(theme): migrate HomeGuestScreen to theme tokens"
 
 ---
 
-### Task 27: Migrate `src/screens/ProfileScreen.tsx`
+### Task 16: Migrate `src/screens/ProfileScreen.tsx`
 
 **Files:**
 - Modify: `src/screens/ProfileScreen.tsx`
@@ -1364,7 +1134,7 @@ git commit -m "refactor(theme): migrate ProfileScreen to theme tokens and shared
 
 ---
 
-### Task 28: Migrate `src/screens/LocationPickerScreen.tsx`
+### Task 17: Migrate `src/screens/LocationPickerScreen.tsx`
 
 **Files:**
 - Modify: `src/screens/LocationPickerScreen.tsx`
@@ -1390,7 +1160,7 @@ git commit -m "refactor(theme): migrate LocationPickerScreen to theme tokens"
 
 ---
 
-### Task 29: Migrate `src/screens/MemberUpgradeScreen.tsx`
+### Task 18: Migrate `src/screens/MemberUpgradeScreen.tsx`
 
 **Files:**
 - Modify: `src/screens/MemberUpgradeScreen.tsx`
@@ -1416,7 +1186,7 @@ git commit -m "refactor(theme): migrate MemberUpgradeScreen to theme tokens"
 
 ---
 
-### Task 30: Migrate `src/screens/MemberVerifyScreen.tsx`
+### Task 19: Migrate `src/screens/MemberVerifyScreen.tsx`
 
 **Files:**
 - Modify: `src/screens/MemberVerifyScreen.tsx`
@@ -1442,7 +1212,7 @@ git commit -m "refactor(theme): migrate MemberVerifyScreen to theme tokens and s
 
 ---
 
-### Task 31: Migrate `src/screens/MemberSubmittedScreen.tsx`
+### Task 20: Migrate `src/screens/MemberSubmittedScreen.tsx`
 
 **Files:**
 - Modify: `src/screens/MemberSubmittedScreen.tsx`
@@ -1472,7 +1242,7 @@ Run `pnpm start`, sign in, and walk through: home → adopt/volunteer tabs → p
 
 ---
 
-### Task 32: Update `CLAUDE.md` to document the theme system
+### Task 21: Update `CLAUDE.md` to document the theme system
 
 **Files:**
 - Modify: `CLAUDE.md`
@@ -1480,7 +1250,7 @@ Run `pnpm start`, sign in, and walk through: home → adopt/volunteer tabs → p
 - [ ] **Step 1: Add a new subsection under "Architecture"** (after the "Screens" subsection, before "Components") documenting:
   - `src/theme/` (`colors.ts`, `typography.ts`, `spacing.ts`, `radii.ts`, `index.ts`) as the single source of truth for all styling values — no file should declare its own `colors`/`authColors` object anymore.
   - The shared primitives in `src/components/`: `Button`, `ScreenContainer`, `Card`, `Section`, `AppText` — reach for these before hand-rolling a button, screen shell, or shadowed card.
-  - A pointer to `.claude/skills/rn-code-review/SKILL.md` (Task 33) for the enforcement checklist.
+  - A pointer to `.claude/skills/rn-code-review/SKILL.md` (Task 22) for the enforcement checklist.
   - Update the existing "Orphaned legacy files" note if needed to clarify it's unaffected by this refactor.
 
 - [ ] **Step 2: Commit**
@@ -1492,7 +1262,7 @@ git commit -m "docs: document theme system and shared primitives in CLAUDE.md"
 
 ---
 
-### Task 33: Create `.claude/skills/rn-code-review/SKILL.md`
+### Task 22: Create `.claude/skills/rn-code-review/SKILL.md`
 
 **Files:**
 - Create: `.claude/skills/rn-code-review/SKILL.md`
@@ -1583,6 +1353,7 @@ git commit -m "feat: add rn-code-review project skill"
 
 ## Self-Review Notes
 
-- **Spec coverage:** `src/theme/*` (Tasks 1–4), primitives (Tasks 5–8), migration of every in-scope `StyleSheet.create` file (Tasks 9–31, 25 files total matching the 25 found minus the 1 excluded `BottomTabs.tsx`), reviewer skill (Task 33) — all spec sections have a task. `CLAUDE.md` update (Task 32) wasn't explicitly in the spec's Design section but follows directly from "Goals" (capture conventions) and is cheap to include now rather than leaving docs stale.
-- **Type consistency:** `Button`/`ScreenContainer`/`Card`/`Section`/`AppText` prop shapes are defined once in Tasks 5–8 and referenced identically in every later task. `colors`/`typography`/`spacing`/`radii` key names are defined once in Tasks 1–4 and every per-file color table below uses only those exact key names.
-- **Known risk:** color/typography mappings above were generated by grepping every hex literal and fontSize/fontWeight pair in each live file (exhaustive, verified) — but the exact JSX location of "which `TouchableOpacity` should become `Button`" or "which block should become `Card`" wasn't pre-verified line-by-line for every file (only for files fully read during planning: `AuthFormKit.tsx`, `AdoptScreen.tsx`, `VolunteerScreen.tsx`, `OwnerTabs.tsx`, `TopStatus.tsx`, `SignupWall.tsx` partial). Tasks 15, 25, 27–30 flag specific candidates based on the codebase-wide `shadowColor`/`TouchableOpacity` survey but leave the final call to whoever executes the task, per Migration Protocol step 6 ("only where it's a genuine match... don't force-fit").
+- **Spec coverage:** `src/theme/*` (Tasks 1–4), primitives (Tasks 5–8), migration of every in-scope `StyleSheet.create` file (Task 9 covers `AuthFormKit.tsx` + 11 consumers; Tasks 10–20 cover the remaining 13 files — 25 files total matching the 25 found minus the 1 excluded `BottomTabs.tsx`), reviewer skill (Task 22) — all spec sections have a task. `CLAUDE.md` update (Task 21) wasn't explicitly in the spec's Design section but follows directly from "Goals" (capture conventions) and is cheap to include now rather than leaving docs stale.
+- **Type consistency:** `Button`/`ScreenContainer`/`Card`/`Section`/`AppText` prop shapes are defined once in Tasks 5–8 and referenced identically in every later task. `colors`/`typography`/`spacing`/`radii` key names are defined once in Tasks 1–4 and every per-file color table uses only those exact key names.
+- **Global-constraint conflict found and resolved:** the original draft split `AuthFormKit.tsx`'s migration from its 11 consumers across separate tasks, which would have left the project non-compiling between them — violating "typecheck must pass after every task." Resolved (per human partner decision) by merging them into one task (Task 9) that lands as a single atomic, always-green commit.
+- **Known risk:** color/typography mappings were generated by grepping every hex literal and fontSize/fontWeight pair in each live file (exhaustive, verified) — but the exact JSX location of "which `TouchableOpacity` should become `Button`" or "which block should become `Card`" wasn't pre-verified line-by-line for every file (only for files fully read during planning: `AuthFormKit.tsx`, `AdoptScreen.tsx`, `VolunteerScreen.tsx`, `OwnerTabs.tsx`, `TopStatus.tsx`, `SignupWall.tsx` partial). Tasks 7 (within Task 9), 14, 16–19 flag specific candidates based on the codebase-wide `shadowColor`/`TouchableOpacity` survey but leave the final call to whoever executes the task, per Migration Protocol step 6 ("only where it's a genuine match... don't force-fit").
