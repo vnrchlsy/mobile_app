@@ -8,7 +8,12 @@ import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } 
 import { useApi } from "../api/useApi";
 import { useAuth } from "../auth/AuthContext";
 import { RootStackParamList } from "../navigation/types";
-import { FormField, PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";
+import { FormField, SimpleHeader } from "./AuthFormKit";
+import { Button } from "../components/Button";
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 const paw = require("../../assets/paw-white.png") as ImageSourcePropType;
 
@@ -59,7 +64,7 @@ export function SigninScreen({ navigation }: Props) {
 
       <View style={styles.content}>
         <View style={styles.logoMark}>
-          <LinearGradient colors={["#1C7876", "#12524C"]} style={styles.logoGradient}>
+          <LinearGradient colors={[colors.teal, colors.tealDark]} style={styles.logoGradient}>
             <Image source={paw} resizeMode="contain" style={styles.logoIcon} />
           </LinearGradient>
         </View>
@@ -100,7 +105,7 @@ export function SigninScreen({ navigation }: Props) {
           <Text style={styles.forgotText}>Forgot password?</Text>
         </TouchableOpacity>
 
-        <PrimaryButton label="Log in" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
+        <Button label="Log in" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
 
         <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate("accountType")}>
           <Text style={styles.linkCentered}>New to Kupkop? Create account</Text>
@@ -113,20 +118,20 @@ export function SigninScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: authColors.page
+    backgroundColor: colors.page
   },
   content: {
     flex: 1,
-    paddingHorizontal: 28,
+    paddingHorizontal: spacing.s28,
     alignItems: "center"
   },
   logoMark: {
-    marginTop: 8
+    marginTop: spacing.s8
   },
   logoGradient: {
     width: 84,
     height: 84,
-    borderRadius: 24,
+    borderRadius: radii.r24,
     alignItems: "center",
     justifyContent: "center"
   },
@@ -135,41 +140,37 @@ const styles = StyleSheet.create({
     height: 42
   },
   title: {
-    marginTop: 22,
-    color: authColors.ink,
-    fontSize: 26,
-    fontWeight: "800"
+    marginTop: spacing.s20,
+    color: colors.ink,
+    ...typography.heading800_26
   },
   caption: {
-    marginTop: 5,
-    color: authColors.muted,
-    fontSize: 14
+    marginTop: spacing.s4,
+    color: colors.muted,
+    ...typography.body14
   },
   formError: {
     alignSelf: "stretch",
-    marginTop: 12,
-    color: authColors.danger,
-    fontSize: 13,
-    fontWeight: "700"
+    marginTop: spacing.s12,
+    color: colors.danger,
+    ...typography.label700_13
   },
   forgotWrap: {
     alignSelf: "flex-end",
-    marginTop: 14
+    marginTop: spacing.s12
   },
   forgotText: {
-    color: "#08716D",
-    fontSize: 13,
-    fontWeight: "800"
+    color: colors.teal,
+    ...typography.label800_13
   },
   submitButton: {
     alignSelf: "stretch",
-    marginTop: 22
+    marginTop: spacing.s20
   },
   linkCentered: {
-    marginTop: 22,
-    color: "#08716D",
-    fontSize: 13,
-    fontWeight: "800",
+    marginTop: spacing.s20,
+    color: colors.teal,
+    ...typography.label800_13,
     textAlign: "center"
   }
 });

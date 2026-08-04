@@ -20,7 +20,12 @@ import {
 import { useApi } from "../api/useApi";
 import { useAuth } from "../auth/AuthContext";
 import { RootStackParamList } from "../navigation/types";
-import { AuthHeader, PrimaryButton, authColors } from "./AuthFormKit";
+import { AuthHeader } from "./AuthFormKit";
+import { Button } from "../components/Button";
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 const CODE_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -180,7 +185,7 @@ export function OtpScreen({ navigation, route }: Props) {
         </TouchableOpacity>
         {!!resendNotice && <Text style={styles.resendNotice}>{resendNotice}</Text>}
 
-        <PrimaryButton label="Verify" onPress={onVerify} disabled={code.length !== CODE_LENGTH} loading={submitting} style={styles.verifyButton} />
+        <Button label="Verify" onPress={onVerify} disabled={code.length !== CODE_LENGTH} loading={submitting} style={styles.verifyButton} />
 
         <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.goBack()}>
           <Text style={styles.changeEmail}>Wrong email? Change it</Text>
@@ -193,31 +198,30 @@ export function OtpScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: authColors.page
+    backgroundColor: colors.page
   },
   content: {
     flex: 1,
-    paddingHorizontal: 28
+    paddingHorizontal: spacing.s28
   },
   unverifiedBanner: {
-    marginBottom: 18,
+    marginBottom: spacing.s16,
     flexDirection: "row",
     alignItems: "flex-start",
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#FBE9CF"
+    borderRadius: radii.r12,
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s12,
+    backgroundColor: colors.warningTint
   },
   unverifiedIcon: {
     width: 22,
     height: 22,
-    marginRight: 12,
-    borderRadius: 11,
+    marginRight: spacing.s12,
+    borderRadius: 11, // exactly half of width/height (circle) — do not snap to radii scale
     borderWidth: 1.5,
-    borderColor: "#7A5310",
-    color: "#7A5310",
-    fontSize: 13,
-    fontWeight: "800",
+    borderColor: colors.warning,
+    color: colors.warning,
+    ...typography.label800_13,
     textAlign: "center",
     lineHeight: 19
   },
@@ -225,36 +229,33 @@ const styles = StyleSheet.create({
     flex: 1
   },
   unverifiedTitle: {
-    color: "#7A5310",
-    fontSize: 14,
-    fontWeight: "800"
+    color: colors.warning,
+    ...typography.label800_14
   },
   unverifiedBody: {
-    marginTop: 3,
-    color: "#7A5310",
-    fontSize: 12,
+    marginTop: spacing.s2,
+    color: colors.warning,
+    ...typography.body12,
     lineHeight: 17
   },
   title: {
-    color: authColors.ink,
-    fontSize: 24,
-    fontWeight: "800",
+    color: colors.ink,
+    ...typography.heading800_24,
     lineHeight: 30
   },
   caption: {
-    marginTop: 5,
-    color: authColors.muted,
-    fontSize: 14,
+    marginTop: spacing.s4,
+    color: colors.muted,
+    ...typography.body14,
     lineHeight: 20
   },
   emailText: {
-    marginTop: 3,
-    color: authColors.ink,
-    fontSize: 15,
-    fontWeight: "800"
+    marginTop: spacing.s2,
+    color: colors.ink,
+    ...typography.label800_15
   },
   otpRow: {
-    marginTop: 30,
+    marginTop: spacing.s28,
     flexDirection: "row",
     justifyContent: "space-between"
   },
@@ -264,55 +265,50 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: authColors.border,
-    borderRadius: 12,
+    borderColor: colors.border,
+    borderRadius: radii.r12,
     padding: 0,
-    backgroundColor: "#FFFFFF",
-    color: authColors.ink,
-    fontSize: 22,
-    fontWeight: "800"
+    backgroundColor: colors.white,
+    color: colors.ink,
+    ...typography.heading800_22
   },
   otpBoxError: {
-    borderColor: authColors.danger
+    borderColor: colors.danger
   },
   errorText: {
-    marginTop: 14,
-    color: authColors.danger,
-    fontSize: 13,
-    fontWeight: "700",
+    marginTop: spacing.s12,
+    color: colors.danger,
+    ...typography.label700_13,
     textAlign: "center"
   },
   resendHint: {
-    marginTop: 26,
-    color: authColors.muted,
-    fontSize: 12,
+    marginTop: spacing.s24,
+    color: colors.muted,
+    ...typography.body12,
     textAlign: "center"
   },
   resendAction: {
-    marginTop: 6,
-    color: "#08716D",
-    fontSize: 13,
-    fontWeight: "800",
+    marginTop: spacing.s4,
+    color: colors.teal,
+    ...typography.label800_13,
     textAlign: "center"
   },
   resendMuted: {
-    color: "#B6B0A7"
+    color: colors.neutralMuted
   },
   resendNotice: {
-    marginTop: 6,
-    color: authColors.teal,
-    fontSize: 12,
-    fontWeight: "700",
+    marginTop: spacing.s4,
+    color: colors.teal,
+    ...typography.label700_12,
     textAlign: "center"
   },
   verifyButton: {
-    marginTop: 30
+    marginTop: spacing.s28
   },
   changeEmail: {
-    marginTop: 22,
-    color: "#08716D",
-    fontSize: 13,
-    fontWeight: "800",
+    marginTop: spacing.s20,
+    color: colors.teal,
+    ...typography.label800_13,
     textAlign: "center"
   }
 });

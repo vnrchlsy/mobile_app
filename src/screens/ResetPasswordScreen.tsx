@@ -6,7 +6,11 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
 import { RootStackParamList } from "../navigation/types";
-import { FormField, PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";
+import { FormField, SimpleHeader } from "./AuthFormKit";
+import { Button } from "../components/Button";
+import { colors } from "../theme/colors";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 const MIN_LENGTH = 8;
 const HAS_NUMBER_OR_SYMBOL = /[0-9!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~]/;
@@ -95,7 +99,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
 
         {!!error && <Text style={styles.formError}>{error}</Text>}
 
-        <PrimaryButton
+        <Button
           label="Save new password"
           onPress={onSubmit}
           disabled={!canSubmit}
@@ -125,76 +129,73 @@ function RuleRow({ met, label }: { met: boolean; label: string }) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: authColors.page
+    backgroundColor: colors.page
   },
   content: {
     flex: 1,
-    paddingHorizontal: 28
+    paddingHorizontal: spacing.s28
   },
   title: {
-    color: authColors.ink,
-    fontSize: 24,
-    fontWeight: "800",
+    color: colors.ink,
+    ...typography.heading800_24,
     lineHeight: 30
   },
   caption: {
-    marginTop: 5,
-    color: authColors.muted,
-    fontSize: 14,
+    marginTop: spacing.s4,
+    color: colors.muted,
+    ...typography.body14,
     lineHeight: 20
   },
   rulesGroup: {
-    marginTop: 16
+    marginTop: spacing.s16
   },
   ruleRow: {
-    marginTop: 8,
+    marginTop: spacing.s8,
     flexDirection: "row",
     alignItems: "center"
   },
   ruleDot: {
     width: 20,
     height: 20,
-    marginRight: 10,
-    borderRadius: 10,
+    marginRight: spacing.s8,
+    borderRadius: 10, // exactly half of width/height (circle) — do not snap to radii scale
     borderWidth: 1.5,
-    borderColor: authColors.border,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center"
   },
   ruleDotMet: {
-    borderColor: "#8FBB6E",
-    backgroundColor: "#E3EFD8"
+    borderColor: colors.successAccent,
+    backgroundColor: colors.successTint
   },
   ruleCheck: {
     width: 6,
     height: 10,
     borderRightWidth: 2,
     borderBottomWidth: 2,
-    borderColor: "#3F6B26",
+    borderColor: colors.success,
     transform: [{ rotate: "45deg" }, { translateY: -1 }]
   },
   ruleText: {
-    color: authColors.muted,
-    fontSize: 13
+    color: colors.muted,
+    ...typography.body13
   },
   ruleTextMet: {
-    color: authColors.ink,
+    color: colors.ink,
     fontWeight: "700"
   },
   formError: {
-    marginTop: 14,
-    color: authColors.danger,
-    fontSize: 13,
-    fontWeight: "700"
+    marginTop: spacing.s12,
+    color: colors.danger,
+    ...typography.label700_13
   },
   submitButton: {
-    marginTop: 26
+    marginTop: spacing.s24
   },
   linkCentered: {
-    marginTop: 22,
-    color: "#08716D",
-    fontSize: 13,
-    fontWeight: "800",
+    marginTop: spacing.s20,
+    color: colors.teal,
+    ...typography.label800_13,
     textAlign: "center"
   }
 });

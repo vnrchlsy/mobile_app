@@ -10,7 +10,11 @@ import { Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, Vi
 
 import { GuestIntentAction } from "../guestIntent";
 import { CheckIcon, ProfileIcon, VolunteerIcon } from "./AppIcons";
-import { PrimaryButton, authColors } from "../screens/AuthFormKit";
+import { Button } from "./Button";
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 export type SignupWallAction = GuestIntentAction;
 
@@ -54,7 +58,7 @@ function getCopy(action: SignupWallAction, subject?: string): WallCopy {
       };
     case "volunteer":
       return {
-        icon: <VolunteerIcon color={authColors.teal} size={30} />,
+        icon: <VolunteerIcon color={colors.teal} size={30} />,
         title: "Volunteer with shelters",
         body: "Create a free account to sign up for Kawang-Gawa volunteer shifts.",
         note: "Takes a minute — we'll bring you right back."
@@ -62,7 +66,7 @@ function getCopy(action: SignupWallAction, subject?: string): WallCopy {
     case "account":
     default:
       return {
-        icon: <ProfileIcon color={authColors.teal} size={30} />,
+        icon: <ProfileIcon color={colors.teal} size={30} />,
         title: "Create your account",
         body: "Sign up to manage your profile, adoptions, and more.",
         note: "Takes a minute — we'll bring you right back."
@@ -90,12 +94,12 @@ export function SignupWall({ visible, action, subject, onCreateAccount, onLogin,
 
           <View style={styles.noteBar}>
             <View style={styles.noteCheck}>
-              <CheckIcon color="#FFFFFF" size={12} />
+              <CheckIcon color={colors.white} size={12} />
             </View>
             <Text style={styles.noteText}>{copy.note}</Text>
           </View>
 
-          <PrimaryButton label="Create free account" onPress={onCreateAccount} style={styles.createButton} />
+          <Button label="Create free account" onPress={onCreateAccount} style={styles.createButton} />
 
           <TouchableOpacity activeOpacity={0.75} onPress={onLogin}>
             <Text style={styles.loginLink}>Already have one? Log in</Text>
@@ -139,87 +143,83 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(18, 33, 58, 0.45)"
   },
   sheet: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 28,
-    paddingTop: 14,
-    paddingBottom: 34,
+    borderTopLeftRadius: radii.r24,
+    borderTopRightRadius: radii.r24,
+    paddingHorizontal: spacing.s28,
+    paddingTop: spacing.s12,
+    paddingBottom: spacing.s32,
     alignItems: "center",
-    backgroundColor: "#FFFFFF"
+    backgroundColor: colors.white
   },
   handle: {
     width: 44,
     height: 5,
-    borderRadius: 3,
-    marginBottom: 22,
-    backgroundColor: authColors.border
+    borderRadius: 3, // ~half of height (pill/bar shape) — do not snap to radii scale
+    marginBottom: spacing.s20,
+    backgroundColor: colors.border
   },
   iconCircle: {
     width: 76,
     height: 76,
-    borderRadius: 38,
+    borderRadius: 38, // exactly half of width/height (circle) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: authColors.paleTeal
+    backgroundColor: colors.tealTint
   },
   title: {
-    marginTop: 18,
-    color: authColors.ink,
-    fontSize: 22,
-    fontWeight: "800",
+    marginTop: spacing.s16,
+    color: colors.ink,
+    ...typography.heading800_22,
     textAlign: "center"
   },
   body: {
-    marginTop: 8,
-    color: authColors.muted,
-    fontSize: 14,
+    marginTop: spacing.s8,
+    color: colors.muted,
+    ...typography.body14,
     lineHeight: 20,
     textAlign: "center"
   },
   noteBar: {
     width: "100%",
-    marginTop: 20,
-    borderRadius: 14,
+    marginTop: spacing.s20,
+    borderRadius: radii.r12,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: authColors.paleTeal
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s12,
+    backgroundColor: colors.tealTint
   },
   noteCheck: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: 12, // exactly half of width/height (circle) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: authColors.teal
+    backgroundColor: colors.teal
   },
   noteText: {
     flex: 1,
-    marginLeft: 12,
-    color: authColors.tealDark,
-    fontSize: 13,
-    fontWeight: "700",
+    marginLeft: spacing.s12,
+    color: colors.tealDark,
+    ...typography.label700_13,
     lineHeight: 18
   },
   createButton: {
     width: "100%",
-    marginTop: 24
+    marginTop: spacing.s24
   },
   loginLink: {
-    marginTop: 18,
-    color: authColors.teal,
-    fontSize: 14,
-    fontWeight: "800"
+    marginTop: spacing.s16,
+    color: colors.teal,
+    ...typography.label800_14
   },
   laterPressable: {
-    marginTop: 14,
-    paddingVertical: 4
+    marginTop: spacing.s12,
+    paddingVertical: spacing.s4
   },
   laterLink: {
-    color: "#AAA69D",
-    fontSize: 13,
-    fontWeight: "700"
+    color: colors.neutralMuted,
+    ...typography.label700_13
   },
   houseIconBox: {
     width: 32,
@@ -237,16 +237,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 13,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderBottomColor: authColors.teal
+    borderBottomColor: colors.teal
   },
   houseBody: {
     position: "absolute",
     top: 12,
     width: 26,
     height: 18,
-    borderBottomLeftRadius: 4,
-    borderBottomRightRadius: 4,
-    backgroundColor: authColors.teal,
+    borderBottomLeftRadius: radii.r4,
+    borderBottomRightRadius: radii.r4,
+    backgroundColor: colors.teal,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row"
@@ -254,15 +254,15 @@ const styles = StyleSheet.create({
   heartLeft: {
     width: 6,
     height: 6,
-    borderRadius: 3,
-    backgroundColor: "#FFFFFF",
+    borderRadius: 3, // exactly half of width/height (circle) — do not snap to radii scale
+    backgroundColor: colors.white,
     transform: [{ translateX: 2 }, { translateY: -1 }, { rotate: "-45deg" }]
   },
   heartRight: {
     width: 6,
     height: 6,
-    borderRadius: 3,
-    backgroundColor: "#FFFFFF",
+    borderRadius: 3, // exactly half of width/height (circle) — do not snap to radii scale
+    backgroundColor: colors.white,
     transform: [{ translateX: -2 }, { translateY: -1 }, { rotate: "45deg" }]
   },
   pinIconBox: {
@@ -274,8 +274,8 @@ const styles = StyleSheet.create({
   pinCircle: {
     width: 18,
     height: 18,
-    borderRadius: 9,
+    borderRadius: 9, // exactly half of width/height (circle) — do not snap to radii scale
     borderWidth: 3,
-    borderColor: authColors.teal
+    borderColor: colors.teal
   }
 });

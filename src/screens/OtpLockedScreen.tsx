@@ -12,7 +12,12 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { useApi } from "../api/useApi";
 import { RootStackParamList } from "../navigation/types";
-import { PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";
+import { SimpleHeader } from "./AuthFormKit";
+import { Button } from "../components/Button";
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 const CODE_LENGTH = 6;
 
@@ -61,7 +66,7 @@ export function OtpLockedScreen({ navigation, route }: Props) {
           </View>
         </View>
 
-        <PrimaryButton label="Send a new code" onPress={onSendNewCode} loading={sending} style={styles.sendButton} />
+        <Button label="Send a new code" onPress={onSendNewCode} loading={sending} style={styles.sendButton} />
 
         <Text style={styles.capHint}>You can request 5 codes an hour.</Text>
       </View>
@@ -72,32 +77,30 @@ export function OtpLockedScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: authColors.page
+    backgroundColor: colors.page
   },
   content: {
     flex: 1,
-    paddingHorizontal: 28
+    paddingHorizontal: spacing.s28
   },
   title: {
-    color: authColors.ink,
-    fontSize: 24,
-    fontWeight: "800",
+    color: colors.ink,
+    ...typography.heading800_24,
     lineHeight: 30
   },
   caption: {
-    marginTop: 5,
-    color: authColors.muted,
-    fontSize: 14,
+    marginTop: spacing.s4,
+    color: colors.muted,
+    ...typography.body14,
     lineHeight: 20
   },
   emailText: {
-    marginTop: 3,
-    color: authColors.ink,
-    fontSize: 15,
-    fontWeight: "800"
+    marginTop: spacing.s2,
+    color: colors.ink,
+    ...typography.label800_15
   },
   otpRow: {
-    marginTop: 30,
+    marginTop: spacing.s28,
     flexDirection: "row",
     justifyContent: "space-between"
   },
@@ -107,34 +110,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: authColors.border,
-    borderRadius: 12,
-    backgroundColor: "#EDECE7"
+    borderColor: colors.border,
+    borderRadius: radii.r12,
+    backgroundColor: colors.neutralTint
   },
   otpDigit: {
-    color: "#B6B0A7",
-    fontSize: 22,
-    fontWeight: "800"
+    color: colors.neutralMuted,
+    ...typography.heading800_22
   },
   noticeBar: {
-    marginTop: 20,
+    marginTop: spacing.s20,
     flexDirection: "row",
     alignItems: "flex-start",
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#FBE4E1"
+    borderRadius: radii.r12,
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s12,
+    backgroundColor: colors.dangerTint
   },
   noticeIcon: {
     width: 22,
     height: 22,
-    marginRight: 12,
-    borderRadius: 11,
+    marginRight: spacing.s12,
+    borderRadius: 11, // exactly half of width/height (circle) — do not snap to radii scale
     borderWidth: 1.5,
-    borderColor: authColors.danger,
-    color: authColors.danger,
-    fontSize: 13,
-    fontWeight: "800",
+    // Darker dangerText variant, not plain danger — matches this screen's #8A3A33 usage below.
+    borderColor: colors.dangerText,
+    color: colors.dangerText,
+    ...typography.label800_13,
     textAlign: "center",
     lineHeight: 19
   },
@@ -142,23 +144,22 @@ const styles = StyleSheet.create({
     flex: 1
   },
   noticeTitle: {
-    color: authColors.danger,
-    fontSize: 14,
-    fontWeight: "800"
+    color: colors.dangerText,
+    ...typography.label800_14
   },
   noticeBody: {
-    marginTop: 4,
-    color: "#8A3A33",
-    fontSize: 12,
+    marginTop: spacing.s4,
+    color: colors.dangerText,
+    ...typography.body12,
     lineHeight: 17
   },
   sendButton: {
-    marginTop: 26
+    marginTop: spacing.s24
   },
   capHint: {
-    marginTop: 16,
-    color: "#9A988F",
-    fontSize: 12,
+    marginTop: spacing.s16,
+    color: colors.neutralMuted,
+    ...typography.body12,
     textAlign: "center"
   }
 });

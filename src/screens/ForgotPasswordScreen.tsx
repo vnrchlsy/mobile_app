@@ -7,7 +7,12 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
 import { RootStackParamList } from "../navigation/types";
-import { FormField, PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";
+import { FormField, SimpleHeader } from "./AuthFormKit";
+import { Button } from "../components/Button";
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 type Props = NativeStackScreenProps<RootStackParamList, "forgotPassword">;
 
@@ -53,7 +58,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
         />
         <Text style={styles.helper}>Use the email you signed up with.</Text>
 
-        <PrimaryButton label="Send code" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
+        <Button label="Send code" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
 
         <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate("signin")}>
           <Text style={styles.linkCentered}>Remembered it? Log in</Text>
@@ -66,21 +71,21 @@ export function ForgotPasswordScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: authColors.page
+    backgroundColor: colors.page
   },
   content: {
     flex: 1,
-    paddingHorizontal: 28,
+    paddingHorizontal: spacing.s28,
     alignItems: "center"
   },
   iconCircle: {
     width: 88,
     height: 88,
-    marginTop: 20,
-    borderRadius: 44,
+    marginTop: spacing.s20,
+    borderRadius: 44, // exactly half of width/height (circle) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: authColors.paleTeal
+    backgroundColor: colors.tealTint
   },
   lockShackle: {
     position: "absolute",
@@ -88,48 +93,46 @@ const styles = StyleSheet.create({
     width: 22,
     height: 18,
     borderWidth: 4,
-    borderColor: authColors.teal,
+    borderColor: colors.teal,
     borderBottomWidth: 0,
-    borderTopLeftRadius: 11,
-    borderTopRightRadius: 11
+    borderTopLeftRadius: 11, // exactly half of width (arc/shackle shape) — do not snap to radii scale
+    borderTopRightRadius: 11 // exactly half of width (arc/shackle shape) — do not snap to radii scale
   },
   lockBody: {
     position: "absolute",
     top: 38,
     width: 34,
     height: 26,
-    borderRadius: 6,
-    backgroundColor: authColors.teal
+    borderRadius: radii.r4,
+    backgroundColor: colors.teal
   },
   title: {
-    marginTop: 20,
-    color: authColors.ink,
-    fontSize: 24,
-    fontWeight: "800",
+    marginTop: spacing.s20,
+    color: colors.ink,
+    ...typography.heading800_24,
     textAlign: "center"
   },
   caption: {
-    marginTop: 10,
-    color: authColors.muted,
-    fontSize: 14,
+    marginTop: spacing.s8,
+    color: colors.muted,
+    ...typography.body14,
     lineHeight: 20,
     textAlign: "center"
   },
   helper: {
-    marginTop: 10,
+    marginTop: spacing.s8,
     alignSelf: "flex-start",
-    color: authColors.muted,
-    fontSize: 12
+    color: colors.muted,
+    ...typography.body12
   },
   submitButton: {
     alignSelf: "stretch",
-    marginTop: 26
+    marginTop: spacing.s24
   },
   linkCentered: {
-    marginTop: 22,
-    color: "#08716D",
-    fontSize: 13,
-    fontWeight: "800",
+    marginTop: spacing.s20,
+    color: colors.teal,
+    ...typography.label800_13,
     textAlign: "center"
   }
 });

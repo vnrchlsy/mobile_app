@@ -1,29 +1,19 @@
 // Shared building blocks for the auth/onboarding flow (account type, signup, OTP).
 // Visual language matches screens/user/screen-{account-type,signup,otp}.png: soft page background,
 // pill status header with back chevron + step dots, 800-weight ink headings, white rounded fields.
-import { LinearGradient } from "expo-linear-gradient";
 import {
-  ActivityIndicator,
-  StyleProp,
   StyleSheet,
   Text,
   TextInput,
   TextInputProps,
   TouchableOpacity,
-  View,
-  ViewStyle
+  View
 } from "react-native";
 
-export const authColors = {
-  ink: "#1F3A5F",
-  teal: "#1C7876",
-  tealDark: "#12524C",
-  page: "#F7F7F4",
-  border: "#E3E1D9",
-  muted: "#62615C",
-  danger: "#B3261E",
-  paleTeal: "#E7F2F1"
-};
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 export const AUTH_STEP_COUNT = 3;
 
@@ -143,42 +133,17 @@ export function FormField({
   );
 }
 
-type PrimaryButtonProps = {
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-  loading?: boolean;
-  style?: StyleProp<ViewStyle>;
-};
-
-export function PrimaryButton({ label, onPress, disabled, loading, style }: PrimaryButtonProps) {
-  const isDisabled = disabled || loading;
-  return (
-    <TouchableOpacity
-      activeOpacity={0.85}
-      onPress={onPress}
-      disabled={isDisabled}
-      style={[styles.primaryButtonWrap, isDisabled && styles.primaryButtonDisabled, style]}
-    >
-      <LinearGradient colors={["#1C7876", "#12524C"]} style={styles.primaryButton}>
-        {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryText}>{label}</Text>}
-      </LinearGradient>
-    </TouchableOpacity>
-  );
-}
-
 const styles = StyleSheet.create({
   header: {
     height: 132,
-    paddingHorizontal: 28
+    paddingHorizontal: spacing.s28
   },
   statusTime: {
     position: "absolute",
     left: 30,
     top: 16,
-    color: authColors.ink,
-    fontSize: 14,
-    fontWeight: "800"
+    color: colors.ink,
+    ...typography.label800_14
   },
   statusBattery: {
     position: "absolute",
@@ -187,18 +152,18 @@ const styles = StyleSheet.create({
     width: 28,
     height: 14,
     borderWidth: 2,
-    borderColor: authColors.ink,
-    borderRadius: 4,
+    borderColor: colors.ink,
+    borderRadius: radii.r4,
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "center",
-    gap: 4
+    gap: spacing.s4
   },
   statusBatteryDot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
-    backgroundColor: authColors.ink
+    borderRadius: 3, // exactly half of width/height (circle) — do not snap to radii scale
+    backgroundColor: colors.ink
   },
   backButton: {
     position: "absolute",
@@ -207,81 +172,76 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     zIndex: 10,
-    borderRadius: 21,
+    borderRadius: 21, // exactly half of width/height (circle) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF"
+    backgroundColor: colors.white
   },
   backText: {
-    color: authColors.ink,
-    fontSize: 26,
-    fontWeight: "700",
+    color: colors.ink,
+    ...typography.heading700_26,
     lineHeight: 28
   },
   headerTitle: {
-    marginTop: 58,
-    color: authColors.ink,
-    fontSize: 16,
-    fontWeight: "800",
+    marginTop: spacing.s56,
+    color: colors.ink,
+    ...typography.label800_16,
     textAlign: "center"
   },
   steps: {
-    marginTop: 26,
+    marginTop: spacing.s24,
     flexDirection: "row",
     justifyContent: "center",
-    gap: 22
+    gap: spacing.s20
   },
   stepDot: {
     width: 9,
     height: 9,
-    borderRadius: 5,
-    backgroundColor: "#D5DDDA"
+    borderRadius: 5, // ~half of width/height (circle) — do not snap to radii scale
+    backgroundColor: colors.border
   },
   stepActive: {
-    backgroundColor: authColors.teal
+    backgroundColor: colors.teal
   },
   fieldGroup: {
-    marginTop: 17
+    marginTop: spacing.s16
   },
   label: {
-    marginBottom: 8,
-    color: authColors.ink,
-    fontSize: 12,
-    fontWeight: "800"
+    marginBottom: spacing.s8,
+    color: colors.ink,
+    ...typography.label800_12
   },
   input: {
     height: 46,
     borderWidth: 1,
-    borderColor: authColors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
+    borderColor: colors.border,
+    borderRadius: radii.r12,
+    paddingHorizontal: spacing.s12,
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOpacity: 0.05,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 1
   },
   inputError: {
-    borderColor: authColors.danger
+    borderColor: colors.danger
   },
   inputText: {
-    color: authColors.ink,
-    fontSize: 14,
-    fontWeight: "800"
+    color: colors.ink,
+    ...typography.label800_14
   },
   textInput: {
     flex: 1,
     height: "100%",
     padding: 0,
-    paddingRight: 34
+    paddingRight: spacing.s32
   },
   fieldError: {
-    marginTop: 6,
-    color: authColors.danger,
-    fontSize: 12,
-    fontWeight: "700"
+    marginTop: spacing.s4,
+    color: colors.danger,
+    ...typography.label700_12
   },
   eyeButton: {
     position: "absolute",
@@ -296,8 +256,8 @@ const styles = StyleSheet.create({
     width: 20,
     height: 13,
     borderWidth: 2,
-    borderColor: "#77756F",
-    borderRadius: 10,
+    borderColor: colors.muted,
+    borderRadius: 10, // ~half of height, forms the pill/eye shape with scaleY below — do not snap
     alignItems: "center",
     justifyContent: "center",
     transform: [{ scaleY: 0.82 }]
@@ -305,24 +265,7 @@ const styles = StyleSheet.create({
   eyePupil: {
     width: 5,
     height: 5,
-    borderRadius: 3,
-    backgroundColor: "#77756F"
-  },
-  primaryButtonWrap: {
-    borderRadius: 24,
-    overflow: "hidden"
-  },
-  primaryButtonDisabled: {
-    opacity: 0.6
-  },
-  primaryButton: {
-    height: 50,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  primaryText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800"
+    borderRadius: 3, // ~half of width/height (circle) — do not snap to radii scale
+    backgroundColor: colors.muted
   }
 });

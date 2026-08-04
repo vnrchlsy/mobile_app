@@ -3,7 +3,11 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Alert, Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { RootStackParamList } from "../navigation/types";
-import { AuthHeader, authColors } from "./AuthFormKit";
+import { AuthHeader } from "./AuthFormKit";
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 const paw = require("../../assets/paw-white.png") as ImageSourcePropType;
 
@@ -58,82 +62,78 @@ export function AccountTypeScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: authColors.page
+    backgroundColor: colors.page
   },
   content: {
     flex: 1,
-    paddingHorizontal: 28
+    paddingHorizontal: spacing.s28
   },
   title: {
-    color: authColors.ink,
-    fontSize: 24,
-    fontWeight: "800",
+    color: colors.ink,
+    ...typography.heading800_24,
     lineHeight: 30
   },
   caption: {
-    marginTop: 6,
-    color: authColors.muted,
-    fontSize: 14,
+    marginTop: spacing.s4,
+    color: colors.muted,
+    ...typography.body14,
     lineHeight: 20
   },
   card: {
-    marginTop: 28,
+    marginTop: spacing.s28,
     borderWidth: 1,
-    borderColor: authColors.border,
-    borderRadius: 16,
+    borderColor: colors.border,
+    borderRadius: radii.r16,
     alignItems: "center",
     flexDirection: "row",
-    paddingHorizontal: 18,
-    paddingVertical: 22,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s20,
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOpacity: 0.06,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2
   },
   secondCard: {
-    marginTop: 18
+    marginTop: spacing.s16
   },
   iconCircle: {
     width: 60,
     height: 60,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 30,
-    backgroundColor: authColors.teal
+    borderRadius: 30, // exactly half of width/height (circle) — do not snap to radii scale
+    backgroundColor: colors.teal
   },
   pawIcon: {
     width: 30,
     height: 30
   },
   orgIconCircle: {
-    backgroundColor: authColors.paleTeal
+    backgroundColor: colors.tealTint
   },
   orgGlyph: {
-    color: authColors.teal,
-    fontSize: 28,
-    fontWeight: "900"
+    color: colors.teal,
+    ...typography.heading900_28
   },
   copy: {
     flex: 1,
-    marginLeft: 18
+    marginLeft: spacing.s16
   },
   cardTitle: {
-    color: authColors.ink,
-    fontSize: 18,
-    fontWeight: "800"
+    color: colors.ink,
+    ...typography.heading800_18
   },
   cardBody: {
-    marginTop: 6,
-    color: authColors.muted,
-    fontSize: 12,
+    marginTop: spacing.s4,
+    color: colors.muted,
+    ...typography.body12,
     lineHeight: 17
   },
   chevron: {
-    color: authColors.muted,
-    fontSize: 26,
-    fontWeight: "700",
-    marginLeft: 8
+    color: colors.muted,
+    ...typography.heading700_26,
+    marginLeft: spacing.s8
   }
 });

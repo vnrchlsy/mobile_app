@@ -18,7 +18,12 @@ import {
 
 import { useApi } from "../api/useApi";
 import { RootStackParamList } from "../navigation/types";
-import { PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";
+import { SimpleHeader } from "./AuthFormKit";
+import { Button } from "../components/Button";
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 const CODE_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -125,7 +130,7 @@ export function ResetOtpScreen({ navigation, route }: Props) {
         </TouchableOpacity>
         {!!resendNotice && <Text style={styles.resendNotice}>{resendNotice}</Text>}
 
-        <PrimaryButton label="Verify" onPress={onContinue} disabled={code.length !== CODE_LENGTH} style={styles.verifyButton} />
+        <Button label="Verify" onPress={onContinue} disabled={code.length !== CODE_LENGTH} style={styles.verifyButton} />
 
         <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.goBack()}>
           <Text style={styles.changeEmail}>Wrong email? Change it</Text>
@@ -138,32 +143,30 @@ export function ResetOtpScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: authColors.page
+    backgroundColor: colors.page
   },
   content: {
     flex: 1,
-    paddingHorizontal: 28
+    paddingHorizontal: spacing.s28
   },
   title: {
-    color: authColors.ink,
-    fontSize: 24,
-    fontWeight: "800",
+    color: colors.ink,
+    ...typography.heading800_24,
     lineHeight: 30
   },
   caption: {
-    marginTop: 5,
-    color: authColors.muted,
-    fontSize: 14,
+    marginTop: spacing.s4,
+    color: colors.muted,
+    ...typography.body14,
     lineHeight: 20
   },
   emailText: {
-    marginTop: 3,
-    color: authColors.ink,
-    fontSize: 15,
-    fontWeight: "800"
+    marginTop: spacing.s2,
+    color: colors.ink,
+    ...typography.label800_15
   },
   otpRow: {
-    marginTop: 30,
+    marginTop: spacing.s28,
     flexDirection: "row",
     justifyContent: "space-between"
   },
@@ -173,45 +176,41 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: authColors.border,
-    borderRadius: 12,
+    borderColor: colors.border,
+    borderRadius: radii.r12,
     padding: 0,
-    backgroundColor: "#FFFFFF",
-    color: authColors.ink,
-    fontSize: 22,
-    fontWeight: "800"
+    backgroundColor: colors.white,
+    color: colors.ink,
+    ...typography.heading800_22
   },
   resendHint: {
-    marginTop: 26,
-    color: authColors.muted,
-    fontSize: 12,
+    marginTop: spacing.s24,
+    color: colors.muted,
+    ...typography.body12,
     textAlign: "center"
   },
   resendAction: {
-    marginTop: 6,
-    color: "#08716D",
-    fontSize: 13,
-    fontWeight: "800",
+    marginTop: spacing.s4,
+    color: colors.teal,
+    ...typography.label800_13,
     textAlign: "center"
   },
   resendMuted: {
-    color: "#B6B0A7"
+    color: colors.neutralMuted
   },
   resendNotice: {
-    marginTop: 6,
-    color: authColors.teal,
-    fontSize: 12,
-    fontWeight: "700",
+    marginTop: spacing.s4,
+    color: colors.teal,
+    ...typography.label700_12,
     textAlign: "center"
   },
   verifyButton: {
-    marginTop: 30
+    marginTop: spacing.s28
   },
   changeEmail: {
-    marginTop: 22,
-    color: "#08716D",
-    fontSize: 13,
-    fontWeight: "800",
+    marginTop: spacing.s20,
+    color: colors.teal,
+    ...typography.label800_13,
     textAlign: "center"
   }
 });

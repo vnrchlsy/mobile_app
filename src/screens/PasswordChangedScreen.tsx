@@ -5,7 +5,13 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { RootStackParamList } from "../navigation/types";
-import { PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";
+import { SimpleHeader } from "./AuthFormKit";
+import { Button } from "../components/Button";
+import { Card } from "../components/Card";
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 type Props = NativeStackScreenProps<RootStackParamList, "passwordChanged">;
 
@@ -27,7 +33,7 @@ export function PasswordChangedScreen({ navigation }: Props) {
         <Text style={styles.heading}>Password changed</Text>
         <Text style={styles.subheading}>Log in with your new password.</Text>
 
-        <View style={styles.noticeBar}>
+        <Card style={styles.noticeBar}>
           <View style={styles.noticeIcon}>
             <View style={styles.lockShackle} />
             <View style={styles.lockBody} />
@@ -36,9 +42,9 @@ export function PasswordChangedScreen({ navigation }: Props) {
             <Text style={styles.noticeTitle}>Signed out everywhere else</Text>
             <Text style={styles.noticeBody}>For your security, other devices were logged out.</Text>
           </View>
-        </View>
+        </Card>
 
-        <PrimaryButton label="Log in" onPress={onDone} style={styles.doneButton} />
+        <Button label="Log in" onPress={onDone} style={styles.doneButton} />
 
         <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate("support")}>
           <Text style={styles.linkCentered}>Need help? Contact support</Text>
@@ -51,71 +57,66 @@ export function PasswordChangedScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: authColors.page
+    backgroundColor: colors.page
   },
   content: {
     flex: 1,
-    paddingHorizontal: 28,
+    paddingHorizontal: spacing.s28,
     alignItems: "center"
   },
   checkCircle: {
     width: 96,
     height: 96,
-    marginTop: 60,
-    borderRadius: 48,
+    marginTop: spacing.s56,
+    borderRadius: 48, // exactly half of width/height (circle) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#DCEED0"
+    backgroundColor: colors.successTint
   },
   checkMarkStem: {
     position: "absolute",
     width: 5,
     height: 20,
-    borderRadius: 3,
-    backgroundColor: "#2E5B1E",
+    borderRadius: 3, // ~half of width (rounded bar end) — do not snap to radii scale
+    backgroundColor: colors.success,
     transform: [{ rotate: "45deg" }, { translateX: 8 }, { translateY: -2 }]
   },
   checkMarkKick: {
     position: "absolute",
     width: 5,
     height: 34,
-    borderRadius: 3,
-    backgroundColor: "#2E5B1E",
+    borderRadius: 3, // ~half of width (rounded bar end) — do not snap to radii scale
+    backgroundColor: colors.success,
     transform: [{ rotate: "-45deg" }, { translateX: -2 }, { translateY: -8 }]
   },
   heading: {
-    marginTop: 22,
-    color: authColors.ink,
-    fontSize: 26,
-    fontWeight: "800"
+    marginTop: spacing.s20,
+    color: colors.ink,
+    ...typography.heading800_26
   },
   subheading: {
-    marginTop: 6,
-    color: authColors.muted,
-    fontSize: 14
+    marginTop: spacing.s4,
+    color: colors.muted,
+    ...typography.body14
   },
   noticeBar: {
+    // Card (Task 8) already matches this block's backgroundColor/borderRadius/padding/
+    // shadowColor/shadowOpacity/elevation exactly — only layout, width, marginTop and the
+    // slightly larger shadowRadius/shadowOffset need overriding here.
     width: "100%",
-    marginTop: 34,
-    borderRadius: 16,
+    marginTop: spacing.s32,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
-    shadowOpacity: 0.05,
     shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 1
+    shadowOffset: { width: 0, height: 3 }
   },
   noticeIcon: {
     width: 44,
     height: 44,
-    borderRadius: 14,
+    borderRadius: radii.r12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: authColors.paleTeal
+    backgroundColor: colors.tealTint
   },
   lockShackle: {
     position: "absolute",
@@ -123,43 +124,41 @@ const styles = StyleSheet.create({
     width: 14,
     height: 11,
     borderWidth: 2.5,
-    borderColor: authColors.teal,
+    borderColor: colors.teal,
     borderBottomWidth: 0,
-    borderTopLeftRadius: 7,
-    borderTopRightRadius: 7
+    borderTopLeftRadius: 7, // exactly half of width (arc/shackle shape) — do not snap to radii scale
+    borderTopRightRadius: 7 // exactly half of width (arc/shackle shape) — do not snap to radii scale
   },
   lockBody: {
     position: "absolute",
     top: 18,
     width: 20,
     height: 16,
-    borderRadius: 4,
-    backgroundColor: authColors.teal
+    borderRadius: radii.r4,
+    backgroundColor: colors.teal
   },
   noticeCopy: {
     flex: 1,
-    marginLeft: 14
+    marginLeft: spacing.s12
   },
   noticeTitle: {
-    color: authColors.ink,
-    fontSize: 14,
-    fontWeight: "800"
+    color: colors.ink,
+    ...typography.label800_14
   },
   noticeBody: {
-    marginTop: 3,
-    color: authColors.muted,
-    fontSize: 12,
+    marginTop: spacing.s2,
+    color: colors.muted,
+    ...typography.body12,
     lineHeight: 17
   },
   doneButton: {
     width: "100%",
-    marginTop: 30
+    marginTop: spacing.s28
   },
   linkCentered: {
-    marginTop: 22,
-    color: "#08716D",
-    fontSize: 13,
-    fontWeight: "800",
+    marginTop: spacing.s20,
+    color: colors.teal,
+    ...typography.label800_13,
     textAlign: "center"
   }
 });

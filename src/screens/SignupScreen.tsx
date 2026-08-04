@@ -6,7 +6,11 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
 import { RootStackParamList } from "../navigation/types";
-import { AuthHeader, FormField, PrimaryButton, authColors } from "./AuthFormKit";
+import { AuthHeader, FormField } from "./AuthFormKit";
+import { Button } from "../components/Button";
+import { colors } from "../theme/colors";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 type Props = NativeStackScreenProps<RootStackParamList, "signup">;
 
@@ -84,7 +88,7 @@ export function SignupScreen({ navigation, route }: Props) {
 
         {!!formError && <Text style={styles.formError}>{formError}</Text>}
 
-        <PrimaryButton label="Send code" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
+        <Button label="Send code" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
 
         <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate("signin")}>
           <Text style={styles.linkCentered}>Already have an account? Log in</Text>
@@ -99,50 +103,47 @@ export function SignupScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: authColors.page
+    backgroundColor: colors.page
   },
   content: {
     flex: 1,
-    paddingHorizontal: 28
+    paddingHorizontal: spacing.s28
   },
   title: {
-    color: authColors.ink,
-    fontSize: 24,
-    fontWeight: "800",
+    color: colors.ink,
+    ...typography.heading800_24,
     lineHeight: 30
   },
   caption: {
-    marginTop: 5,
-    color: authColors.muted,
-    fontSize: 14,
+    marginTop: spacing.s4,
+    color: colors.muted,
+    ...typography.body14,
     lineHeight: 20
   },
   helper: {
-    marginTop: 16,
-    color: authColors.muted,
-    fontSize: 12,
+    marginTop: spacing.s16,
+    color: colors.muted,
+    ...typography.body12,
     lineHeight: 17
   },
   formError: {
-    marginTop: 14,
-    color: authColors.danger,
-    fontSize: 13,
-    fontWeight: "700"
+    marginTop: spacing.s12,
+    color: colors.danger,
+    ...typography.label700_13
   },
   submitButton: {
-    marginTop: 26
+    marginTop: spacing.s24
   },
   linkCentered: {
-    marginTop: 20,
-    color: "#08716D",
-    fontSize: 13,
-    fontWeight: "800",
+    marginTop: spacing.s20,
+    color: colors.teal,
+    ...typography.label800_13,
     textAlign: "center"
   },
   terms: {
-    marginTop: 18,
-    color: "#9A988F",
-    fontSize: 11,
+    marginTop: spacing.s16,
+    color: colors.neutralMuted,
+    ...typography.body11,
     lineHeight: 16,
     textAlign: "center"
   }
