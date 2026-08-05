@@ -213,9 +213,8 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.s24,
     paddingTop: spacing.s20,
-    // 156 in the original design has no near equivalent on the spacing scale (it exists solely
-    // to clear the floating OwnerTabs dock); snapped down to the scale max, spacing.s96.
-    paddingBottom: spacing.s96
+    // clears OwnerTabs' floating bar — not snapped to the spacing scale, see Migration Protocol step 2
+    paddingBottom: 156
   },
   headerRow: {
     flexDirection: "row",
