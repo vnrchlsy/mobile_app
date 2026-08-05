@@ -10,6 +10,7 @@ export const typography = {
   heading900_23: { fontSize: 23, fontWeight: "900" },
   heading800_23: { fontSize: 23, fontWeight: "800" },
   heading800_22: { fontSize: 22, fontWeight: "800" },
+  heading900_20: { fontSize: 20, fontWeight: "900" },
   heading800_20: { fontSize: 20, fontWeight: "800" },
   heading800_19: { fontSize: 19, fontWeight: "800" },
   heading800_18: { fontSize: 18, fontWeight: "800" },
@@ -33,5 +34,7 @@ export const typography = {
   body11: { fontSize: 11, fontWeight: "400" },
   body10: { fontSize: 10, fontWeight: "400" },
 
-  micro900_9: { fontSize: 9, fontWeight: "900" }
+  micro900_9: { fontSize: 9, fontWeight: "900" },
+  micro800_9: { fontSize: 9, fontWeight: "800" },
+  micro400_9: { fontSize: 9, fontWeight: "400" }
 } as const;

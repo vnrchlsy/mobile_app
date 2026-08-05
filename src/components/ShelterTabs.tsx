@@ -75,17 +75,16 @@ const styles = StyleSheet.create({
     transform: [{ translateY: -1 }]
   },
   symbolIcon: {
-    fontSize: 20,
-    fontWeight: "900",
+    ...theme.typography.heading900_20,
     lineHeight: 24
   },
   tabText: {
     marginTop: theme.spacing.s2,
     color: theme.colors.muted,
-    fontSize: 9
+    ...theme.typography.micro400_9
   },
   activeTabText: {
     color: theme.colors.teal,
-    fontWeight: "800"
+    ...theme.typography.micro800_9
   }
 });
