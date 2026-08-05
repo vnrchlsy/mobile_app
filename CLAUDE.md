@@ -83,6 +83,49 @@ All live screens wired into `RootNavigator` live here. `AuthFormKit.tsx` is the 
 (headers, form fields, buttons, color palette) for the onboarding/auth screens — reuse it rather
 than restyling from scratch when touching that flow.
 
+### Theme and shared primitives (`src/theme/`, `src/components/`)
+
+`src/theme/` is the single source of truth for every styling value used across `src/screens/`
+and `src/components/` — colors, typography, spacing, radii. No screen or component should
+declare its own local `colors`/`authColors` object anymore; import from `src/theme/` instead.
+`src/theme/index.ts` re-exports each module individually and also as a combined
+`theme = { colors, typography, spacing, radii }`.
+
+- `colors.ts` — flat palette (`ink`/`inkStrong`, `teal`/`tealDark`, `page`, `border`,
+  `danger`/`dangerTint`, `success`/`successTint`, `warning`/`warningTint`, etc.), consolidated
+  from the hex literals duplicated across ~20 files' old local `colors`/`authColors` objects —
+  including six near-identical teal/ink shades that all collapsed into `teal`/`tealDark`.
+- `typography.ts` — named text styles keyed to the size/weight combinations actually used in the
+  app (`heading800_24`, `label800_16`, `body14`, `micro700_10`, …), not an invented scale.
+  Naming: `heading` = size ≥18 & weight ≥700, `label` = size <18 & weight ≥600, `body` = weight
+  400, `micro` = size ≤10.
+- `spacing.ts` / `radii.ts` — step scales (`s2`…`s96`, `r2`…`r48`) that every padding/margin/gap
+  and non-circular `borderRadius` snaps to. A `borderRadius` that makes an element a circle/pill
+  (~half its width/height) stays a literal value tied to that element's own size — it does not
+  snap to `radii`.
+- Known exception: `src/components/BottomTabs.tsx` still has its own hardcoded local `colors`
+  object. It's only reachable from the orphaned root-level mockups below, not from any screen
+  wired into `RootNavigator`, so it was out of scope for this migration.
+
+Shared primitive components also live in `src/components/`, alongside the feature-specific ones
+listed below — reach for these before hand-rolling a button, screen shell, or shadowed card in
+new or edited screens:
+
+- `Button.tsx` — `variant` of `"primary"` (teal gradient fill), `"secondary"` (white, bordered),
+  or `"danger"` (secondary styling with a red border/label), plus `loading` (swaps the label for
+  an `ActivityIndicator`) and `disabled` states.
+- `ScreenContainer.tsx` — the root screen shell (`flex: 1`, `colors.page` background); pass
+  `scroll` to wrap children in a `ScrollView`.
+- `Card.tsx` — white, rounded (`radii.r16`), padded (`spacing.s16`), lightly shadowed block.
+- `Section.tsx` — vertical grouping with top margin and an optional label (rendered via
+  `AppText variant="label800_13"`). Unlike `Card`, unshadowed — use it to group content within a
+  screen or card, not to draw a surface.
+- `AppText.tsx` — `Text` wrapper typed to a `typography` variant (`variant` is
+  `keyof typeof typography`), defaulting to `colors.ink`.
+
+See `.claude/skills/rn-code-review/SKILL.md` for the checklist these conventions get enforced
+against on new PRs.
+
 ### Components (`src/components/`)
 
 - `OwnerTabs.tsx` — the 4-tab floating bottom bar (Home/Adopt/Volunteer/You) used by owner-shell
@@ -105,7 +148,8 @@ than restyling from scratch when touching that flow.
 the React Navigation rewrite, and are **not imported by `RootNavigator` or anything else live** —
 grep before assuming a change to one of these does anything. The real, wired-up versions are the
 same-named files under `src/screens/`. The one exception is `src/WelcomeScreen.tsx`, which is
-still imported by `RootNavigator` and is live.
+still imported by `RootNavigator` and is live. The theme/shared-primitives migration above did
+not touch any of these — they still hold their own inline hex literals, not `src/theme/`.
 
 ### User story comments
 
