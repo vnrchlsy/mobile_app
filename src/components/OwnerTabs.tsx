@@ -7,6 +7,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+import { theme } from "../theme";
 import { RootStackParamList } from "../navigation/types";
 import { AdoptIcon, HomeIcon, ProfileIcon, VolunteerIcon } from "./AppIcons";
 
@@ -23,14 +24,6 @@ const tabs: Array<{ key: OwnerTab; label: string }> = [
   { key: "profile", label: "You" }
 ];
 
-const colors = {
-  teal: "#1C6B6B",
-  tealDark: "#14504F",
-  soft: "#E7F0EE",
-  inactive: "#C9CEC7",
-  muted: "#5F5E5A"
-};
-
 export function OwnerTabs({ active }: OwnerTabsProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -39,7 +32,7 @@ export function OwnerTabs({ active }: OwnerTabsProps) {
       <View style={styles.bar}>
         {tabs.map((tab) => {
           const isActive = tab.key === active;
-          const color = isActive ? colors.teal : colors.inactive;
+          const color = isActive ? theme.colors.teal : theme.colors.inactive;
           return (
             <TouchableOpacity
               key={tab.key}
@@ -75,12 +68,12 @@ const styles = StyleSheet.create({
   },
   bar: {
     height: 84,
-    borderRadius: 30,
+    borderRadius: theme.radii.r32,
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    backgroundColor: theme.colors.white,
+    shadowColor: theme.colors.ink,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 16,
@@ -99,16 +92,15 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   iconSlotActive: {
-    backgroundColor: colors.soft
+    backgroundColor: theme.colors.tealTint
   },
   tabText: {
-    marginTop: 4,
-    color: colors.muted,
-    fontSize: 12,
-    fontWeight: "600"
+    marginTop: theme.spacing.s4,
+    color: theme.colors.muted,
+    ...theme.typography.label600_12
   },
   activeTabText: {
-    color: colors.tealDark,
-    fontWeight: "800"
+    color: theme.colors.tealDark,
+    ...theme.typography.label800_12
   }
 });
