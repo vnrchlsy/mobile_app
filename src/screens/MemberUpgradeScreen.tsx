@@ -7,6 +7,10 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { AdoptIcon, UserBadgeIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 type Props = NativeStackScreenProps<RootStackParamList, "memberUpgrade">;
 
@@ -35,7 +39,7 @@ export function MemberUpgradeScreen({ navigation }: Props) {
       <View style={styles.content}>
         <View style={styles.hero}>
           <View style={styles.heroIcon}>
-            <UserBadgeIcon color="#FFFFFF" />
+            <UserBadgeIcon color={colors.white} />
           </View>
           <View style={styles.heroCopy}>
             <Text style={styles.heroTitle}>Become a Verified Member</Text>
@@ -69,16 +73,6 @@ export function MemberUpgradeScreen({ navigation }: Props) {
   );
 }
 
-const colors = {
-  ink: "#12213A",
-  teal: "#1C6B6B",
-  tealDark: "#14504F",
-  page: "#F4F5F2",
-  border: "#E3E1D9",
-  muted: "#5F5E5A",
-  paleTeal: "#E7F0EE"
-};
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -88,7 +82,7 @@ const styles = StyleSheet.create({
     height: 96,
     alignItems: "center",
     justifyContent: "flex-end",
-    paddingBottom: 14
+    paddingBottom: spacing.s12
   },
   backButton: {
     position: "absolute",
@@ -96,42 +90,42 @@ const styles = StyleSheet.create({
     bottom: 12,
     width: 42,
     height: 42,
+    // Circle (half of 42x42) — kept literal per Migration Protocol step 3.
     borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 7,
     elevation: 2
   },
   backText: {
-    color: colors.ink,
-    fontSize: 26,
-    fontWeight: "700",
+    ...typography.heading700_26,
+    color: colors.inkStrong,
     lineHeight: 28
   },
   headerTitle: {
-    color: colors.ink,
-    fontSize: 18,
-    fontWeight: "800"
+    ...typography.heading800_18,
+    color: colors.inkStrong
   },
   content: {
     flex: 1,
-    paddingHorizontal: 26
+    paddingHorizontal: spacing.s24
   },
   hero: {
-    marginTop: 10,
-    borderRadius: 20,
+    marginTop: spacing.s8,
+    borderRadius: radii.r20,
     flexDirection: "row",
     alignItems: "center",
-    padding: 20,
+    padding: spacing.s20,
     backgroundColor: colors.teal
   },
   heroIcon: {
     width: 64,
     height: 64,
+    // Circle (half of 64x64) — kept literal per Migration Protocol step 3.
     borderRadius: 32,
     alignItems: "center",
     justifyContent: "center",
@@ -139,72 +133,68 @@ const styles = StyleSheet.create({
   },
   heroCopy: {
     flex: 1,
-    marginLeft: 16
+    marginLeft: spacing.s16
   },
   heroTitle: {
-    color: "#FFFFFF",
-    fontSize: 19,
-    fontWeight: "800"
+    ...typography.heading800_19,
+    color: colors.white
   },
   heroText: {
-    marginTop: 8,
-    color: "#D5ECE8",
-    fontSize: 13,
+    marginTop: spacing.s8,
+    ...typography.body13,
+    color: colors.tealTint,
     lineHeight: 19
   },
   sectionTitle: {
-    marginTop: 26,
-    color: colors.ink,
-    fontSize: 17,
-    fontWeight: "800"
+    marginTop: spacing.s24,
+    ...typography.heading800_17,
+    color: colors.inkStrong
   },
   unlockRow: {
-    marginTop: 16,
+    marginTop: spacing.s16,
     flexDirection: "row",
     alignItems: "center",
-    gap: 14
+    gap: spacing.s12
   },
   unlockText: {
     flex: 1,
-    color: colors.ink,
-    fontSize: 14,
-    fontWeight: "600"
+    ...typography.label600_14,
+    color: colors.inkStrong
   },
   lightCard: {
-    marginTop: 26,
-    borderRadius: 16,
-    padding: 18,
-    backgroundColor: colors.paleTeal
+    marginTop: spacing.s24,
+    borderRadius: radii.r16,
+    padding: spacing.s16,
+    backgroundColor: colors.tealTint
   },
   lightTitle: {
-    color: colors.tealDark,
-    fontSize: 14,
-    fontWeight: "800"
+    ...typography.label800_14,
+    color: colors.tealDark
   },
   lightText: {
-    marginTop: 6,
+    marginTop: spacing.s4,
+    ...typography.body13,
     color: colors.muted,
-    fontSize: 13,
     lineHeight: 18
   },
   cta: {
     height: 54,
-    marginTop: 28,
+    marginTop: spacing.s28,
+    // Pill (half of 54 height) — kept literal per Migration Protocol step 3.
     borderRadius: 27,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.teal
   },
   ctaText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800"
+    ...typography.label800_16,
+    color: colors.white
   },
   footnote: {
-    marginTop: 12,
-    marginBottom: 30,
-    color: "#9A988F",
-    fontSize: 12,
+    marginTop: spacing.s12,
+    marginBottom: spacing.s28,
+    color: colors.neutralMuted,
+    ...typography.body12,
     textAlign: "center"
   }
 });
