@@ -11,6 +11,10 @@ import { useApi } from "../api/useApi";
 import { useAuth } from "../auth/AuthContext";
 import { CheckIcon, LocationPinIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 type Props = NativeStackScreenProps<RootStackParamList, "locationPicker">;
 
@@ -97,7 +101,7 @@ export function LocationPickerScreen({ navigation }: Props) {
             value={query}
             onChangeText={setQuery}
             placeholder="Search city or barangay"
-            placeholderTextColor="#9A988F"
+            placeholderTextColor={colors.neutralMuted}
             style={styles.searchInput}
             autoCapitalize="words"
           />
@@ -119,10 +123,10 @@ export function LocationPickerScreen({ navigation }: Props) {
                     onPress={() => selectCity(city)}
                     disabled={!!saving}
                   >
-                    <LocationPinIcon color={selected ? colors.teal : "#B9B5AA"} size={18} />
+                    <LocationPinIcon color={selected ? colors.teal : colors.neutralMuted} size={18} />
                     <Text style={[styles.cityName, selected && styles.cityNameSelected]}>{city}</Text>
                     <View style={[styles.radio, selected && styles.radioSelected]}>
-                      {selected && <CheckIcon color="#FFFFFF" size={12} />}
+                      {selected && <CheckIcon color={colors.white} size={12} />}
                     </View>
                   </TouchableOpacity>
                 );
@@ -139,16 +143,6 @@ export function LocationPickerScreen({ navigation }: Props) {
   );
 }
 
-const colors = {
-  ink: "#12213A",
-  teal: "#1C6B6B",
-  tealDark: "#14504F",
-  page: "#F4F5F2",
-  border: "#E3E1D9",
-  muted: "#5F5E5A",
-  danger: "#B23B3B"
-};
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -158,7 +152,7 @@ const styles = StyleSheet.create({
     height: 96,
     alignItems: "center",
     justifyContent: "flex-end",
-    paddingBottom: 14
+    paddingBottom: spacing.s12
   },
   backButton: {
     position: "absolute",
@@ -166,78 +160,72 @@ const styles = StyleSheet.create({
     bottom: 12,
     width: 42,
     height: 42,
-    borderRadius: 21,
+    borderRadius: 21, // circle: half of width/height, intentionally not snapped
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 7,
     elevation: 2
   },
   backText: {
-    color: colors.ink,
-    fontSize: 26,
-    fontWeight: "700",
+    color: colors.inkStrong,
+    ...typography.heading700_26,
     lineHeight: 28
   },
   headerTitle: {
-    color: colors.ink,
-    fontSize: 18,
-    fontWeight: "800"
+    color: colors.inkStrong,
+    ...typography.heading800_18
   },
   content: {
-    paddingHorizontal: 26,
-    paddingBottom: 60
+    paddingHorizontal: spacing.s24,
+    paddingBottom: spacing.s56
   },
   searchBar: {
     height: 50,
-    marginTop: 6,
-    borderRadius: 25,
+    marginTop: spacing.s4,
+    borderRadius: 25, // pill: half of height, intentionally not snapped
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 18,
-    gap: 10,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    paddingHorizontal: spacing.s16,
+    gap: spacing.s8,
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 7,
     elevation: 2
   },
   searchIcon: {
-    color: "#9A988F",
-    fontSize: 17,
-    fontWeight: "700"
+    color: colors.neutralMuted,
+    ...typography.heading700_17
   },
   searchInput: {
     flex: 1,
     height: "100%",
-    color: colors.ink,
-    fontSize: 14,
-    fontWeight: "600"
+    color: colors.inkStrong,
+    ...typography.label600_14
   },
   formError: {
-    marginTop: 12,
+    marginTop: spacing.s12,
     color: colors.danger,
-    fontSize: 13,
-    fontWeight: "700"
+    ...typography.label700_13
   },
   groupBlock: {
-    marginTop: 22
+    marginTop: spacing.s20
   },
   sectionLabel: {
-    marginBottom: 10,
-    color: "#9A988F",
-    fontSize: 11,
-    fontWeight: "800",
+    marginBottom: spacing.s8,
+    color: colors.neutralMuted,
+    ...typography.label800_11,
     letterSpacing: 0.6
   },
   groupCard: {
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    borderRadius: radii.r16,
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 7,
@@ -247,8 +235,8 @@ const styles = StyleSheet.create({
     height: 58,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    gap: 12
+    paddingHorizontal: spacing.s16,
+    gap: spacing.s12
   },
   cityRowDivider: {
     borderTopWidth: 1,
@@ -256,9 +244,8 @@ const styles = StyleSheet.create({
   },
   cityName: {
     flex: 1,
-    color: colors.ink,
-    fontSize: 15,
-    fontWeight: "700"
+    color: colors.inkStrong,
+    ...typography.label700_15
   },
   cityNameSelected: {
     color: colors.tealDark
@@ -266,7 +253,7 @@ const styles = StyleSheet.create({
   radio: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: 12, // circle: half of width/height, intentionally not snapped
     borderWidth: 1.5,
     borderColor: colors.border,
     alignItems: "center",
@@ -277,15 +264,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.teal
   },
   emptyText: {
-    marginTop: 30,
+    marginTop: spacing.s28,
     color: colors.muted,
-    fontSize: 13,
+    ...typography.body13,
     textAlign: "center"
   },
   footnote: {
-    marginTop: 26,
-    color: "#9A988F",
-    fontSize: 11,
+    marginTop: spacing.s24,
+    color: colors.neutralMuted,
+    ...typography.body11,
     textAlign: "center",
     lineHeight: 16
   }
