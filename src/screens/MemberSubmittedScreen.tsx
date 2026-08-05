@@ -7,6 +7,10 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { ClockIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 type Props = NativeStackScreenProps<RootStackParamList, "memberSubmitted">;
 
@@ -38,6 +42,11 @@ export function MemberSubmittedScreen({ navigation }: Props) {
 
         <Text style={styles.hint}>You can use everything else while you wait.</Text>
 
+        {/* Solid teal fill at height 54 / pill radius 27 — Button's primary variant renders a
+            fixed height-50 teal→tealDark gradient (LinearGradient fill isn't resizable via the
+            `style` prop, which only merges into the outer wrap). Swapping in Button would change
+            both the height and the fill from solid to gradient, so this isn't a genuine shape
+            match (Migration Protocol step 6) — kept as a plain TouchableOpacity. */}
         <TouchableOpacity activeOpacity={0.85} style={styles.doneButton} onPress={backToHome}>
           <Text style={styles.doneText}>Back to home</Text>
         </TouchableOpacity>
@@ -46,15 +55,6 @@ export function MemberSubmittedScreen({ navigation }: Props) {
   );
 }
 
-const colors = {
-  ink: "#12213A",
-  teal: "#1C6B6B",
-  tealDark: "#14504F",
-  page: "#F4F5F2",
-  muted: "#5F5E5A",
-  paleTeal: "#E7F0EE"
-};
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -62,96 +62,93 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 28,
-    paddingTop: 90,
+    paddingHorizontal: spacing.s28,
+    paddingTop: spacing.s96,
     alignItems: "center"
   },
   checkCircle: {
     width: 96,
     height: 96,
-    borderRadius: 48,
+    borderRadius: 48, // circle/pill: borderRadius ≈ half of width/height — not snapped to radii scale (Migration Protocol step 3)
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#DCEED0"
+    backgroundColor: colors.successTint
   },
   checkMarkStem: {
     position: "absolute",
     width: 5,
     height: 20,
-    borderRadius: 3,
-    backgroundColor: "#2E5B1E",
+    borderRadius: 3, // circle/pill: borderRadius ≈ half of width/height — not snapped to radii scale (Migration Protocol step 3)
+    backgroundColor: colors.success,
     transform: [{ rotate: "45deg" }, { translateX: 8 }, { translateY: -2 }]
   },
   checkMarkKick: {
     position: "absolute",
     width: 5,
     height: 34,
-    borderRadius: 3,
-    backgroundColor: "#2E5B1E",
+    borderRadius: 3, // circle/pill: borderRadius ≈ half of width/height — not snapped to radii scale (Migration Protocol step 3)
+    backgroundColor: colors.success,
     transform: [{ rotate: "-45deg" }, { translateX: -2 }, { translateY: -8 }]
   },
   heading: {
-    marginTop: 22,
-    color: colors.ink,
-    fontSize: 26,
-    fontWeight: "800"
+    marginTop: spacing.s20,
+    color: colors.inkStrong,
+    ...typography.heading800_26
   },
   subheading: {
-    marginTop: 6,
+    marginTop: spacing.s4,
     color: colors.muted,
-    fontSize: 14
+    ...typography.body14
   },
   noticeBar: {
     width: "100%",
-    marginTop: 34,
-    borderRadius: 16,
+    marginTop: spacing.s32,
+    borderRadius: radii.r16,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 14,
-    backgroundColor: colors.paleTeal
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s16,
+    gap: spacing.s12,
+    backgroundColor: colors.tealTint
   },
   noticeIcon: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 22, // circle/pill: borderRadius ≈ half of width/height — not snapped to radii scale (Migration Protocol step 3)
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF"
+    backgroundColor: colors.white
   },
   noticeCopy: {
     flex: 1
   },
   noticeTitle: {
     color: colors.tealDark,
-    fontSize: 14,
-    fontWeight: "800"
+    ...typography.label800_14
   },
   noticeBody: {
-    marginTop: 4,
+    marginTop: spacing.s4,
     color: colors.muted,
-    fontSize: 12,
+    ...typography.body12,
     lineHeight: 17
   },
   hint: {
-    marginTop: 22,
-    color: "#9A988F",
-    fontSize: 12,
+    marginTop: spacing.s20,
+    color: colors.neutralMuted,
+    ...typography.body12,
     textAlign: "center"
   },
   doneButton: {
     width: "100%",
     height: 54,
-    marginTop: 26,
-    borderRadius: 27,
+    marginTop: spacing.s24,
+    borderRadius: 27, // circle/pill: borderRadius ≈ half of width/height — not snapped to radii scale (Migration Protocol step 3)
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.teal
   },
   doneText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800"
+    color: colors.white,
+    ...typography.label800_16
   }
 });
