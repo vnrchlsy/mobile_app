@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 
+import { colors } from "../theme/colors";
 import { BatteryIcon } from "./AppIcons";
 
 type TopStatusProps = {
@@ -7,7 +8,7 @@ type TopStatusProps = {
 };
 
 export function TopStatus({ variant = "dark" }: TopStatusProps) {
-  const color = variant === "light" ? "#FFFFFF" : "#1F3A5F";
+  const color = variant === "light" ? colors.white : colors.ink;
   return (
     <View style={styles.statusBar}>
       <Text style={[styles.time, { color }]}>9:41</Text>

@@ -1,5 +1,7 @@
 import { Image, ImageSourcePropType, StyleSheet, View } from "react-native";
 
+import { colors } from "../theme/colors";
+
 const paw = require("../../assets/paw-white.png") as ImageSourcePropType;
 
 type IconProps = {
@@ -154,7 +156,7 @@ export function LocationPinIcon({ color, size = 20 }: IconProps) {
   );
 }
 
-export function CheckIcon({ color = "#FFFFFF", size = 14 }: { color?: string; size?: number }) {
+export function CheckIcon({ color = colors.white, size = 14 }: { color?: string; size?: number }) {
   return (
     <View style={[styles.iconBox, { width: size, height: size }]}>
       <View
@@ -270,7 +272,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: "#FFFFFF"
+    backgroundColor: colors.white
   },
   userBadgeBody: {
     width: 25,
@@ -278,7 +280,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     borderTopLeftRadius: 13,
     borderTopRightRadius: 13,
-    backgroundColor: "#FFFFFF"
+    backgroundColor: colors.white
   },
   document: {
     width: 21,
