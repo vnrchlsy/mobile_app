@@ -12,9 +12,14 @@ import { Image, ImageSourcePropType, ScrollView, StyleSheet, Text, TouchableOpac
 import { useApi } from "../api/useApi";
 import { Listing } from "../api/types";
 import { AdoptIcon, HomeIcon, ProfileIcon, VolunteerIcon } from "../components/AppIcons";
+import { ScreenContainer } from "../components/ScreenContainer";
 import { SignupWall, SignupWallAction } from "../components/SignupWall";
 import { setIntent } from "../guestIntent";
 import { RootStackParamList } from "../navigation/types";
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 const paw = require("../../assets/paw-white.png") as ImageSourcePropType;
 
@@ -56,7 +61,7 @@ export function HomeGuestScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <ScreenContainer>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <View style={styles.headerCopy}>
@@ -146,7 +151,7 @@ export function HomeGuestScreen({ navigation }: Props) {
         onLogin={onWallLogin}
         onDismiss={() => setWall(null)}
       />
-    </View>
+    </ScreenContainer>
   );
 }
 
@@ -186,26 +191,12 @@ function GuestTabs({ onGated }: { onGated: (action: SignupWallAction) => void })
   );
 }
 
-const colors = {
-  ink: "#12213A",
-  teal: "#1C6B6B",
-  tealDark: "#14504F",
-  page: "#F4F5F2",
-  border: "#E3E1D9",
-  muted: "#5F5E5A",
-  soft: "#E7F0EE",
-  inactive: "#C9CEC7",
-  paleTeal: "#E7F0EE"
-};
-
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.page
-  },
   content: {
-    paddingHorizontal: 26,
-    paddingTop: 20,
+    // 26 ties between s24/s28 on the snapping scale — round down per Migration Protocol
+    paddingHorizontal: spacing.s24,
+    paddingTop: spacing.s20,
+    // clears GuestTabs' floating bar — not snapped to the spacing scale, see Migration Protocol step 2
     paddingBottom: 156
   },
   headerRow: {
@@ -215,38 +206,35 @@ const styles = StyleSheet.create({
   },
   headerCopy: {
     flex: 1,
-    marginRight: 12
+    marginRight: spacing.s12
   },
   greeting: {
-    color: colors.ink,
-    fontSize: 22,
-    fontWeight: "800",
+    color: colors.inkStrong,
+    ...typography.heading800_22,
     lineHeight: 28
   },
   cityRow: {
-    marginTop: 6,
+    marginTop: spacing.s4,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8
+    gap: spacing.s8
   },
   cityText: {
-    color: colors.ink,
-    fontSize: 15,
-    fontWeight: "700"
+    color: colors.inkStrong,
+    ...typography.label700_15
   },
   cityChange: {
     color: colors.teal,
-    fontSize: 13,
-    fontWeight: "700"
+    ...typography.label700_13
   },
   loginPill: {
     height: 40,
-    paddingHorizontal: 20,
-    borderRadius: 20,
+    paddingHorizontal: spacing.s20,
+    borderRadius: 20, // exactly half of height (pill) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 7,
@@ -254,116 +242,110 @@ const styles = StyleSheet.create({
   },
   loginPillText: {
     color: colors.teal,
-    fontSize: 13,
-    fontWeight: "800"
+    ...typography.label800_13
   },
   guestBanner: {
     minHeight: 72,
-    marginTop: 20,
+    marginTop: spacing.s20,
     borderWidth: 1,
     borderColor: colors.teal,
-    borderRadius: 16,
+    borderRadius: radii.r16,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: colors.soft
+    paddingHorizontal: spacing.s12,
+    paddingVertical: spacing.s12,
+    backgroundColor: colors.tealTint
   },
   guestIcon: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 18, // exactly half of width/height (circle) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF"
+    backgroundColor: colors.white
   },
   guestCopy: {
     flex: 1,
-    marginLeft: 12
+    marginLeft: spacing.s12
   },
   guestTitle: {
-    color: colors.ink,
-    fontSize: 13,
-    fontWeight: "800"
+    color: colors.inkStrong,
+    ...typography.label800_13
   },
   guestBody: {
-    marginTop: 3,
+    marginTop: spacing.s2,
     color: colors.muted,
-    fontSize: 11
+    ...typography.body11
   },
   guestLink: {
-    marginLeft: 8,
+    marginLeft: spacing.s8,
     color: colors.tealDark,
-    fontSize: 13,
-    fontWeight: "800"
+    ...typography.label800_13
   },
   reportCard: {
     height: 136,
-    marginTop: 16,
-    borderRadius: 18,
+    marginTop: spacing.s16,
+    borderRadius: radii.r16,
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingLeft: 20,
-    paddingRight: 16,
-    paddingTop: 26,
+    paddingLeft: spacing.s20,
+    paddingRight: spacing.s16,
+    paddingTop: spacing.s24,
     backgroundColor: colors.teal
   },
   reportTitle: {
-    color: "#FFFFFF",
-    fontSize: 23,
-    fontWeight: "800",
+    color: colors.white,
+    ...typography.heading800_23,
     lineHeight: 28
   },
   reportText: {
-    marginTop: 9,
-    color: "#D5ECE8",
-    fontSize: 13
+    marginTop: spacing.s8,
+    color: colors.tealTint,
+    ...typography.body13
   },
   reportButton: {
     width: 136,
     height: 38,
-    marginTop: 14,
-    borderRadius: 19,
+    marginTop: spacing.s12,
+    borderRadius: 19, // exactly half of height (pill) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF"
+    backgroundColor: colors.white
   },
   reportButtonText: {
-    color: "#126B69",
-    fontSize: 13,
-    fontWeight: "800"
+    color: colors.teal,
+    ...typography.label800_13
   },
   reportPaw: {
     width: 72,
     height: 72,
-    marginTop: 4
+    marginTop: spacing.s4
   },
   sectionHeader: {
-    marginTop: 22,
+    marginTop: spacing.s20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between"
   },
   sectionTitle: {
-    color: colors.ink,
-    fontSize: 17,
-    fontWeight: "800"
+    color: colors.inkStrong,
+    ...typography.heading800_17
   },
   emptyText: {
-    marginTop: 14,
+    marginTop: spacing.s12,
     color: colors.muted,
-    fontSize: 13,
+    ...typography.body13,
     textAlign: "center"
   },
   petCard: {
     height: 68,
-    marginTop: 10,
-    borderRadius: 14,
+    marginTop: spacing.s8,
+    borderRadius: radii.r12,
     alignItems: "center",
     flexDirection: "row",
-    paddingHorizontal: 13,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    paddingHorizontal: spacing.s12,
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 7,
@@ -372,10 +354,10 @@ const styles = StyleSheet.create({
   avatarCircle: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 24, // exactly half of width/height (circle) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.paleTeal
+    backgroundColor: colors.tealTint
   },
   avatarPaw: {
     width: 24,
@@ -384,17 +366,16 @@ const styles = StyleSheet.create({
   },
   petCopy: {
     flex: 1,
-    marginLeft: 14
+    marginLeft: spacing.s12
   },
   petName: {
-    color: colors.ink,
-    fontSize: 17,
-    fontWeight: "800"
+    color: colors.inkStrong,
+    ...typography.heading800_17
   },
   petDetails: {
-    marginTop: 5,
+    marginTop: spacing.s4,
     color: colors.muted,
-    fontSize: 11
+    ...typography.body11
   },
   petMeta: {
     alignItems: "flex-end"
@@ -402,20 +383,19 @@ const styles = StyleSheet.create({
   availableBadge: {
     minWidth: 92,
     height: 28,
-    borderRadius: 14,
+    borderRadius: 14, // exactly half of height (pill) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E1F2D3"
+    backgroundColor: colors.successTint
   },
   availableText: {
-    color: "#356A24",
-    fontSize: 12,
-    fontWeight: "800"
+    color: colors.success,
+    ...typography.label800_12
   },
   shelterText: {
-    marginTop: 8,
-    color: "#AAA69D",
-    fontSize: 10
+    marginTop: spacing.s8,
+    color: colors.neutralMuted,
+    ...typography.body10
   },
   tabsWrap: {
     position: "absolute",
@@ -425,12 +405,12 @@ const styles = StyleSheet.create({
   },
   tabsBar: {
     height: 84,
-    borderRadius: 30,
+    borderRadius: radii.r32,
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 16,
@@ -444,21 +424,20 @@ const styles = StyleSheet.create({
   iconSlot: {
     width: 44,
     height: 34,
-    borderRadius: 17,
+    borderRadius: 17, // exactly half of height (pill) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center"
   },
   iconSlotActive: {
-    backgroundColor: colors.soft
+    backgroundColor: colors.tealTint
   },
   tabText: {
-    marginTop: 4,
+    marginTop: spacing.s4,
     color: colors.muted,
-    fontSize: 12,
-    fontWeight: "600"
+    ...typography.label600_12
   },
   activeTabText: {
     color: colors.tealDark,
-    fontWeight: "800"
+    ...typography.label800_12
   }
 });
