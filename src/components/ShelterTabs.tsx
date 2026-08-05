@@ -1,5 +1,6 @@
 import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+import { theme } from "../theme";
 import { HomeIcon, ProfileIcon } from "./AppIcons";
 
 const paw = require("../../assets/paw-white.png") as ImageSourcePropType;
@@ -19,18 +20,12 @@ const tabs: Array<{ key: ShelterTabKey; label: string }> = [
   { key: "profile", label: "You" }
 ];
 
-const colors = {
-  teal: "#1C7876",
-  inactive: "#CAD2CF",
-  muted: "#62615C"
-};
-
 export function ShelterTabs({ active, onTabPress }: ShelterTabsProps) {
   return (
     <View style={styles.tabs}>
       {tabs.map((tab) => {
         const isActive = tab.key === active;
-        const color = isActive ? colors.teal : colors.inactive;
+        const color = isActive ? theme.colors.teal : theme.colors.inactive;
         return (
           <TouchableOpacity key={tab.key} activeOpacity={0.75} style={styles.tabItem} onPress={() => onTabPress?.(tab.key)}>
             <View style={styles.iconSlot}>{renderIcon(tab.key, color)}</View>
@@ -58,11 +53,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: 78,
     borderTopWidth: 1,
-    borderTopColor: "#E3E1D9",
+    borderTopColor: theme.colors.border,
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingTop: 12,
-    backgroundColor: "#F7F7F4"
+    paddingTop: theme.spacing.s12,
+    backgroundColor: theme.colors.page
   },
   tabItem: {
     width: 58,
@@ -85,12 +80,12 @@ const styles = StyleSheet.create({
     lineHeight: 24
   },
   tabText: {
-    marginTop: 2,
-    color: colors.muted,
+    marginTop: theme.spacing.s2,
+    color: theme.colors.muted,
     fontSize: 9
   },
   activeTabText: {
-    color: colors.teal,
+    color: theme.colors.teal,
     fontWeight: "800"
   }
 });
