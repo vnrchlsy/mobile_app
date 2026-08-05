@@ -10,9 +10,14 @@ import { Image, ImageSourcePropType, ScrollView, StyleSheet, Text, TextInput, To
 import { useApi } from "../api/useApi";
 import { Me } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
-import { OwnerTabs } from "../components/OwnerTabs";
 import { LocationPinIcon, UserBadgeIcon } from "../components/AppIcons";
+import { OwnerTabs } from "../components/OwnerTabs";
+import { ScreenContainer } from "../components/ScreenContainer";
 import { RootStackParamList } from "../navigation/types";
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 type Props = NativeStackScreenProps<RootStackParamList, "profile">;
 
@@ -74,7 +79,7 @@ export function ProfileScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <ScreenContainer>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.pageTitle}>Profile</Text>
 
@@ -164,45 +169,30 @@ export function ProfileScreen({ navigation }: Props) {
       </ScrollView>
 
       <OwnerTabs active="profile" />
-    </View>
+    </ScreenContainer>
   );
 }
 
-const colors = {
-  ink: "#12213A",
-  teal: "#1C6B6B",
-  tealDark: "#14504F",
-  page: "#F4F5F2",
-  border: "#E3E1D9",
-  muted: "#5F5E5A",
-  soft: "#E7F0EE",
-  danger: "#B23B3B"
-};
-
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.page
-  },
   content: {
-    paddingHorizontal: 26,
-    paddingTop: 20,
+    paddingHorizontal: spacing.s24,
+    paddingTop: spacing.s20,
+    // clears OwnerTabs' floating bar — not snapped to the spacing scale, see Migration Protocol step 2
     paddingBottom: 156
   },
   pageTitle: {
-    color: colors.ink,
-    fontSize: 28,
-    fontWeight: "800",
+    color: colors.inkStrong,
+    ...typography.heading800_28,
     letterSpacing: -0.5
   },
   card: {
-    marginTop: 18,
-    borderRadius: 18,
+    marginTop: spacing.s16,
+    borderRadius: radii.r16,
     alignItems: "center",
-    paddingVertical: 26,
-    paddingHorizontal: 20,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    paddingVertical: spacing.s24,
+    paddingHorizontal: spacing.s20,
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 16,
@@ -211,10 +201,10 @@ const styles = StyleSheet.create({
   avatar: {
     width: 84,
     height: 84,
-    borderRadius: 22,
+    borderRadius: radii.r20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.soft,
+    backgroundColor: colors.tealTint,
     overflow: "hidden"
   },
   avatarImage: {
@@ -223,30 +213,27 @@ const styles = StyleSheet.create({
   },
   avatarInitials: {
     color: colors.teal,
-    fontSize: 28,
-    fontWeight: "800"
+    ...typography.heading800_28
   },
   name: {
-    marginTop: 16,
-    color: colors.ink,
-    fontSize: 20,
-    fontWeight: "800"
+    marginTop: spacing.s16,
+    color: colors.inkStrong,
+    ...typography.heading800_20
   },
   email: {
-    marginTop: 5,
+    marginTop: spacing.s4,
     color: colors.muted,
-    fontSize: 13
+    ...typography.body13
   },
   editLinkWrap: {
-    marginTop: 10
+    marginTop: spacing.s8
   },
   editLink: {
     color: colors.teal,
-    fontSize: 13,
-    fontWeight: "800"
+    ...typography.label800_13
   },
   editBlock: {
-    marginTop: 16,
+    marginTop: spacing.s16,
     width: "100%",
     alignItems: "center"
   },
@@ -255,108 +242,103 @@ const styles = StyleSheet.create({
     height: 46,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    color: colors.ink,
-    fontSize: 15,
-    fontWeight: "800",
-    backgroundColor: "#FFFFFF",
+    borderRadius: radii.r12,
+    paddingHorizontal: spacing.s12,
+    color: colors.inkStrong,
+    ...typography.label800_15,
+    backgroundColor: colors.white,
     textAlign: "center"
   },
   saveError: {
-    marginTop: 8,
+    marginTop: spacing.s8,
     color: colors.danger,
-    fontSize: 12,
-    fontWeight: "700"
+    ...typography.label700_12
   },
   editActions: {
-    marginTop: 12,
+    marginTop: spacing.s12,
     flexDirection: "row",
-    gap: 22
+    gap: spacing.s20
   },
   editCancel: {
     color: colors.muted,
-    fontSize: 13,
-    fontWeight: "700"
+    ...typography.label700_13
   },
   editSave: {
     color: colors.teal,
-    fontSize: 13,
-    fontWeight: "800"
+    ...typography.label800_13
   },
   cityChip: {
-    marginTop: 18,
+    marginTop: spacing.s16,
     height: 40,
+    // pill: borderRadius = height / 2, kept literal per Migration Protocol step 3
     borderRadius: 20,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 14,
-    gap: 8,
-    backgroundColor: colors.soft
+    paddingHorizontal: spacing.s12,
+    gap: spacing.s8,
+    backgroundColor: colors.tealTint
   },
   cityChipText: {
     color: colors.tealDark,
-    fontSize: 13,
-    fontWeight: "700"
+    ...typography.label700_13
   },
   cityChipChevron: {
-    marginLeft: 2,
+    marginLeft: spacing.s2,
     color: colors.teal,
-    fontSize: 15,
-    fontWeight: "800"
+    ...typography.label800_15
   },
   verifyCard: {
     minHeight: 84,
-    marginTop: 18,
-    borderRadius: 15,
+    marginTop: spacing.s16,
+    borderRadius: radii.r16,
     alignItems: "center",
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: colors.soft
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s12,
+    backgroundColor: colors.tealTint
   },
   verifyIcon: {
     width: 48,
     height: 48,
+    // circle: borderRadius = width / 2, kept literal per Migration Protocol step 3
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF"
+    backgroundColor: colors.white
   },
   verifyCopy: {
     flex: 1,
-    marginLeft: 14
+    marginLeft: spacing.s12
   },
   verifyTitle: {
     color: colors.tealDark,
-    fontSize: 15,
-    fontWeight: "800"
+    ...typography.label800_15
   },
   verifyText: {
-    marginTop: 5,
+    marginTop: spacing.s4,
     color: colors.muted,
-    fontSize: 12
+    ...typography.body12
   },
   verifyButton: {
     height: 38,
     minWidth: 68,
+    // pill: borderRadius = height / 2, kept literal per Migration Protocol step 3
     borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.s16,
     backgroundColor: colors.teal
   },
   verifyButtonText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "800"
+    color: colors.white,
+    ...typography.label800_13
   },
   accountCard: {
-    marginTop: 18,
-    borderRadius: 15,
-    paddingHorizontal: 18,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    marginTop: spacing.s16,
+    borderRadius: radii.r16,
+    paddingHorizontal: spacing.s16,
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 7,
@@ -369,13 +351,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between"
   },
   accountRowLabel: {
-    color: colors.ink,
-    fontSize: 15,
-    fontWeight: "800"
+    color: colors.inkStrong,
+    ...typography.label800_15
   },
   accountRowChevron: {
-    color: "#B9B5AA",
-    fontSize: 22,
+    color: colors.neutralMuted,
+    ...typography.body22,
     lineHeight: 22
   }
 });

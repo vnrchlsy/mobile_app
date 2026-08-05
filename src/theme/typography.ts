@@ -28,6 +28,7 @@ export const typography = {
   label700_12: { fontSize: 12, fontWeight: "700" },
   label600_12: { fontSize: 12, fontWeight: "600" },
 
+  body22: { fontSize: 22, fontWeight: "400" },
   body14: { fontSize: 14, fontWeight: "400" },
   body13: { fontSize: 13, fontWeight: "400" },
   body12: { fontSize: 12, fontWeight: "400" },
