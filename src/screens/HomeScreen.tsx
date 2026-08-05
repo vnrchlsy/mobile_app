@@ -13,7 +13,6 @@ import { useApi } from "../api/useApi";
 import { Me } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import { BellIcon, ClockIcon } from "../components/AppIcons";
-import { Card } from "../components/Card";
 import { OwnerTabs } from "../components/OwnerTabs";
 import { ScreenContainer } from "../components/ScreenContainer";
 import { GuestIntentAction, takeIntent } from "../guestIntent";
@@ -132,7 +131,7 @@ export function HomeScreen({ navigation, route }: Props) {
         </View>
 
         {pets.map((pet) => (
-          <Card key={pet.name} style={styles.petCard}>
+          <View key={pet.name} style={styles.petCard}>
             <View style={styles.avatarCircle}>
               <Image source={paw} resizeMode="contain" style={styles.avatarPaw} />
             </View>
@@ -146,11 +145,11 @@ export function HomeScreen({ navigation, route }: Props) {
               </View>
               <Text style={styles.shelterText}>{pet.shelter}</Text>
             </View>
-          </Card>
+          </View>
         ))}
 
         <Text style={[styles.sectionTitle, styles.rescueTitle]}>Nearby rescues</Text>
-        <Card style={styles.rescueCard}>
+        <View style={styles.rescueCard}>
           <View style={styles.avatarCircle}>
             <Image source={paw} resizeMode="contain" style={styles.avatarPaw} />
           </View>
@@ -161,7 +160,7 @@ export function HomeScreen({ navigation, route }: Props) {
           <View style={styles.urgentBadge}>
             <Text style={styles.urgentText}>Urgent</Text>
           </View>
-        </Card>
+        </View>
 
         {pendingMember && <Text style={styles.lockedNote}>Claiming rescues unlocks once you're verified.</Text>}
       </ScrollView>
@@ -416,16 +415,14 @@ const styles = StyleSheet.create({
     ...typography.label800_12
   },
   petCard: {
-    // Card (Task 8) already matches this block's backgroundColor/shadowColor exactly — layout,
-    // height, marginTop, borderRadius, padding, and the slightly heavier shadow need overriding
-    // here since this is a compact row card rather than Card's default all-around-padded block.
     height: 68,
     marginTop: spacing.s8,
     borderRadius: radii.r12,
     alignItems: "center",
     flexDirection: "row",
-    padding: 0,
     paddingHorizontal: spacing.s12,
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 7,
@@ -481,14 +478,14 @@ const styles = StyleSheet.create({
     marginTop: spacing.s32
   },
   rescueCard: {
-    // Same Card override rationale as petCard above.
     height: 68,
     marginTop: spacing.s16,
     borderRadius: radii.r12,
     alignItems: "center",
     flexDirection: "row",
-    padding: 0,
     paddingHorizontal: spacing.s12,
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 7,
