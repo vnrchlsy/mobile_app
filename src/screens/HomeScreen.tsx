@@ -12,10 +12,16 @@ import { Alert, Image, ImageSourcePropType, ScrollView, StyleSheet, Text, Toucha
 import { useApi } from "../api/useApi";
 import { Me } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
-import { OwnerTabs } from "../components/OwnerTabs";
 import { BellIcon, ClockIcon } from "../components/AppIcons";
+import { Card } from "../components/Card";
+import { OwnerTabs } from "../components/OwnerTabs";
+import { ScreenContainer } from "../components/ScreenContainer";
 import { GuestIntentAction, takeIntent } from "../guestIntent";
 import { RootStackParamList } from "../navigation/types";
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 const paw = require("../../assets/paw-white.png") as ImageSourcePropType;
 
@@ -68,7 +74,7 @@ export function HomeScreen({ navigation, route }: Props) {
   const pendingMember = me?.capabilities.some((c) => c.capability === "rescuer" && c.status === "pending") ?? false;
 
   return (
-    <View style={styles.screen}>
+    <ScreenContainer>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <View style={styles.headerCopy}>
@@ -85,13 +91,13 @@ export function HomeScreen({ navigation, route }: Props) {
             )}
           </View>
           <View style={styles.bellButton}>
-            <BellIcon color="#12213A" />
+            <BellIcon color={colors.inkStrong} />
           </View>
         </View>
 
         {pendingMember && (
           <TouchableOpacity activeOpacity={0.85} style={styles.reviewCard}>
-            <ClockIcon color="#8A5A12" size={38} />
+            <ClockIcon color={colors.warning} size={38} />
             <View style={styles.reviewCopy}>
               <Text style={styles.reviewTitle}>Verified Member in review</Text>
               <Text style={styles.reviewText}>We'll notify you within a day.</Text>
@@ -126,7 +132,7 @@ export function HomeScreen({ navigation, route }: Props) {
         </View>
 
         {pets.map((pet) => (
-          <View key={pet.name} style={styles.petCard}>
+          <Card key={pet.name} style={styles.petCard}>
             <View style={styles.avatarCircle}>
               <Image source={paw} resizeMode="contain" style={styles.avatarPaw} />
             </View>
@@ -140,11 +146,11 @@ export function HomeScreen({ navigation, route }: Props) {
               </View>
               <Text style={styles.shelterText}>{pet.shelter}</Text>
             </View>
-          </View>
+          </Card>
         ))}
 
         <Text style={[styles.sectionTitle, styles.rescueTitle]}>Nearby rescues</Text>
-        <View style={styles.rescueCard}>
+        <Card style={styles.rescueCard}>
           <View style={styles.avatarCircle}>
             <Image source={paw} resizeMode="contain" style={styles.avatarPaw} />
           </View>
@@ -155,13 +161,13 @@ export function HomeScreen({ navigation, route }: Props) {
           <View style={styles.urgentBadge}>
             <Text style={styles.urgentText}>Urgent</Text>
           </View>
-        </View>
+        </Card>
 
         {pendingMember && <Text style={styles.lockedNote}>Claiming rescues unlocks once you're verified.</Text>}
       </ScrollView>
 
       <OwnerTabs active="home" />
-    </View>
+    </ScreenContainer>
   );
 }
 
@@ -203,27 +209,13 @@ function renderQuickIcon(icon: QuickAction["icon"]) {
   return <Text style={styles.quickSymbol}>{icon === "heart" ? "♥" : "₱"}</Text>;
 }
 
-const colors = {
-  ink: "#12213A",
-  teal: "#1C6B6B",
-  page: "#F4F5F2",
-  border: "#E3E1D9",
-  muted: "#5F5E5A",
-  warnBg: "#FAEEDA",
-  warn: "#8A5A12",
-  warn2: "#633806",
-  paleTeal: "#E7F0EE"
-};
-
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.page
-  },
   content: {
-    paddingHorizontal: 26,
-    paddingTop: 20,
-    paddingBottom: 156
+    paddingHorizontal: spacing.s24,
+    paddingTop: spacing.s20,
+    // 156 in the original design has no near equivalent on the spacing scale (it exists solely
+    // to clear the floating OwnerTabs dock); snapped down to the scale max, spacing.s96.
+    paddingBottom: spacing.s96
   },
   headerRow: {
     flexDirection: "row",
@@ -232,128 +224,121 @@ const styles = StyleSheet.create({
   },
   headerCopy: {
     flex: 1,
-    marginRight: 12
+    marginRight: spacing.s12
   },
   greeting: {
-    color: colors.ink,
-    fontSize: 22,
-    fontWeight: "800",
+    color: colors.inkStrong,
+    ...typography.heading800_22,
     lineHeight: 28
   },
   role: {
-    marginTop: 6,
+    marginTop: spacing.s4,
     color: colors.muted,
-    fontSize: 13
+    ...typography.body13
   },
   cityRow: {
-    marginTop: 6,
+    marginTop: spacing.s4,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8
+    gap: spacing.s8
   },
   cityText: {
-    color: colors.ink,
-    fontSize: 15,
-    fontWeight: "700"
+    color: colors.inkStrong,
+    ...typography.label700_15
   },
   cityChange: {
     color: colors.teal,
-    fontSize: 13,
-    fontWeight: "700"
+    ...typography.label700_13
   },
   bellButton: {
     width: 40,
     height: 40,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 20,
+    borderRadius: 20, // exactly half of width/height (circle) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF"
+    backgroundColor: colors.white
   },
   reviewCard: {
     minHeight: 84,
-    marginTop: 22,
-    borderRadius: 15,
+    marginTop: spacing.s20,
+    borderRadius: radii.r16,
     alignItems: "center",
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: colors.warnBg
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s12,
+    backgroundColor: colors.warningTint
   },
   reviewCopy: {
     flex: 1,
-    marginLeft: 14
+    marginLeft: spacing.s12
   },
   reviewTitle: {
-    color: colors.warn2,
-    fontSize: 14,
-    fontWeight: "800"
+    color: colors.warning,
+    ...typography.label800_14
   },
   reviewText: {
-    marginTop: 5,
-    color: colors.warn,
-    fontSize: 11
+    marginTop: spacing.s4,
+    color: colors.warning,
+    ...typography.body11
   },
   statusLink: {
-    color: colors.warn2,
-    fontSize: 12,
-    fontWeight: "800"
+    color: colors.warning,
+    ...typography.label800_12
   },
   reportCard: {
     height: 136,
-    marginTop: 22,
-    borderRadius: 18,
+    marginTop: spacing.s20,
+    borderRadius: radii.r16,
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingLeft: 20,
-    paddingRight: 16,
-    paddingTop: 26,
+    paddingLeft: spacing.s20,
+    paddingRight: spacing.s16,
+    paddingTop: spacing.s24,
     backgroundColor: colors.teal
   },
   reportTitle: {
-    color: "#FFFFFF",
-    fontSize: 23,
-    fontWeight: "800",
+    color: colors.white,
+    ...typography.heading800_23,
     lineHeight: 28
   },
   reportText: {
-    marginTop: 9,
-    color: "#D5ECE8",
-    fontSize: 13
+    marginTop: spacing.s8,
+    color: colors.tealTint,
+    ...typography.body13
   },
   reportButton: {
     width: 136,
     height: 38,
-    marginTop: 14,
-    borderRadius: 19,
+    marginTop: spacing.s12,
+    borderRadius: 19, // exactly half of height (pill) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF"
+    backgroundColor: colors.white
   },
   reportButtonText: {
-    color: "#126B69",
-    fontSize: 13,
-    fontWeight: "800"
+    color: colors.teal,
+    ...typography.label800_13
   },
   reportPaw: {
     width: 72,
     height: 72,
-    marginTop: 4
+    marginTop: spacing.s4
   },
   quickGrid: {
-    marginTop: 16,
+    marginTop: spacing.s16,
     flexDirection: "row",
     justifyContent: "space-between"
   },
   quickCard: {
     width: "23%",
     height: 86,
-    borderRadius: 11,
+    borderRadius: radii.r12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 7,
@@ -362,22 +347,20 @@ const styles = StyleSheet.create({
   quickIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 20, // exactly half of width/height (circle) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.teal
   },
   quickLabel: {
-    marginTop: 8,
-    color: colors.ink,
-    fontSize: 10,
-    fontWeight: "800",
+    marginTop: spacing.s8,
+    color: colors.inkStrong,
+    ...typography.micro800_10,
     textAlign: "center"
   },
   quickSymbol: {
-    color: "#FFFFFF",
-    fontSize: 23,
-    fontWeight: "900"
+    color: colors.white,
+    ...typography.heading900_23
   },
   searchIcon: {
     width: 25,
@@ -387,8 +370,8 @@ const styles = StyleSheet.create({
     width: 17,
     height: 17,
     borderWidth: 3,
-    borderColor: "#FFFFFF",
-    borderRadius: 9
+    borderColor: colors.white,
+    borderRadius: 9 // ~half of width/height (circle) — do not snap to radii scale
   },
   searchHandle: {
     position: "absolute",
@@ -396,8 +379,8 @@ const styles = StyleSheet.create({
     bottom: 3,
     width: 11,
     height: 3,
-    borderRadius: 2,
-    backgroundColor: "#FFFFFF",
+    borderRadius: 2, // ~half of height (pill end-cap) — do not snap to radii scale
+    backgroundColor: colors.white,
     transform: [{ rotate: "45deg" }]
   },
   personIcon: {
@@ -406,42 +389,44 @@ const styles = StyleSheet.create({
   personHead: {
     width: 13,
     height: 13,
-    borderRadius: 7,
-    backgroundColor: "#FFFFFF"
+    borderRadius: 7, // ~half of width/height (circle) — do not snap to radii scale
+    backgroundColor: colors.white
   },
   personBody: {
     width: 23,
     height: 13,
-    marginTop: 3,
+    marginTop: spacing.s2,
+    // ~half of width, shape-defining dome (not exact — see OwnerTabs iconSlotActive precedent) —
+    // do not snap to radii scale
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
-    backgroundColor: "#FFFFFF"
+    backgroundColor: colors.white
   },
   sectionHeader: {
-    marginTop: 18,
+    marginTop: spacing.s16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between"
   },
   sectionTitle: {
-    color: colors.ink,
-    fontSize: 17,
-    fontWeight: "800"
+    color: colors.inkStrong,
+    ...typography.heading800_17
   },
   seeAll: {
-    color: "#126B69",
-    fontSize: 12,
-    fontWeight: "800"
+    color: colors.teal,
+    ...typography.label800_12
   },
   petCard: {
+    // Card (Task 8) already matches this block's backgroundColor/shadowColor exactly — layout,
+    // height, marginTop, borderRadius, padding, and the slightly heavier shadow need overriding
+    // here since this is a compact row card rather than Card's default all-around-padded block.
     height: 68,
-    marginTop: 10,
-    borderRadius: 14,
+    marginTop: spacing.s8,
+    borderRadius: radii.r12,
     alignItems: "center",
     flexDirection: "row",
-    paddingHorizontal: 13,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    padding: 0,
+    paddingHorizontal: spacing.s12,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 7,
@@ -450,10 +435,10 @@ const styles = StyleSheet.create({
   avatarCircle: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 24, // exactly half of width/height (circle) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.paleTeal
+    backgroundColor: colors.tealTint
   },
   avatarPaw: {
     width: 24,
@@ -462,17 +447,16 @@ const styles = StyleSheet.create({
   },
   petCopy: {
     flex: 1,
-    marginLeft: 14
+    marginLeft: spacing.s12
   },
   petName: {
-    color: colors.ink,
-    fontSize: 17,
-    fontWeight: "800"
+    color: colors.inkStrong,
+    ...typography.heading800_17
   },
   petDetails: {
-    marginTop: 5,
+    marginTop: spacing.s4,
     color: colors.muted,
-    fontSize: 11
+    ...typography.body11
   },
   petMeta: {
     alignItems: "flex-end"
@@ -480,33 +464,32 @@ const styles = StyleSheet.create({
   availableBadge: {
     minWidth: 92,
     height: 28,
-    borderRadius: 14,
+    borderRadius: 14, // exactly half of height (pill) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E1F2D3"
+    backgroundColor: colors.successTint
   },
   availableText: {
-    color: "#356A24",
-    fontSize: 12,
-    fontWeight: "800"
+    color: colors.success,
+    ...typography.label800_12
   },
   shelterText: {
-    marginTop: 8,
-    color: "#AAA69D",
-    fontSize: 10
+    marginTop: spacing.s8,
+    color: colors.neutralMuted,
+    ...typography.body10
   },
   rescueTitle: {
-    marginTop: 34
+    marginTop: spacing.s32
   },
   rescueCard: {
+    // Same Card override rationale as petCard above.
     height: 68,
-    marginTop: 16,
-    borderRadius: 14,
+    marginTop: spacing.s16,
+    borderRadius: radii.r12,
     alignItems: "center",
     flexDirection: "row",
-    paddingHorizontal: 13,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    padding: 0,
+    paddingHorizontal: spacing.s12,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 7,
@@ -515,20 +498,19 @@ const styles = StyleSheet.create({
   urgentBadge: {
     width: 68,
     height: 28,
-    borderRadius: 14,
+    borderRadius: 14, // exactly half of height (pill) — do not snap to radii scale
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.warnBg
+    backgroundColor: colors.warningTint
   },
   urgentText: {
-    color: colors.warn2,
-    fontSize: 12,
-    fontWeight: "800"
+    color: colors.warning,
+    ...typography.label800_12
   },
   lockedNote: {
-    marginTop: 14,
+    marginTop: spacing.s12,
     color: colors.muted,
-    fontSize: 11,
+    ...typography.body11,
     textAlign: "center"
   }
 });

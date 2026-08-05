@@ -36,5 +36,6 @@ export const typography = {
 
   micro900_9: { fontSize: 9, fontWeight: "900" },
   micro800_9: { fontSize: 9, fontWeight: "800" },
-  micro400_9: { fontSize: 9, fontWeight: "400" }
+  micro400_9: { fontSize: 9, fontWeight: "400" },
+  micro800_10: { fontSize: 10, fontWeight: "800" }
 } as const;
