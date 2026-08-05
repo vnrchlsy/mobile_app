@@ -1,6 +1,6 @@
 ---
 name: rn-code-review
-description: Use when writing or reviewing React Native/Expo UI code in this repo (new screens, components, style changes) under src/screens or src/components. Checks adherence to the shared theme/primitives system (src/theme, Button/ScreenContainer/Card/Section/AppText) plus general RN/Expo best practices before code is considered done. Invoke explicitly as /rn-review, or proactively whenever writing or touching UI code in this repo.
+description: Use when writing or reviewing React Native/Expo UI code in this repo (new screens, components, style changes) under src/screens or src/components. Checks adherence to the shared theme/primitives system (src/theme, Button/ScreenContainer/Card/Section/AppText) plus general RN/Expo best practices before code is considered done. Invoke explicitly as /rn-code-review, or proactively whenever writing or touching UI code in this repo.
 ---
 
 # React Native Code Review (Kupkop PH)
@@ -14,6 +14,10 @@ the actual file and line — don't just recite the checklist.
 Applies to `src/screens/` and `src/components/`. Does **not** apply to `src/navigation/`,
 `src/auth/`, `src/api/`, or the orphaned legacy files at `src/` root (`HomeScreen.tsx`,
 `ShelterDashboardScreens.tsx`, etc. — see `CLAUDE.md`) — those are intentionally out of scope.
+Exception: `src/WelcomeScreen.tsx` sits at `src/` root like the orphaned files, but is still
+imported by `RootNavigator` and is live — it was out of scope for this migration (only
+`src/screens/` and `src/components/` were covered), not permanently exempt from these
+conventions, so don't assume it's covered by this skill's checklist yet.
 
 ## Checklist
 
@@ -52,8 +56,9 @@ Applies to `src/screens/` and `src/components/`. Does **not** apply to `src/navi
   and `accessibilityLabel` when the visible label isn't itself descriptive text (icon-only
   buttons).
 - Screens should respect safe areas (via `SafeAreaProvider`/`useSafeAreaInsets`, or the
-  existing `TopStatus`/`ScreenContainer` pattern) rather than hardcoding a top/bottom offset
-  that assumes one specific device's status bar/home indicator height.
+  existing `TopStatus` pattern) rather than hardcoding a top/bottom offset that assumes one
+  specific device's status bar/home indicator height. Note `ScreenContainer` does *not* handle
+  safe areas itself (plain `View` + `flex: 1`) — don't cite it as a fix here.
 - Flag `Platform.OS` branches with no comment explaining why the platforms need to diverge.
 - `useEffect`/`useFocusEffect` data-fetching should have a stable dependency array — flag an
   effect that will re-fire every render because its deps include a new inline function/object

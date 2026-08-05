@@ -80,8 +80,9 @@ at Home, so an unrelated later sign-in doesn't resurface a stale intent from an 
 ### Screens (`src/screens/`) — this is the active screen set
 
 All live screens wired into `RootNavigator` live here. `AuthFormKit.tsx` is the shared UI kit
-(headers, form fields, buttons, color palette) for the onboarding/auth screens — reuse it rather
-than restyling from scratch when touching that flow.
+(headers, form fields, step dots) for the onboarding/auth screens — reuse it rather than
+restyling from scratch when touching that flow. Buttons come from `src/components/Button` and
+colors from `src/theme/colors`, not from `AuthFormKit`.
 
 ### Theme and shared primitives (`src/theme/`, `src/components/`)
 
