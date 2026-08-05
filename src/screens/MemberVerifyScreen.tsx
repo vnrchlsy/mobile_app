@@ -11,6 +11,10 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOp
 import { useApi } from "../api/useApi";
 import { CheckIcon, DocumentIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
+import { colors } from "../theme/colors";
+import { radii } from "../theme/radii";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 type Props = NativeStackScreenProps<RootStackParamList, "memberVerify">;
 
@@ -115,7 +119,7 @@ export function MemberVerifyScreen({ navigation }: Props) {
           ) : fileUrl ? (
             <View style={styles.docDone}>
               <View style={styles.docCheck}>
-                <CheckIcon color="#FFFFFF" size={12} />
+                <CheckIcon color={colors.white} size={12} />
               </View>
               <Text style={styles.docDoneText}>Uploaded</Text>
             </View>
@@ -130,7 +134,7 @@ export function MemberVerifyScreen({ navigation }: Props) {
             value={socialUrl}
             onChangeText={setSocialUrl}
             placeholder="facebook.com/your.name"
-            placeholderTextColor="#9A988F"
+            placeholderTextColor={colors.neutralMuted}
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="url"
@@ -144,7 +148,7 @@ export function MemberVerifyScreen({ navigation }: Props) {
           onPress={() => setConsent((v) => !v)}
         >
           <View style={[styles.consentBox, consent && styles.consentBoxChecked]}>
-            {consent && <CheckIcon color="#FFFFFF" size={13} />}
+            {consent && <CheckIcon color={colors.white} size={13} />}
           </View>
           <Text style={styles.consentText}>
             I consent to Kupkop PH collecting these documents solely to verify my identity.
@@ -162,7 +166,7 @@ export function MemberVerifyScreen({ navigation }: Props) {
           disabled={!canSubmit || submitting}
         >
           {submitting ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={colors.white} />
           ) : (
             <Text style={styles.submitText}>Submit for review</Text>
           )}
@@ -171,17 +175,6 @@ export function MemberVerifyScreen({ navigation }: Props) {
     </View>
   );
 }
-
-const colors = {
-  ink: "#12213A",
-  teal: "#1C6B6B",
-  tealDark: "#14504F",
-  page: "#F4F5F2",
-  border: "#E3E1D9",
-  muted: "#5F5E5A",
-  danger: "#B23B3B",
-  paleTeal: "#E7F0EE"
-};
 
 const styles = StyleSheet.create({
   screen: {
@@ -192,7 +185,7 @@ const styles = StyleSheet.create({
     height: 96,
     alignItems: "center",
     justifyContent: "flex-end",
-    paddingBottom: 14
+    paddingBottom: spacing.s12
   },
   backButton: {
     position: "absolute",
@@ -200,52 +193,50 @@ const styles = StyleSheet.create({
     bottom: 12,
     width: 42,
     height: 42,
+    // circle/pill: borderRadius ≈ half of width/height — not snapped to radii scale (Migration Protocol step 3)
     borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 7,
     elevation: 2
   },
   backText: {
-    color: colors.ink,
-    fontSize: 26,
-    fontWeight: "700",
+    color: colors.inkStrong,
+    ...typography.heading700_26,
     lineHeight: 28
   },
   headerTitle: {
-    color: colors.ink,
-    fontSize: 18,
-    fontWeight: "800"
+    color: colors.inkStrong,
+    ...typography.heading800_18
   },
   content: {
-    paddingHorizontal: 26,
-    paddingBottom: 60
+    paddingHorizontal: spacing.s24,
+    paddingBottom: spacing.s56
   },
   heading: {
-    marginTop: 6,
-    color: colors.ink,
-    fontSize: 24,
-    fontWeight: "800"
+    marginTop: spacing.s4,
+    color: colors.inkStrong,
+    ...typography.heading800_24
   },
   subheading: {
-    marginTop: 6,
+    marginTop: spacing.s4,
     color: colors.muted,
-    fontSize: 14
+    ...typography.body14
   },
   docCard: {
     minHeight: 84,
-    marginTop: 24,
-    borderRadius: 16,
+    marginTop: spacing.s24,
+    borderRadius: radii.r16,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s12,
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 7,
@@ -254,29 +245,27 @@ const styles = StyleSheet.create({
   docIcon: {
     width: 48,
     height: 48,
-    borderRadius: 14,
+    borderRadius: radii.r12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.paleTeal
+    backgroundColor: colors.tealTint
   },
   docCopy: {
     flex: 1,
-    marginLeft: 14
+    marginLeft: spacing.s12
   },
   docTitle: {
-    color: colors.ink,
-    fontSize: 15,
-    fontWeight: "800"
+    color: colors.inkStrong,
+    ...typography.label800_15
   },
   docSubtitle: {
-    marginTop: 5,
+    marginTop: spacing.s4,
     color: colors.muted,
-    fontSize: 11
+    ...typography.body11
   },
   docUploadLink: {
     color: colors.teal,
-    fontSize: 13,
-    fontWeight: "800"
+    ...typography.label800_13
   },
   docDone: {
     alignItems: "center"
@@ -284,61 +273,59 @@ const styles = StyleSheet.create({
   docCheck: {
     width: 24,
     height: 24,
+    // circle/pill: borderRadius ≈ half of width/height — not snapped to radii scale (Migration Protocol step 3)
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#5B8A3A"
+    backgroundColor: colors.successAccent
   },
   docDoneText: {
-    marginTop: 5,
+    marginTop: spacing.s4,
     color: colors.muted,
-    fontSize: 10,
-    fontWeight: "700"
+    ...typography.micro700_10
   },
   fieldLabel: {
-    marginTop: 22,
-    marginBottom: 8,
+    marginTop: spacing.s20,
+    marginBottom: spacing.s8,
     color: colors.muted,
-    fontSize: 12,
-    fontWeight: "800"
+    ...typography.label800_12
   },
   socialField: {
     height: 54,
-    borderRadius: 14,
+    borderRadius: radii.r12,
     justifyContent: "center",
-    paddingHorizontal: 16,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#1F3A5F",
+    paddingHorizontal: spacing.s16,
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 7,
     elevation: 2
   },
   socialInput: {
-    color: colors.ink,
-    fontSize: 15,
-    fontWeight: "800",
+    color: colors.inkStrong,
+    ...typography.label800_15,
     padding: 0
   },
   consentRow: {
-    marginTop: 26,
-    borderRadius: 14,
+    marginTop: spacing.s24,
+    borderRadius: radii.r12,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 14,
-    backgroundColor: colors.paleTeal
+    paddingHorizontal: spacing.s16,
+    paddingVertical: spacing.s16,
+    gap: spacing.s12,
+    backgroundColor: colors.tealTint
   },
   consentBox: {
     width: 26,
     height: 26,
-    borderRadius: 7,
+    borderRadius: radii.r8,
     borderWidth: 1.5,
     borderColor: colors.teal,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF"
+    backgroundColor: colors.white
   },
   consentBoxChecked: {
     backgroundColor: colors.teal
@@ -346,25 +333,24 @@ const styles = StyleSheet.create({
   consentText: {
     flex: 1,
     color: colors.tealDark,
-    fontSize: 13,
-    fontWeight: "700",
+    ...typography.label700_13,
     lineHeight: 19
   },
   formError: {
-    marginTop: 14,
+    marginTop: spacing.s12,
     color: colors.danger,
-    fontSize: 13,
-    fontWeight: "700"
+    ...typography.label700_13
   },
   reviewNote: {
-    marginTop: 18,
+    marginTop: spacing.s16,
     color: colors.muted,
-    fontSize: 12,
+    ...typography.body12,
     textAlign: "center"
   },
   submitButton: {
     height: 54,
-    marginTop: 16,
+    marginTop: spacing.s16,
+    // circle/pill: borderRadius ≈ half of width/height — not snapped to radii scale (Migration Protocol step 3)
     borderRadius: 27,
     alignItems: "center",
     justifyContent: "center",
@@ -374,8 +360,7 @@ const styles = StyleSheet.create({
     opacity: 0.5
   },
   submitText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800"
+    color: colors.white,
+    ...typography.label800_16
   }
 });
