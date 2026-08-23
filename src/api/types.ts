@@ -33,9 +33,29 @@ export type MapReport = {
   report_id: string; species: string; condition: string;
   status: StrayStatus; city: string | null; reported_at: string;
 };
+// US-O3 — reporter-only block, present only when the caller IS the report's reporter.
+export type ReportStatusHistoryEntry = { status: StrayStatus; changed_at: string };
 export type ReportDetail = {
   report_id: string; species: string; condition: string; status: StrayStatus;
   notes: string | null; city: string | null; reported_at: string; photos: string[];
+  escalation_level?: number; offers_count?: number;
+  status_history?: ReportStatusHistoryEntry[];
+};
+
+// Track K — the claim + working-the-case loop
+export type RescueCaseSummary = {
+  case_id: string;
+  report: { report_id: string; species: string; condition: string; city: string | null };
+  status: StrayStatus; claimed_at: string; expired_at: string | null;
+};
+
+// Track O — the commitment ladder (offers)
+export type OfferType = "transport" | "vet_costs" | "supplies";
+export type OfferListStatus = "open" | "matched" | "expired";
+export type MyOffer = {
+  offer_id: string;
+  report: { report_id: string; species: string; condition: string; city: string | null };
+  offer_type: OfferType; status: OfferListStatus; expires_at: string;
 };
 export type Listing = {
   listing_id: string;

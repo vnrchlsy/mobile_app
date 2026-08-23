@@ -54,4 +54,11 @@ export type RootStackParamList = {
   myReports: undefined;
   rescueMap: undefined;
   reportDetail: { reportId: string };
+  // Track O — the commitment ladder (offers)
+  rescueOffer: { reportId: string };
+  rescueOfferSent: { reportId: string; offerType: string };
+  myOffers: undefined;
+  // Track K — claim + work the case
+  myRescues: undefined;
+  rescueUpdate: { caseId: string; reportId: string };
 };

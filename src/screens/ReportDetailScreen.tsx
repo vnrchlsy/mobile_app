@@ -1,9 +1,11 @@
-// US-S5 · report detail (city-level, public shared-link). Reference: screens/user/screen-report-detail.png.
-// GET /reports/{id}. No claim button this sprint — the claim + offers ladder are Sprint 3.
+// US-S5 · report detail (city-level, public shared-link) + Track K/O — claim it, offer
+// help, or (if you're the reporter) see the waiting view. Reference:
+// screens/user/screen-report-detail.png (+ -waiting, -unclaimed).
+// GET /reports/{id}; POST /reports/{id}/claim.
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { ReportDetail, StrayStatus } from "../api/types";
 import { useApi } from "../api/useApi";
@@ -30,17 +32,62 @@ export function ReportDetailScreen({ navigation, route }: Props) {
   const api = useApi();
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [claiming, setClaiming] = useState(false);
 
-  useFocusEffect(useCallback(() => {
+  const load = useCallback(() => {
     api.get(`/reports/${route.params.reportId}`).then((r) => {
       if (r.ok) setReport(r.data);
       setLoaded(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
-  }, [route.params.reportId]));
+  }, [route.params.reportId]);
+
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  function confirmClaim() {
+    // The exclusivity warning appears before the tap commits to anything — claiming is
+    // final, there's no release once it lands.
+    Alert.alert(
+      "Claiming is final",
+      "It's locked to you and can't be handed back. Only claim if you're actually going.",
+      [
+        { text: "Not yet", style: "cancel" },
+        { text: "Claim this case", style: "default", onPress: claim }
+      ]
+    );
+  }
+
+  async function claim() {
+    if (claiming) return;
+    setClaiming(true);
+    const res = await api.post(`/reports/${route.params.reportId}/claim`);
+    setClaiming(false);
+    if (res.ok) {
+      navigation.replace("rescueUpdate", { caseId: res.data.case_id, reportId: route.params.reportId });
+      return;
+    }
+    const code = res.data?.error?.code;
+    if (code === "already_claimed") {
+      Alert.alert("Someone else got there first", "This report was just claimed by another rescuer.");
+      load();
+      return;
+    }
+    if (res.status === 403) {
+      Alert.alert(
+        "Get verified to claim",
+        "Claiming needs a Verified Member badge or a verified shelter account.",
+        [{ text: "Not now", style: "cancel" }, { text: "Get verified", onPress: () => navigation.navigate("memberUpgrade") }]
+      );
+      return;
+    }
+    Alert.alert("Couldn't claim this case", res.data?.error?.message ?? "Try again.");
+  }
 
   const chip = report ? strayChip(report.status) : null;
   const activeIdx = report ? LADDER.indexOf(report.status === "safe" ? "rescued" : report.status) : -1;
+  // Present only when the caller IS this report's reporter (US-O3) — the backend omits
+  // these fields entirely for anyone else, so their presence alone is the signal.
+  const isReporterView = report?.status_history !== undefined;
 
   return (
     <View style={styles.screen}>
@@ -75,18 +122,70 @@ export function ReportDetailScreen({ navigation, route }: Props) {
             </View>
           ) : null}
 
+          {isReporterView && report.status === "reported" ? (
+            <View style={styles.waitingCard}>
+              <Text style={styles.waitingLine}>
+                {(report.offers_count ?? 0) === 0
+                  ? "No one has offered yet — you'd be on your own for this one."
+                  : `${report.offers_count} ${report.offers_count === 1 ? "person has" : "people have"} offered to help.`}
+              </Text>
+              {report.escalation_level === 1 ? (
+                <Text style={styles.waitingSub}>Widened to ~5 km · nearby rescuers notified.</Text>
+              ) : report.escalation_level === 2 ? (
+                <Text style={styles.waitingSub}>Widened further · partner shelters notified.</Text>
+              ) : null}
+            </View>
+          ) : null}
+
           <Text style={styles.sectionTitle}>Status</Text>
-          <View style={styles.ladder}>
-            {LADDER.map((s, i) => {
-              const done = i <= activeIdx;
-              return (
-                <View key={s} style={styles.ladderRow}>
-                  <View style={[styles.ladderDot, done && styles.ladderDotDone]} />
-                  <Text style={[styles.ladderLabel, done && styles.ladderLabelDone]}>{LADDER_LABEL[s]}</Text>
+          {isReporterView && report.status_history && report.status_history.length > 0 ? (
+            <View style={styles.ladder}>
+              {report.status_history.map((h, i) => (
+                <View key={i} style={styles.ladderRow}>
+                  <View style={[styles.ladderDot, styles.ladderDotDone]} />
+                  <Text style={[styles.ladderLabel, styles.ladderLabelDone]}>
+                    {LADDER_LABEL[h.status]} · {relTime(h.changed_at)}
+                  </Text>
                 </View>
-              );
-            })}
-          </View>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.ladder}>
+              {LADDER.map((s, i) => {
+                const done = i <= activeIdx;
+                return (
+                  <View key={s} style={styles.ladderRow}>
+                    <View style={[styles.ladderDot, done && styles.ladderDotDone]} />
+                    <Text style={[styles.ladderLabel, done && styles.ladderLabelDone]}>{LADDER_LABEL[s]}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {!isReporterView && report.status === "reported" ? (
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={styles.claimBtn}
+                activeOpacity={0.9}
+                onPress={confirmClaim}
+                disabled={claiming}
+              >
+                {claiming ? <ActivityIndicator color={colors.white} />
+                  : <Text style={styles.claimBtnText}>Claim this case</Text>}
+              </TouchableOpacity>
+              <Text style={styles.claimFine}>
+                Claiming is final — it's locked to you and can't be handed back.
+              </Text>
+              <TouchableOpacity
+                style={styles.offerBtn}
+                activeOpacity={0.85}
+                onPress={() => navigation.navigate("rescueOffer", { reportId: report.report_id })}
+              >
+                <Text style={styles.offerBtnText}>Can't go? Offer help instead</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
         </ScrollView>
       )}
     </View>
@@ -113,11 +212,20 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 13, fontWeight: "800" },
   notesCard: { marginTop: 20, padding: 18, borderRadius: 18, ...card },
   notesText: { color: colors.ink, fontSize: 16, lineHeight: 23 },
+  waitingCard: { marginTop: 20, padding: 18, borderRadius: 18, backgroundColor: colors.tealBg },
+  waitingLine: { color: colors.tealFg, fontSize: 16, fontWeight: "700" },
+  waitingSub: { marginTop: 6, color: colors.tealFg, fontSize: 14 },
   sectionTitle: { marginTop: 26, marginBottom: 14, color: colors.ink, fontSize: 20, fontWeight: "800" },
   ladder: { paddingLeft: 4 },
   ladderRow: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 16 },
   ladderDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: colors.line },
   ladderDotDone: { backgroundColor: colors.teal },
   ladderLabel: { color: colors.muted, fontSize: 16 },
-  ladderLabelDone: { color: colors.ink, fontWeight: "700" }
+  ladderLabelDone: { color: colors.ink, fontWeight: "700" },
+  actionRow: { marginTop: 30 },
+  claimBtn: { height: 60, borderRadius: 30, alignItems: "center", justifyContent: "center", backgroundColor: colors.teal },
+  claimBtnText: { color: colors.white, fontSize: 19, fontWeight: "700" },
+  claimFine: { marginTop: 10, color: "#9a988f", fontSize: 13, lineHeight: 18, textAlign: "center" },
+  offerBtn: { marginTop: 16, height: 54, borderRadius: 27, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: colors.teal },
+  offerBtnText: { color: colors.teal, fontSize: 16, fontWeight: "700" }
 });

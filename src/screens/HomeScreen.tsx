@@ -131,6 +131,12 @@ export function HomeScreen({ navigation, route }: Props) {
           <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate("myReports")}>
             <Text style={styles.sagipLink}>My reports ›</Text>
           </TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate("myRescues")}>
+            <Text style={styles.sagipLink}>My rescues ›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate("myOffers")}>
+            <Text style={styles.sagipLink}>My offers ›</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.quickGrid}>
@@ -361,7 +367,9 @@ const styles = StyleSheet.create({
   sagipLinks: {
     marginTop: 14,
     flexDirection: "row",
-    justifyContent: "space-between"
+    flexWrap: "wrap",
+    columnGap: 18,
+    rowGap: 10
   },
   sagipLink: {
     color: "#1C6B6B",

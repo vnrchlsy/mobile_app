@@ -16,6 +16,19 @@ test("post returns parsed data on 200", async () => {
   expect(res.data.access).toBe("a");
 });
 
+test("del sends DELETE and treats 204 as an empty-body success (US-O2 withdraw)", async () => {
+  let method: string | undefined;
+  global.fetch = jest.fn(async (_url: any, init: any) => {
+    method = init?.method;
+    return { status: 204, ok: true, json: async () => { throw new Error("204 must not be parsed"); } } as unknown as Response;
+  });
+  const api = createApi(() => null, async () => {});
+  const res = await api.del("/reports/r1/offers/o1");
+  expect(method).toBe("DELETE");
+  expect(res.ok).toBe(true);
+  expect(res.data).toEqual({});
+});
+
 test("refreshes once on 401 then retries with the refreshed access token", async () => {
   const responses = [
     { status: 401, body: { error: { code: "token_not_valid" } } },

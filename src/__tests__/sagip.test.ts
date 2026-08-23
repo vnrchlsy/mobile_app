@@ -1,4 +1,4 @@
-import { relTime, sagipTitle, strayChip } from "../sagip";
+import { advanceableStatuses, offerStatusChip, relTime, sagipTitle, strayChip } from "../sagip";
 
 describe("strayChip (only unclaimed is amber — the app's 'someone must act' colour)", () => {
   it("maps each status to a labelled tone", () => {
@@ -14,6 +14,30 @@ describe("sagipTitle", () => {
   it("formats species and condition into the card title", () => {
     expect(sagipTitle("dog", "injured")).toBe("Dog · Injured");
     expect(sagipTitle("cat", "pregnant")).toBe("Cat · Pregnant");
+  });
+});
+
+describe("advanceableStatuses (US-K2 — forward-only, but not one-step-only)", () => {
+  it("offers every remaining forward status, not just the next one", () => {
+    expect(advanceableStatuses("claimed")).toEqual(["rescued", "safe", "resolved"]);
+    expect(advanceableStatuses("rescued")).toEqual(["safe", "resolved"]);
+    expect(advanceableStatuses("safe")).toEqual(["resolved"]);
+  });
+
+  it("resolved is terminal — nothing left to advance to", () => {
+    expect(advanceableStatuses("resolved")).toEqual([]);
+  });
+
+  it("a report that was never claimed has no case to advance", () => {
+    expect(advanceableStatuses("reported")).toEqual([]);
+  });
+});
+
+describe("offerStatusChip (decision 14 — no amber; that's the report's job, not an offer's)", () => {
+  it("maps each offer status to a labelled, never-amber tone", () => {
+    expect(offerStatusChip("open")).toEqual({ label: "Open", tone: "teal" });
+    expect(offerStatusChip("matched")).toEqual({ label: "Matched", tone: "green" });
+    expect(offerStatusChip("expired")).toEqual({ label: "Expired", tone: "grey" });
   });
 });
 

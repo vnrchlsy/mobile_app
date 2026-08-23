@@ -35,6 +35,11 @@ import { ReportDetailScreen } from "../screens/ReportDetailScreen";
 import { ReportSentScreen } from "../screens/ReportSentScreen";
 import { ReportStrayScreen } from "../screens/ReportStrayScreen";
 import { RescueMapScreen } from "../screens/RescueMapScreen";
+import { RescueOfferScreen } from "../screens/RescueOfferScreen";
+import { RescueOfferSentScreen } from "../screens/RescueOfferSentScreen";
+import { MyOffersScreen } from "../screens/MyOffersScreen";
+import { MyRescuesScreen } from "../screens/MyRescuesScreen";
+import { RescueUpdateScreen } from "../screens/RescueUpdateScreen";
 import { VerifyDocumentsScreen } from "../screens/VerifyDocumentsScreen";
 import { VerifyResubmitScreen } from "../screens/VerifyResubmitScreen";
 import { VolunteerScreen } from "../screens/VolunteerScreen";
@@ -92,6 +97,11 @@ export function RootNavigator() {
       <Stack.Screen name="myReports" component={MyReportsScreen} />
       <Stack.Screen name="rescueMap" component={RescueMapScreen} />
       <Stack.Screen name="reportDetail" component={ReportDetailScreen} />
+      <Stack.Screen name="rescueOffer" component={RescueOfferScreen} />
+      <Stack.Screen name="rescueOfferSent" component={RescueOfferSentScreen} />
+      <Stack.Screen name="myOffers" component={MyOffersScreen} />
+      <Stack.Screen name="myRescues" component={MyRescuesScreen} />
+      <Stack.Screen name="rescueUpdate" component={RescueUpdateScreen} />
     </Stack.Navigator>
   );
 }

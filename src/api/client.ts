@@ -32,5 +32,6 @@ export function createApi(getTokens: () => Tokens, setTokens: (t: Tokens) => Pro
     post: (p: string, b?: any) => raw("POST", p, b),
     patch: (p: string, b?: any) => raw("PATCH", p, b),
     put: (p: string, b?: any) => raw("PUT", p, b),
+    del: (p: string) => raw("DELETE", p),
   };
 }
