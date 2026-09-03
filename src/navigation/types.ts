@@ -125,6 +125,11 @@ export type RootStackParamList = {
   shelterNeeds: undefined;
   needForm: { need?: ShelterNeedShape } | undefined;
   needPledges: { need: ShelterNeedShape };
+  // US-N5 · settings + the two RA 10173 data rights (§12.6/§12.7).
+  settings: undefined;
+  settingsPrivacy: undefined;
+  deleteAccount: undefined;
+  exportData: undefined;
   // US-B2 · My impact: the badge grid + a single badge's detail.
   impact: undefined;
   badgeComparison: { badge: BadgeShape };

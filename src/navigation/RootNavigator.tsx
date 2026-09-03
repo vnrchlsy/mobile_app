@@ -12,6 +12,10 @@ import { ShelterNeedsScreen } from "../screens/ShelterNeedsScreen";
 import { NeedFormScreen } from "../screens/NeedFormScreen";
 import { NeedPledgesScreen } from "../screens/NeedPledgesScreen";
 import { ImpactScreen } from "../screens/ImpactScreen";
+import { DeleteAccountScreen } from "../screens/DeleteAccountScreen";
+import { ExportDataScreen } from "../screens/ExportDataScreen";
+import { SettingsPrivacyScreen } from "../screens/SettingsPrivacyScreen";
+import { SettingsScreen } from "../screens/SettingsScreen";
 import { BadgeComparisonScreen } from "../screens/BadgeComparisonScreen";
 import { StoriesScreen } from "../screens/StoriesScreen";
 import { StoryComposeScreen } from "../screens/StoryComposeScreen";
@@ -171,6 +175,10 @@ export function RootNavigator() {
       <Stack.Screen name="shelterNeeds" component={ShelterNeedsScreen} />
       <Stack.Screen name="needForm" component={NeedFormScreen} />
       <Stack.Screen name="needPledges" component={NeedPledgesScreen} />
+      <Stack.Screen name="settings" component={SettingsScreen} />
+      <Stack.Screen name="settingsPrivacy" component={SettingsPrivacyScreen} />
+      <Stack.Screen name="deleteAccount" component={DeleteAccountScreen} />
+      <Stack.Screen name="exportData" component={ExportDataScreen} />
       <Stack.Screen name="impact" component={ImpactScreen} />
       <Stack.Screen name="badgeComparison" component={BadgeComparisonScreen} />
       <Stack.Screen name="stories" component={StoriesScreen} />

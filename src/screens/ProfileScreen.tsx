@@ -172,6 +172,16 @@ export function ProfileScreen({ navigation }: Props) {
             <Text style={styles.accountRowLabel}>My impact</Text>
             <Text style={styles.accountRowChevron}>›</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.75}
+            style={[styles.accountRow, styles.accountRowDivided]}
+            onPress={() => navigation.navigate("settings")}
+          >
+            {/* US-N5 · the only route to Settings — and through it to the §12.6 data
+                rights. Before Sprint 7 the designed screen had no entry point at all. */}
+            <Text style={styles.accountRowLabel}>Settings</Text>
+            <Text style={styles.accountRowChevron}>›</Text>
+          </TouchableOpacity>
           <TouchableOpacity activeOpacity={0.75} style={styles.accountRow} onPress={handleLogout}>
             <Text style={styles.accountRowLabel}>Log out</Text>
             <Text style={styles.accountRowChevron}>›</Text>
