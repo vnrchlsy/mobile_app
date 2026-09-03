@@ -98,14 +98,16 @@ than restyling from scratch when touching that flow.
 
 ### Orphaned legacy files — do not treat as live code
 
-`src/HomeScreen.tsx`, `MoreScreens.tsx`, `OnboardingScreens.tsx`, `PetDetailScreen.tsx`,
-`ProfileScreen.tsx`, `RescuerScreens.tsx`, `ShelterDashboardScreens.tsx`,
-`ShelterListingScreens.tsx`, `ShelterScreens.tsx`, and `VolunteerScreens.tsx` sit directly under
-`src/` (as opposed to `src/screens/`). These are static mockups from an early commit, predating
-the React Navigation rewrite, and are **not imported by `RootNavigator` or anything else live** —
-grep before assuming a change to one of these does anything. The real, wired-up versions are the
-same-named files under `src/screens/`. The one exception is `src/WelcomeScreen.tsx`, which is
-still imported by `RootNavigator` and is live.
+`src/PetDetailScreen.tsx`, `ProfileScreen.tsx`, `RescuerScreens.tsx`, and `ShelterScreens.tsx`
+sit directly under `src/` (as opposed to `src/screens/`). These are static mockups from an early
+commit, predating the React Navigation rewrite, and are **not imported by `RootNavigator` or
+anything else live** — grep before assuming a change to one of these does anything. The real,
+wired-up versions are the same-named files under `src/screens/`. The one exception is
+`src/WelcomeScreen.tsx`, which is still imported by `RootNavigator` and is live.
+
+The other six mockups (`HomeScreen`, `MoreScreens`, `OnboardingScreens`, `ShelterDashboardScreens`,
+`ShelterListingScreens`, `VolunteerScreens`) were deleted once confirmed unreachable — they were
+inflating the US-U1 accessibility count with ~47 unlabelled controls on screens no user can reach.
 
 ### User story comments
 

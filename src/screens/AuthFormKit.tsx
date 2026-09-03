@@ -52,10 +52,12 @@ export function AuthHeader({ title, activeStep, onBack, stepCount = AUTH_STEP_CO
         onPress={onBack}
         style={styles.backButton}
         hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
       >
         <Text style={styles.backText}>‹</Text>
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>{title}</Text>
+      <Text style={styles.headerTitle} accessibilityRole="header">{title}</Text>
 
       <View style={styles.steps}>
         {Array.from({ length: stepCount }).map((_, step) => (
@@ -90,6 +92,8 @@ export function SimpleHeader({ title, onBack }: SimpleHeaderProps) {
           onPress={onBack}
           style={styles.backButton}
           hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
         >
           <Text style={styles.backText}>‹</Text>
         </TouchableOpacity>
@@ -136,7 +140,15 @@ export function FormField({
           style={[styles.inputText, styles.textInput]}
         />
         {onToggleSecure && (
-          <TouchableOpacity activeOpacity={0.7} onPress={onToggleSecure} style={styles.eyeButton}>
+          <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={onToggleSecure}
+          style={styles.eyeButton}
+          accessibilityRole="button"
+          // The label has to track the state: announcing "show password" while the
+          // password is already visible tells a blind user the opposite of the truth.
+          accessibilityLabel={secure ? "Show password" : "Hide password"}
+        >
             <View style={styles.eyeIcon}>
               <View style={styles.eyePupil} />
             </View>

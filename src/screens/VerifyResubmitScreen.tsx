@@ -63,6 +63,8 @@ export function VerifyResubmitScreen({ navigation, route }: Props) {
           onPress={() => navigation.goBack()}
           style={styles.back}
           hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
         >
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>

@@ -144,17 +144,25 @@ export function ReportStrayScreen({ navigation, route }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Report a stray</Text>
+        <Text style={styles.title} accessibilityRole="header">Report a stray</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.h1}>What did you see?</Text>
         <Text style={styles.sub}>A photo helps — but don't wait for one.</Text>
 
-        <TouchableOpacity style={styles.photoBtn} onPress={addPhoto} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={styles.photoBtn}
+          onPress={addPhoto}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={photoUrl ? "Photo added. Tap to replace it." : "Add a photo, optional"}
+          accessibilityState={{ busy: uploading }}
+        >
           {uploading ? <ActivityIndicator color={colors.teal} />
             : <Text style={styles.photoText}>{photoUrl ? "✓ Photo added" : "Add a photo · optional"}</Text>}
         </TouchableOpacity>
@@ -189,6 +197,8 @@ export function ReportStrayScreen({ navigation, route }: Props) {
                   <TouchableOpacity
                     onPress={() => navigation.navigate("adjustPin", { lat: coords.lat, lng: coords.lng })}
                     hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel="Adjust the exact location of this report"
                   >
                     <Text style={styles.adjust}>Adjust exact location ›</Text>
                   </TouchableOpacity>
@@ -201,15 +211,29 @@ export function ReportStrayScreen({ navigation, route }: Props) {
 
         <View style={styles.anonRow}>
           <Text style={styles.anonLabel}>Report anonymously</Text>
-          <Switch value={anonymous} onValueChange={setAnonymous} trackColor={{ true: colors.teal }} />
+          <Switch
+            value={anonymous}
+            onValueChange={setAnonymous}
+            trackColor={{ true: colors.teal }}
+            accessibilityLabel="Report anonymously"
+            accessibilityHint="Hides your name from other users. The report is still linked to your account."
+          />
         </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? (
+          <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="polite">
+            {error}
+          </Text>
+        ) : null}
 
         <TouchableOpacity
           style={[styles.submit, !coords && styles.submitIdle]}
           onPress={submit}
           activeOpacity={0.9}
+          accessibilityRole="button"
+          accessibilityLabel="Send report"
+          accessibilityHint={coords ? undefined : "Waiting for your location"}
+          accessibilityState={{ busy: submitting }}
         >
           {submitting ? <ActivityIndicator color={colors.white} />
             : <Text style={styles.submitText}>Send report</Text>}

@@ -68,7 +68,8 @@ export function DonatePledgeScreen({ navigation, route }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Pledge</Text>
@@ -84,11 +85,16 @@ export function DonatePledgeScreen({ navigation, route }: Props) {
         <Text style={styles.label}>How many can you give?</Text>
         <View style={styles.stepper}>
           <TouchableOpacity style={styles.stepBtn} onPress={() => setQty((q) => Math.max(1, q - 1))}
-            hitSlop={10}>
+            hitSlop={10}
+            accessibilityRole="button" accessibilityLabel="Decrease pledge quantity"
+            accessibilityValue={{ now: qty }}>
             <Text style={styles.stepGlyph}>–</Text>
           </TouchableOpacity>
           <Text style={styles.qty}>{qty}</Text>
-          <TouchableOpacity style={styles.stepBtn} onPress={() => setQty((q) => q + 1)} hitSlop={10}>
+          <TouchableOpacity
+            style={styles.stepBtn} onPress={() => setQty((q) => q + 1)} hitSlop={10}
+            accessibilityRole="button" accessibilityLabel="Increase pledge quantity"
+            accessibilityValue={{ now: qty }}>
             <Text style={styles.stepGlyph}>+</Text>
           </TouchableOpacity>
         </View>

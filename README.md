@@ -54,6 +54,6 @@ pnpm typecheck
 ```text
 App.tsx                  App entry and screen routing
 src/WelcomeScreen.tsx    Welcome screen UI
-src/OnboardingScreens.tsx Account setup, OTP, and account type screens
+src/screens/            Wired-up screens (React Navigation)
 assets/                  Logo and paw image assets
 ```

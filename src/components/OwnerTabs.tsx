@@ -45,6 +45,11 @@ export function OwnerTabs({ active }: OwnerTabsProps) {
               key={tab.key}
               activeOpacity={0.75}
               style={styles.tabItem}
+              accessibilityRole="tab"
+              accessibilityLabel={tab.label}
+              // A screen-reader user needs to know WHICH tab they are on, not just
+              // which ones exist — selected state is half of what a tab bar means.
+              accessibilityState={{ selected: isActive }}
               onPress={() => {
                 if (isActive) return;
                 // The Volunteer tab opens the Kawang-Gawa hub (US-V8) rather than the old

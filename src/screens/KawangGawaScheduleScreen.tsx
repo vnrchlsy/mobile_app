@@ -102,7 +102,8 @@ export function KawangGawaScheduleScreen({ navigation }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>My schedule</Text>
@@ -131,6 +132,14 @@ export function KawangGawaScheduleScreen({ navigation }: Props) {
                   style={[styles.card, styles.cardColumn]}
                   activeOpacity={0.85}
                   onPress={() => navigation.navigate("kawanggawaCheckin", { signupId: item.signup_id })}
+                  accessibilityRole="button"
+                  accessibilityLabel="Volunteer shift — open to check in"
+                  // ⚠️ KNOWN LIMITATION, for the manual VoiceOver/TalkBack walk: this card
+                  // contains a NESTED touchable (CancelLink). iOS flattens an accessible
+                  // container into a single element, which can make the nested cancel
+                  // unreachable by a screen reader. Fixing it properly means lifting the
+                  // cancel action out of the card (or using accessibilityActions), which is a
+                  // layout change — recorded rather than guessed at here.
                 >
                   <View style={styles.cardRow}>
                     <ShiftCardBody item={item} />

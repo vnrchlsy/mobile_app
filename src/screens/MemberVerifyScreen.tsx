@@ -93,6 +93,8 @@ export function MemberVerifyScreen({ navigation }: Props) {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
         >
           <Text style={styles.backText}>‹</Text>
         </TouchableOpacity>

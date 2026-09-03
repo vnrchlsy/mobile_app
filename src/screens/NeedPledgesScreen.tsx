@@ -76,7 +76,8 @@ export function NeedPledgesScreen({ navigation, route }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title} numberOfLines={1}>{need.title}</Text>

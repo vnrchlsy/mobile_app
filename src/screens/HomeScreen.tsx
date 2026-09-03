@@ -122,6 +122,8 @@ export function HomeScreen({ navigation, route }: Props) {
             activeOpacity={0.75}
             onPress={() => navigation.navigate("notifications")}
             hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
           >
             <BellIcon color="#12213A" />
             {hasUnread ? <View style={styles.bellDot} /> : null}
@@ -171,6 +173,10 @@ export function HomeScreen({ navigation, route }: Props) {
               activeOpacity={0.85}
               style={styles.reportButton}
               onPress={() => navigation.navigate("reportStray")}
+              // §13.4 · the drawn pill is 38pt tall, under the 44pt minimum. hitSlop raises
+              // the TOUCH area without changing the design — and this is the control someone
+              // uses in a hurry, standing over an animal.
+              hitSlop={{ top: 6, bottom: 6, left: 8, right: 8 }}
             >
               <Text style={styles.reportButtonText}>Report now</Text>
             </TouchableOpacity>

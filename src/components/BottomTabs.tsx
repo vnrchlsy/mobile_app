@@ -29,7 +29,17 @@ export function BottomTabs({ active, onTabPress }: BottomTabsProps) {
         const isActive = tab.key === active;
         const color = isActive ? colors.teal : colors.inactive;
         return (
-          <TouchableOpacity key={tab.key} activeOpacity={0.75} style={styles.tabItem} onPress={() => onTabPress?.(tab.key)}>
+          <TouchableOpacity
+            key={tab.key}
+            activeOpacity={0.75}
+            style={styles.tabItem}
+            onPress={() => onTabPress?.(tab.key)}
+            accessibilityRole="tab"
+            accessibilityLabel={tab.label}
+            // A screen-reader user needs to know WHICH tab they are on, not just
+            // which ones exist — selected state is half of what a tab bar means.
+            accessibilityState={{ selected: isActive }}
+          >
             <View style={styles.iconSlot}>{renderIcon(tab.key, color)}</View>
             <Text style={[styles.tabText, isActive && styles.activeTabText]}>{tab.label}</Text>
           </TouchableOpacity>
