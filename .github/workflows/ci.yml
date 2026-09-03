@@ -35,6 +35,30 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # US-K3 · §12.4 dependency hygiene.
+      #
+      # THE THRESHOLD IS `critical`, AND THAT IS A COMPROMISE — here is the whole reasoning,
+      # because a gate this weak is otherwise indistinguishable from carelessness.
+      #
+      # The 2026-09-04 baseline was 120 advisories (1 critical, 66 high). Almost all came
+      # from the deprecated `expo-cli` devDependency, which no script in this project used;
+      # removing it left 27 (0 critical, 17 high). Every remaining high is a BUILD-TIME
+      # package pinned inside the Expo SDK's own tree — metro, postcss, browserslist, tar,
+      # js-yaml, nanoid, image-size, brace-expansion. None ships in the app binary and none
+      # is reachable from our code.
+      #
+      # Gating at `high` would therefore mean a permanently red pipeline that nobody can fix
+      # without forking Expo, and a pipeline nobody can fix is a pipeline that gets deleted —
+      # which costs more than it buys. Per-advisory ignores would be the right answer, but
+      # pnpm 9.7's `auditConfig.ignoreCves` / `ignoreGhsas` do not affect `pnpm audit`'s exit
+      # code (both were tried and neither changed the counts).
+      #
+      # So: fail on `critical`, and print everything else. The 17 highs are recorded in
+      # dev/HANDOFF.md as a tracked acceptance, and the real fix is the next Expo SDK bump,
+      # which re-pins that tree. Re-audit after every SDK upgrade.
+      - name: Dependency audit
+        run: pnpm audit --audit-level critical
+
       # TypeScript is currently the only automated guard on ~74 screens.
       - name: Typecheck
         run: pnpm typecheck
