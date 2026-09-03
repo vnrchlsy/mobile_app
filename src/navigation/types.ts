@@ -74,7 +74,9 @@ export type RootStackParamList = {
   reportStray: { adjustedLat?: number; adjustedLng?: number } | undefined;
   // US-S2 · refine the report's precise pin on a map. Seeded with the current GPS coords.
   adjustPin: { lat: number; lng: number };
-  reportSent: { reportId: string; title: string; city: string | null };
+  // US-O3 · `reportId` is null and `queued` true when the report went to the offline
+  // outbox instead of the server — the success screen says so rather than pretending.
+  reportSent: { reportId: string | null; title: string; city: string | null; queued?: boolean };
   myReports: undefined;
   rescueMap: undefined;
   reportDetail: { reportId: string };

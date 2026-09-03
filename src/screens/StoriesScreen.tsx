@@ -9,6 +9,8 @@ import {
 } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { storyTypeChip, StoryType } from "../community";
 import { RootStackParamList } from "../navigation/types";
 
@@ -40,9 +42,17 @@ function initials(name: string) {
 export function StoriesScreen({ navigation }: Props) {
   const api = useApi();
   const [stories, setStories] = useState<StoryCard[] | null>(null);
+  // US-O1 · keep the RESULT, not just the rows. Collapsing a failure into `[]` told an
+  // offline person "No stories yet — be the first to share one", which is untrue and makes
+  // the community look dead.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
 
   const load = useCallback(() => {
-    api.get("/stories").then((r) => setStories(r.ok ? r.data.results : []));
+    setRes(null);
+    api.get("/stories").then((r) => {
+      setRes({ ok: r.ok, status: r.status });
+      setStories(r.ok ? r.data.results : []);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useFocusEffect(load);
@@ -59,12 +69,15 @@ export function StoriesScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {stories === null ? (
-          <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal} />
-        ) : stories.length === 0 ? (
-          <Text style={styles.empty}>No stories yet — be the first to share one.</Text>
+        {loadState(res, stories?.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, stories?.length)}
+            emptyTitle="No stories yet"
+            emptyBody="Be the first to share one."
+            onRetry={load}
+          />
         ) : (
-          stories.map((s) => {
+          (stories ?? []).map((s) => {
             const chip = storyTypeChip(s.story_type);
             return (
               <TouchableOpacity key={s.story_id} style={styles.storyCard} activeOpacity={0.85}

@@ -19,20 +19,29 @@ const NEXT = [
 ];
 
 export function ReportSentScreen({ navigation, route }: Props) {
-  const { reportId, title, city } = route.params;
+  const { reportId, title, city, queued } = route.params;
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <View style={styles.heroIcon}><CheckIcon color={colors.white} size={30} /></View>
-          <Text style={styles.heroTitle}>Report sent</Text>
-          <Text style={styles.heroBody}>Rescuers near {city ?? "you"} have been alerted.</Text>
+          {/* US-O3 · a queued report has NOT reached anyone yet. Saying "rescuers have been
+              alerted" would be the exact false reassurance §13.3's outbox exists to avoid —
+              the person would stop worrying about an animal nobody has been told about. */}
+          <Text style={styles.heroTitle}>{queued ? "Saved — we'll send it" : "Report sent"}</Text>
+          <Text style={styles.heroBody}>
+            {queued
+              ? "You're offline. This sends by itself the moment you're back."
+              : `Rescuers near ${city ?? "you"} have been alerted.`}
+          </Text>
         </View>
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{title}</Text>
           {city ? <Text style={styles.cardCity}>{city}</Text> : null}
-          <View style={styles.chip}><Text style={styles.chipText}>Reported</Text></View>
+          <View style={styles.chip}>
+            <Text style={styles.chipText}>{queued ? "Waiting to send" : "Reported"}</Text>
+          </View>
         </View>
 
         <Text style={styles.sectionTitle}>What happens next</Text>
@@ -44,13 +53,25 @@ export function ReportSentScreen({ navigation, route }: Props) {
         ))}
         <Text style={styles.fine}>No one yet? It widens automatically — unclaimed reports alert a bigger radius.</Text>
 
-        <TouchableOpacity
-          style={styles.primary}
-          activeOpacity={0.9}
-          onPress={() => navigation.replace("reportDetail", { reportId })}
-        >
-          <Text style={styles.primaryText}>Track this report</Text>
-        </TouchableOpacity>
+        {reportId ? (
+          <TouchableOpacity
+            style={styles.primary}
+            activeOpacity={0.9}
+            onPress={() => navigation.replace("reportDetail", { reportId })}
+          >
+            <Text style={styles.primaryText}>Track this report</Text>
+          </TouchableOpacity>
+        ) : (
+          // No server id yet — My Reports is where the queued item lives and can be
+          // retried or discarded.
+          <TouchableOpacity
+            style={styles.primary}
+            activeOpacity={0.9}
+            onPress={() => navigation.replace("myReports")}
+          >
+            <Text style={styles.primaryText}>See my reports</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity onPress={() => navigation.popToTop()} activeOpacity={0.7}>
           <Text style={styles.secondary}>Back to home</Text>
         </TouchableOpacity>

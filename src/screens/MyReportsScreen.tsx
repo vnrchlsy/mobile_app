@@ -2,10 +2,12 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View , Alert } from "react-native";
 
 import { MyReport, StrayStatus } from "../api/types";
 import { useApi } from "../api/useApi";
+import { isStuck, pendingLabel } from "../outbox";
+import { useOutbox } from "../outbox/OutboxProvider";
 import { RootStackParamList } from "../navigation/types";
 import { relTime, sagipTitle, strayChip } from "../sagip";
 
@@ -28,6 +30,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "myReports">;
 
 export function MyReportsScreen({ navigation }: Props) {
   const api = useApi();
+  const { queue, retry, discard } = useOutbox();
   const [reports, setReports] = useState<MyReport[]>([]);
   const [filter, setFilter] = useState<"all" | StrayStatus>("all");
   const [loaded, setLoaded] = useState(false);
@@ -41,6 +44,17 @@ export function MyReportsScreen({ navigation }: Props) {
   }, []));
 
   const shown = filter === "all" ? reports : reports.filter((r) => r.status === filter);
+
+  // US-O3 · queued reports render ABOVE the sent ones, always, regardless of the filter.
+  // A report the server has never seen is the one the person most needs to know about, and
+  // hiding it behind a status filter (it has no status yet) would be how it gets forgotten —
+  // which is precisely the silent loss §13.3 forbids.
+  function confirmDiscard(key: string, label: string) {
+    Alert.alert("Discard this report?", `"${label}" hasn't been sent. This can't be undone.`, [
+      { text: "Keep it", style: "cancel" },
+      { text: "Discard", style: "destructive", onPress: () => { void discard(key); } },
+    ]);
+  }
 
   return (
     <View style={styles.screen}>
@@ -64,7 +78,45 @@ export function MyReportsScreen({ navigation }: Props) {
           ))}
         </View>
 
-        {loaded && shown.length === 0 ? (
+        {queue.map((item) => {
+          const label = sagipTitle(String(item.body.species), String(item.body.condition));
+          const stuck = isStuck(item);
+          return (
+            <View key={item.idempotency_key} style={[styles.card, styles.pendingCard]}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle}>{label}</Text>
+                <Text style={styles.cardMeta}>
+                  {stuck ? "Couldn't send — tap to try again" : "On this device until you're back online"}
+                </Text>
+                <View style={styles.pendingActions}>
+                  <Text
+                    style={styles.pendingAction}
+                    onPress={() => { void retry(item.idempotency_key); }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Try sending ${label} again`}
+                  >
+                    Try again
+                  </Text>
+                  <Text
+                    style={[styles.pendingAction, styles.pendingDiscard]}
+                    onPress={() => confirmDiscard(item.idempotency_key, label)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Discard ${label}`}
+                  >
+                    Discard
+                  </Text>
+                </View>
+              </View>
+              <View style={[styles.chip, { backgroundColor: stuck ? "#FBEEEC" : "#FAEEDA" }]}>
+                <Text style={[styles.chipText, { color: stuck ? "#B23B3B" : "#633806" }]}>
+                  {pendingLabel(item)}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+
+        {loaded && shown.length === 0 && queue.length === 0 ? (
           <Text style={styles.empty}>No reports here yet.</Text>
         ) : (
           shown.map((r) => {
@@ -101,6 +153,10 @@ const card = {
 };
 
 const styles = StyleSheet.create({
+  pendingCard: { borderWidth: 1, borderColor: "#EFE3C9" },
+  pendingActions: { flexDirection: "row", marginTop: 8 },
+  pendingAction: { fontSize: 13, fontWeight: "700", color: "#1C6B6B", marginRight: 18 },
+  pendingDiscard: { color: "#B23B3B" },
   screen: { flex: 1, backgroundColor: colors.page },
   header: { paddingTop: 58, paddingHorizontal: 26, paddingBottom: 6, flexDirection: "row", alignItems: "center", gap: 16 },
   back: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", ...card },

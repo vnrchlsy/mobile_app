@@ -9,6 +9,8 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { useOutbox } from "../outbox/OutboxProvider";
+import { randomKey } from "../outbox/key";
 import { pickAndUpload } from "../media/pickAndUpload";
 import { RootStackParamList } from "../navigation/types";
 import { sagipTitle } from "../sagip";
@@ -26,6 +28,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "reportStray">;
 
 export function ReportStrayScreen({ navigation, route }: Props) {
   const api = useApi();
+  const { enqueue } = useOutbox();
   const [species, setSpecies] = useState<string>("dog");
   const [condition, setCondition] = useState<string>("injured");
   const [notes, setNotes] = useState("");
@@ -100,21 +103,42 @@ export function ReportStrayScreen({ navigation, route }: Props) {
     if (!coords || submitting) return;
     setSubmitting(true);
     setError(undefined);
-    const res = await api.post("/reports", {
+
+    // US-O3 · the key is generated HERE, at compose time, not at send time — every retry of
+    // this report must carry the same value or the server cannot tell a replay from a second
+    // animal, and one animal gets two rescuers.
+    const idempotencyKey = randomKey();
+    const body = {
       species, condition, notes: notes.trim() || undefined, is_anonymous: anonymous,
       lat: coords.lat, lng: coords.lng, location_text: locationText || undefined,
       city: city || undefined,
-      photos: photoUrl ? [{ file_url: photoUrl }] : []
-    });
+      photos: photoUrl ? [{ file_url: photoUrl }] : [],
+      idempotency_key: idempotencyKey,
+    };
+
+    const res = await api.post("/reports", body);
     setSubmitting(false);
+
     if (res.ok) {
       navigation.replace("reportSent", {
         reportId: res.data.report_id, title: sagipTitle(species, condition),
         city: locationText || null
       });
-    } else {
-      setError(res.data?.error?.message ?? "Couldn't send the report. Try again.");
+      return;
     }
+
+    // §13.3 · "never silently lose a user's report". A connectivity failure is not a dead
+    // end: the report is queued and sent when the network returns, and the person is told
+    // so rather than being asked to remember and re-file it.
+    if (res.status === 0) {
+      await enqueue(body, idempotencyKey);
+      navigation.replace("reportSent", {
+        reportId: null, title: sagipTitle(species, condition),
+        city: locationText || null, queued: true
+      });
+      return;
+    }
+    setError(res.data?.error?.message ?? "Couldn't send the report. Try again.");
   }
 
   return (
