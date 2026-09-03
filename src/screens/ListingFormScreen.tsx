@@ -13,6 +13,7 @@ import {
 } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { pickAndUpload } from "../media/pickAndUpload";
 import { useAuth } from "../auth/AuthContext";
 import { RootStackParamList } from "../navigation/types";
 
@@ -71,10 +72,9 @@ export function ListingFormScreen({ navigation, route }: Props) {
   async function addPhoto() {
     if (uploadingPhoto) return;
     setUploadingPhoto(true);
-    // Same dev-stub presign flow as everywhere else in the app (S3 is still a dev seam).
-    const res = await api.post("/media/presign", { purpose: "listing_photo", content_type: "image/jpeg" });
+    const res = await pickAndUpload(api, "listing_photo");
     setUploadingPhoto(false);
-    if (res.ok) setPhotoUrl(res.data.file_url);
+    if (res?.ok) setPhotoUrl(res.fileUrl);
   }
 
   async function submit() {

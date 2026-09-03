@@ -1,5 +1,4 @@
 // US-A4 step 2 — reference: screens/user/screen-member-verify.png.
-// File upload is a DEV STUB (see backend POST /media/presign): tapping "Valid government ID"
 // just asks the backend for a placeholder file_url — there's no real picker, no image bytes, no
 // expo-image-picker. Submit is gated on three things: a presigned gov-ID file_url, a non-empty
 // social_proof_url, and the DPA consent checkbox. A 422 from POST /verifications means consent
@@ -9,6 +8,8 @@ import { useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { pickAndUpload } from "../media/pickAndUpload";
+import { uploadErrorMessage } from "../upload";
 import { CheckIcon, DocumentIcon } from "../components/AppIcons";
 import { DOC_CONSENT_VERSION } from "../consent";
 import { RootStackParamList } from "../navigation/types";
@@ -27,7 +28,7 @@ export function MemberVerifyScreen({ navigation }: Props) {
   const canSubmit = !!fileUrl && socialUrl.trim().length > 0 && consent;
 
   async function presignDoc() {
-    const res = await api.post("/media/presign", { purpose: "verification_doc", content_type: "image/jpeg" });
+    const res = await pickAndUpload(api, "verification_doc");
     return res;
   }
 
@@ -37,11 +38,9 @@ export function MemberVerifyScreen({ navigation }: Props) {
     setError(undefined);
     try {
       const res = await presignDoc();
-      if (res.ok) {
-        setFileUrl(res.data.file_url);
-      } else {
-        setError(res.data?.error?.message ?? "Couldn't prepare the upload. Try again.");
-      }
+      if (res === null) return;                 // cancelled — not an error, say nothing
+      if (res.ok) setFileUrl(res.fileUrl);
+      else setError(uploadErrorMessage(res.reason));
     } finally {
       setUploading(false);
     }
@@ -57,11 +56,12 @@ export function MemberVerifyScreen({ navigation }: Props) {
       let url = fileUrl;
       if (!url) {
         const pre = await presignDoc();
+        if (!pre) return;                       // cancelled — say nothing, change nothing
         if (!pre.ok) {
-          setError(pre.data?.error?.message ?? "Couldn't prepare the upload. Try again.");
+          setError(uploadErrorMessage(pre.reason));
           return;
         }
-        url = pre.data.file_url;
+        url = pre.fileUrl;
       }
 
       const res = await api.post("/verifications", {

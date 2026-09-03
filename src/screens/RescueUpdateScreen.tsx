@@ -9,6 +9,7 @@ import MapView, { Marker } from "react-native-maps";
 
 import { ReportDetail, StrayStatus } from "../api/types";
 import { useApi } from "../api/useApi";
+import { pickAndUpload } from "../media/pickAndUpload";
 import { RootStackParamList } from "../navigation/types";
 import { advanceableStatuses, sagipTitle, strayChip } from "../sagip";
 
@@ -56,11 +57,10 @@ export function RescueUpdateScreen({ navigation, route }: Props) {
   async function addOutcomePhoto() {
     if (uploadingPhoto) return;
     setUploadingPhoto(true);
-    // Same dev-stub presign flow as ReportStrayScreen's addPhoto — no real bucket yet
     // (S3 is still a dev seam), but the client-side wiring is real.
-    const res = await api.post("/media/presign", { purpose: "rescue_outcome_photo", content_type: "image/jpeg" });
+    const res = await pickAndUpload(api, "rescue_outcome_photo");
     setUploadingPhoto(false);
-    if (res.ok) setOutcomePhotoUrl(res.data.file_url);
+    if (res?.ok) setOutcomePhotoUrl(res.fileUrl);
   }
 
   async function submit() {

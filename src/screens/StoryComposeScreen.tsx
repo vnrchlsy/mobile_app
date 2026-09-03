@@ -8,6 +8,7 @@ import {
 } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { pickAndUpload } from "../media/pickAndUpload";
 import { RootStackParamList } from "../navigation/types";
 
 const colors = {
@@ -33,10 +34,9 @@ export function StoryComposeScreen({ navigation, route }: Props) {
   async function addPhoto() {
     if (uploading) return;
     setUploading(true);
-    // Same dev-stub presign flow as the rest of the app (S3 is still a dev seam).
-    const res = await api.post("/media/presign", { purpose: "story_photo", content_type: "image/jpeg" });
+    const res = await pickAndUpload(api, "story_photo");
     setUploading(false);
-    if (res.ok) setPhotoUrl(res.data.file_url);
+    if (res?.ok) setPhotoUrl(res.fileUrl);
     else Alert.alert("Couldn't add photo", "Please try again.");
   }
 

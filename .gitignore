@@ -31,3 +31,6 @@ pnpm-debug.log*
 
 # Git worktrees
 .worktrees/
+
+# US-E1 · EAS Submit's Play service-account key. Never commit — it can publish to the store.
+play-service-account.json

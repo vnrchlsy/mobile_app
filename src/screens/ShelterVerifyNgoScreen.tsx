@@ -7,6 +7,7 @@ import { useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { pickAndUpload } from "../media/pickAndUpload";
 import { CheckIcon, DocumentIcon } from "../components/AppIcons";
 import { DOC_CONSENT_VERSION } from "../consent";
 import { RootStackParamList, ShelterDoc } from "../navigation/types";
@@ -35,8 +36,8 @@ export function ShelterVerifyNgoScreen({ navigation, route }: Props) {
   const canSubmit = docsReady && vetName.trim().length > 0 && prcValid && !submitting;
 
   async function presign(): Promise<string | null> {
-    const res = await api.post("/media/presign", { purpose: "verification_doc", content_type: "image/jpeg" });
-    return res.ok ? res.data.file_url : null;
+    const res = await pickAndUpload(api, "verification_doc");
+    return res?.ok ? res.fileUrl : null;
   }
 
   async function uploadInto(slot: string, set: (url: string) => void) {

@@ -1,12 +1,12 @@
 // US-V3 · replace one rejected file and resubmit. Reference: screens/user/screen-shelter-verify-resubmit.png.
 // POST /verifications/{id}/documents { replaces, doc_type, file_url } supersedes the rejected row
 // (kept for audit) and returns the request to pending. Only the flagged file is touched — the rest stay.
-// Uploads are the same DEV STUB as ShelterVerifyScreen (POST /media/presign → placeholder file_url).
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { pickAndUpload } from "../media/pickAndUpload";
 import { CheckIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
 import { docLabel } from "../verifications";
@@ -31,10 +31,8 @@ export function VerifyResubmitScreen({ navigation, route }: Props) {
     setUploading(true);
     setError(undefined);
     try {
-      const res = await api.post("/media/presign", {
-        purpose: "verification_doc", content_type: "image/jpeg"
-      });
-      if (res.ok) setFileUrl(res.data.file_url);
+      const res = await pickAndUpload(api, "verification_doc");
+      if (res?.ok) setFileUrl(res.fileUrl);
       else setError("Couldn't prepare the upload. Try again.");
     } finally {
       setUploading(false);

@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { pickAndUpload } from "../media/pickAndUpload";
 import { RootStackParamList } from "../navigation/types";
 import { sagipTitle } from "../sagip";
 
@@ -90,10 +91,9 @@ export function ReportStrayScreen({ navigation, route }: Props) {
   async function addPhoto() {
     if (uploading) return;
     setUploading(true);
-    // Uploads are the same dev stub as the shelter docs (no real picker in Expo Go).
-    const res = await api.post("/media/presign", { purpose: "stray_photo", content_type: "image/jpeg" });
+    const res = await pickAndUpload(api, "stray_photo");
     setUploading(false);
-    if (res.ok) setPhotoUrl(res.data.file_url);
+    if (res?.ok) setPhotoUrl(res.fileUrl);
   }
 
   async function submit() {
