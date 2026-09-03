@@ -4,6 +4,9 @@ on:
   push:
     branches: ['**']
   pull_request:
+  # US-C2 · manual trigger, so US-E3's release rehearsal can run the pipeline on demand
+  # rather than pushing a throwaway commit to provoke it.
+  workflow_dispatch:
 
 concurrency:
   group: mobile-${{ github.ref }}
