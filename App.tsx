@@ -7,9 +7,14 @@ import { SessionGuard } from "./src/auth/SessionGuard";
 import { OfflineBanner } from "./src/components/OfflineBanner";
 import { ConnectivityProvider } from "./src/net/ConnectivityProvider";
 import { OutboxProvider } from "./src/outbox/OutboxProvider";
+import { initErrorReporting } from "./src/observability";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { PushBridge } from "./src/push/PushBridge";
 import type { RootStackParamList } from "./src/navigation/types";
+
+// US-E2 · started at module scope, before the first render, so a crash during startup is
+// still captured. No-op until a DSN is configured.
+initErrorReporting();
 
 export default function App() {
   const navRef = useNavigationContainerRef<RootStackParamList>();
