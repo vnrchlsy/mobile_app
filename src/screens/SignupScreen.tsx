@@ -9,6 +9,7 @@ import { TERMS_VERSION } from "../consent";
 import { passwordError } from "../passwordRules";
 import { RootStackParamList } from "../navigation/types";
 import { AuthHeader, FormField, PrimaryButton, SHELTER_STEP_COUNT, authColors } from "./AuthFormKit";
+import { TAP_SLOP } from "../touch";
 
 type Props = NativeStackScreenProps<RootStackParamList, "signup">;
 
@@ -113,7 +114,7 @@ export function SignupScreen({ navigation, route }: Props) {
 
         <PrimaryButton label="Send code" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
 
-        <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate("signin")}>
+        <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.navigate("signin")}>
           <Text style={styles.linkCentered}>Already have an account? Log in</Text>
         </TouchableOpacity>
 

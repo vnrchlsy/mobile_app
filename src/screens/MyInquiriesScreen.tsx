@@ -17,6 +17,7 @@ import { MyInquiry } from "../api/types";
 import { useApi } from "../api/useApi";
 import { inquiryProgressLabel } from "../adoption";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -101,7 +102,7 @@ export function MyInquiriesScreen({ navigation }: Props) {
                 {/* US-T2 · the "Share your adoption story" CTA goes live on an adopted inquiry
                     (was a dead control), opening compose prefilled with this listing. */}
                 {iq.status === "adopted" ? (
-                  <TouchableOpacity
+                  <TouchableOpacity hitSlop={TAP_SLOP}
                     style={styles.shareStory}
                     activeOpacity={0.8}
                     onPress={() => navigation.navigate("storyCompose",

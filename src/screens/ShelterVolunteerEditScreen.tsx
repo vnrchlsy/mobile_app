@@ -11,6 +11,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOp
 import { useApi } from "../api/useApi";
 import { RootStackParamList } from "../navigation/types";
 import { ShiftType, shiftTypeLabel } from "../volunteer";
+import { TAP_SLOP } from "../touch";
 
 const SHIFT_TYPES: ShiftType[] = ["walking", "feeding", "visitor", "event", "facility", "transport"];
 
@@ -126,7 +127,7 @@ export function ShelterVolunteerEditScreen({ navigation, route }: Props) {
       ) : loadError || !initial ? (
         <View style={styles.centerFill}>
           <Text style={styles.empty}>Couldn't load this activity. Pull down or go back and try again.</Text>
-          <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()} hitSlop={10}>
+          <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()} hitSlop={TAP_SLOP}>
             <Text style={styles.backLinkText}>Go back</Text>
           </TouchableOpacity>
         </View>

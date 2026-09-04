@@ -4,6 +4,7 @@ import { Image, ImageSourcePropType, ScrollView, StyleSheet, Text, TouchableOpac
 import { UserBadgeIcon } from "./components/AppIcons";
 import { BottomTabs, TabKey } from "./components/BottomTabs";
 import { TopStatus } from "./components/TopStatus";
+import { TAP_SLOP } from "./touch";
 
 const paw = require("../assets/paw-white.png") as ImageSourcePropType;
 
@@ -64,7 +65,7 @@ export function ProfileScreen({ onAddPet, onSettings, onStartRescuer, onOpenPet,
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>My pets</Text>
-          <TouchableOpacity activeOpacity={0.75} onPress={onAddPet}>
+          <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={onAddPet}>
             <Text style={styles.addText}>Add</Text>
           </TouchableOpacity>
         </View>

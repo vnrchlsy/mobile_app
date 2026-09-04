@@ -9,6 +9,7 @@ import { MyOffer } from "../api/types";
 import { useApi } from "../api/useApi";
 import { RootStackParamList } from "../navigation/types";
 import { OFFER_TYPE_LABEL, offerStatusChip, sagipTitle } from "../sagip";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -101,8 +102,7 @@ export function MyOffersScreen({ navigation }: Props) {
                         </View>
                         {o.status === "open" ? (
                           <TouchableOpacity
-                            onPress={(e) => { e.stopPropagation(); withdraw(o); }}
-                            hitSlop={10}
+                            onPress={(e) => { e.stopPropagation(); withdraw(o); }} hitSlop={TAP_SLOP}
                             style={styles.withdrawBtn}
                           >
                             <Text style={styles.withdrawText}>Withdraw</Text>

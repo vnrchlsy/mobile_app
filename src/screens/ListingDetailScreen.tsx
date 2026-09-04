@@ -14,6 +14,7 @@ import { useAuth } from "../auth/AuthContext";
 import { SignupWall } from "../components/SignupWall";
 import { setIntent } from "../guestIntent";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -159,7 +160,7 @@ export function ListingDetailScreen({ navigation, route }: Props) {
           {listing.poster.is_shelter ? (
             // US-Q2 · a 404 (org unapproved or no verified QR yet) is handled on the
             // donate screen itself — this link doesn't need to know which is true.
-            <TouchableOpacity
+            <TouchableOpacity hitSlop={TAP_SLOP}
               style={styles.donateLink}
               activeOpacity={0.85}
               onPress={() => navigation.navigate("donate",

@@ -1,6 +1,7 @@
 import { Image, ImageSourcePropType, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { TopStatus } from "./components/TopStatus";
+import { TAP_SLOP } from "./touch";
 
 const paw = require("../assets/paw-white.png") as ImageSourcePropType;
 
@@ -26,7 +27,7 @@ export function PetDetailScreen({ onBack }: PetDetailScreenProps) {
             <View style={styles.availableDot} />
             <Text style={styles.availableText}>Available</Text>
           </View>
-          <TouchableOpacity activeOpacity={0.75} style={styles.favoriteButton}>
+          <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} style={styles.favoriteButton}>
             <Text style={styles.favoriteText}>♥</Text>
           </TouchableOpacity>
           <Image source={paw} resizeMode="contain" style={styles.heroPaw} />
@@ -77,7 +78,7 @@ export function PetDetailScreen({ onBack }: PetDetailScreenProps) {
         <TouchableOpacity activeOpacity={0.85} style={styles.primaryButton}>
           <Text style={styles.primaryText}>Start adoption</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.75}>
+        <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75}>
           <Text style={styles.callLink}>Have a question? Call the shelter</Text>
         </TouchableOpacity>
       </ScrollView>

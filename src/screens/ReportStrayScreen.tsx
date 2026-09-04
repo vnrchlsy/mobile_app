@@ -14,6 +14,7 @@ import { randomKey } from "../outbox/key";
 import { pickAndUpload } from "../media/pickAndUpload";
 import { RootStackParamList } from "../navigation/types";
 import { sagipTitle } from "../sagip";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", tealDark: "#14504F", page: "#F4F5F2", muted: "#5F5E5A",
@@ -195,8 +196,7 @@ export function ReportStrayScreen({ navigation, route }: Props) {
                 <Text style={styles.locFrom}>From your GPS</Text>
                 {coords ? (
                   <TouchableOpacity
-                    onPress={() => navigation.navigate("adjustPin", { lat: coords.lat, lng: coords.lng })}
-                    hitSlop={10}
+                    onPress={() => navigation.navigate("adjustPin", { lat: coords.lat, lng: coords.lng })} hitSlop={TAP_SLOP}
                     accessibilityRole="button"
                     accessibilityLabel="Adjust the exact location of this report"
                   >

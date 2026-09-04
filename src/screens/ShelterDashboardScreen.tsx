@@ -13,6 +13,7 @@ import { AlertIcon, CheckIcon, ClockIcon } from "../components/AppIcons";
 import { ShelterTabs } from "../components/ShelterTabs";
 import { RootStackParamList } from "../navigation/types";
 import { ShelterBannerState, shelterBannerState } from "../shelterDashboard";
+import { TAP_SLOP } from "../touch";
 
 type Props = NativeStackScreenProps<RootStackParamList, "shelterDashboard">;
 
@@ -135,7 +136,7 @@ export function ShelterDashboardScreen({ navigation }: Props) {
                 {state === "pending" ? "They go live the moment you're approved." : "Upload your documents to get approved."}
               </Text>
             </View>
-            <TouchableOpacity activeOpacity={0.8} onPress={onBannerPress}>
+            <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.8} onPress={onBannerPress}>
               <Text style={styles.footCta}>{state === "pending" ? "Start ›" : "Continue ›"}</Text>
             </TouchableOpacity>
           </View>

@@ -13,6 +13,7 @@ import { LoadStateView } from "../components/LoadStateView";
 import { loadState } from "../net";
 import { storyTypeChip, StoryType } from "../community";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -65,7 +66,7 @@ export function StoriesScreen({ navigation }: Props) {
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Stories</Text>
-        <TouchableOpacity style={styles.share} onPress={() => navigation.navigate("storyCompose", {})}>
+        <TouchableOpacity hitSlop={TAP_SLOP} style={styles.share} onPress={() => navigation.navigate("storyCompose", {})}>
           <Text style={styles.shareLabel}>+ Share</Text>
         </TouchableOpacity>
       </View>

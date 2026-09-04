@@ -8,6 +8,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { useApi } from "../api/useApi";
 import { RootStackParamList } from "../navigation/types";
 import { AuthHeader, FormField, PrimaryButton, SHELTER_STEP_COUNT, authColors } from "./AuthFormKit";
+import { TAP_SLOP } from "../touch";
 
 type Props = NativeStackScreenProps<RootStackParamList, "shelterSetup">;
 
@@ -125,7 +126,7 @@ function ChipRow({
       {options.map((opt) => {
         const active = opt.value === value;
         return (
-          <TouchableOpacity
+          <TouchableOpacity hitSlop={TAP_SLOP}
             key={opt.label}
             activeOpacity={0.85}
             onPress={() => onChange(opt.value)}

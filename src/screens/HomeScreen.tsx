@@ -16,6 +16,7 @@ import { OwnerTabs } from "../components/OwnerTabs";
 import { BellIcon, CheckIcon, ClockIcon } from "../components/AppIcons";
 import { GuestIntentAction, takeIntent } from "../guestIntent";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const paw = require("../../assets/paw-white.png") as ImageSourcePropType;
 
@@ -111,7 +112,7 @@ export function HomeScreen({ navigation, route }: Props) {
             ) : (
               <View style={styles.cityRow}>
                 <Text style={styles.cityText}>{city ?? "Set your city"}</Text>
-                <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate("locationPicker")}>
+                <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.navigate("locationPicker")}>
                   <Text style={styles.cityChange}>Change ›</Text>
                 </TouchableOpacity>
               </View>
@@ -173,10 +174,7 @@ export function HomeScreen({ navigation, route }: Props) {
               activeOpacity={0.85}
               style={styles.reportButton}
               onPress={() => navigation.navigate("reportStray")}
-              // §13.4 · the drawn pill is 38pt tall, under the 44pt minimum. hitSlop raises
-              // the TOUCH area without changing the design — and this is the control someone
-              // uses in a hurry, standing over an animal.
-              hitSlop={{ top: 6, bottom: 6, left: 8, right: 8 }}
+              hitSlop={TAP_SLOP}
             >
               <Text style={styles.reportButtonText}>Report now</Text>
             </TouchableOpacity>
@@ -185,16 +183,16 @@ export function HomeScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.sagipLinks}>
-          <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate("rescueMap")}>
+          <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.7} onPress={() => navigation.navigate("rescueMap")}>
             <Text style={styles.sagipLink}>See nearby strays ›</Text>
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate("myReports")}>
+          <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.7} onPress={() => navigation.navigate("myReports")}>
             <Text style={styles.sagipLink}>My reports ›</Text>
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate("myRescues")}>
+          <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.7} onPress={() => navigation.navigate("myRescues")}>
             <Text style={styles.sagipLink}>My rescues ›</Text>
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate("myOffers")}>
+          <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.7} onPress={() => navigation.navigate("myOffers")}>
             <Text style={styles.sagipLink}>My offers ›</Text>
           </TouchableOpacity>
         </View>
@@ -215,7 +213,7 @@ export function HomeScreen({ navigation, route }: Props) {
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Adopt near you</Text>
-          <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate("adopt")}>
+          <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.7} onPress={() => navigation.navigate("adopt")}>
             <Text style={styles.seeAll}>See all ›</Text>
           </TouchableOpacity>
         </View>
@@ -513,8 +511,13 @@ const styles = StyleSheet.create({
     fontSize: 13
   },
   reportButton: {
+    // §13.4 · the drawn pill is 38 pt, under the 44 pt minimum. `minHeight` raises the real
+    // target without repainting the design, and TAP_SLOP on the element covers the rest.
+    // This is the control someone uses in a hurry, standing over an animal — the last one
+    // that should be fiddly to press.
     width: 136,
     height: 38,
+    minHeight: 44,
     marginTop: 14,
     borderRadius: 19,
     alignItems: "center",

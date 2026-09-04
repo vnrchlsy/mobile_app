@@ -10,6 +10,7 @@ import {
 import { useApi } from "../api/useApi";
 import { ChipTone, pledgeIsCancellable, pledgeStatusChip, PledgeStatus } from "../community";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -90,7 +91,7 @@ export function MyDonationsScreen({ navigation }: Props) {
                 </View>
                 <Text style={styles.meta}>{p.need.shelter_name} · pledged {p.quantity}</Text>
                 {pledgeIsCancellable(p.status) ? (
-                  <TouchableOpacity style={styles.cancelBtn} onPress={() => confirmCancel(p)}
+                  <TouchableOpacity hitSlop={TAP_SLOP} style={styles.cancelBtn} onPress={() => confirmCancel(p)}
                     disabled={busyId === p.pledge_id}>
                     <Text style={styles.cancelLabel}>
                       {busyId === p.pledge_id ? "Cancelling…" : "Cancel pledge"}

@@ -12,6 +12,7 @@ import { useApi } from "../api/useApi";
 import { VolunteerIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
 import { CardTone, MySignupItem, MySignups, shiftTypeLabel, signupStatusCard } from "../volunteer";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -66,7 +67,7 @@ function ShiftCardBody({ item }: { item: MySignupItem }) {
 // innermost Touchable claim the gesture, so tapping "Cancel" never also fires the card tap.
 function CancelLink({ label = "Cancel", onPress }: { label?: string; onPress: () => void }) {
   return (
-    <TouchableOpacity activeOpacity={0.6} onPress={onPress} hitSlop={8} style={styles.cancelLink}>
+    <TouchableOpacity activeOpacity={0.6} onPress={onPress} hitSlop={TAP_SLOP} style={styles.cancelLink}>
       <Text style={styles.cancelLinkText}>{label}</Text>
     </TouchableOpacity>
   );

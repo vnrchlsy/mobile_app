@@ -13,6 +13,7 @@ import { useAuth } from "../auth/AuthContext";
 import { OwnerTabs } from "../components/OwnerTabs";
 import { LocationPinIcon, UserBadgeIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 type Props = NativeStackScreenProps<RootStackParamList, "profile">;
 
@@ -98,10 +99,10 @@ export function ProfileScreen({ navigation }: Props) {
               />
               {!!saveError && <Text style={styles.saveError}>{saveError}</Text>}
               <View style={styles.editActions}>
-                <TouchableOpacity activeOpacity={0.75} onPress={() => setEditing(false)} disabled={saving}>
+                <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => setEditing(false)} disabled={saving}>
                   <Text style={styles.editCancel}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity activeOpacity={0.85} onPress={saveEdit} disabled={saving}>
+                <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.85} onPress={saveEdit} disabled={saving}>
                   <Text style={styles.editSave}>{saving ? "Saving…" : "Save"}</Text>
                 </TouchableOpacity>
               </View>
@@ -110,7 +111,7 @@ export function ProfileScreen({ navigation }: Props) {
             <>
               <Text style={styles.name}>{me?.display_name ?? ""}</Text>
               <Text style={styles.email}>{me?.email ?? ""}</Text>
-              <TouchableOpacity activeOpacity={0.75} onPress={startEdit} style={styles.editLinkWrap}>
+              <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={startEdit} style={styles.editLinkWrap}>
                 <Text style={styles.editLink}>Edit profile</Text>
               </TouchableOpacity>
             </>

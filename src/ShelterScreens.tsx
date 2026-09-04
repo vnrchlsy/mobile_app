@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 
 
 import { DocumentIcon } from "./components/AppIcons";
 import { TopStatus } from "./components/TopStatus";
+import { TAP_SLOP } from "./touch";
 
 type ShelterScreenProps = {
   onBack: () => void;
@@ -40,7 +41,7 @@ export function ShelterSetupScreen({ onBack, onNext }: ShelterScreenProps) {
         <Text style={styles.label}>Organization type</Text>
         <View style={styles.chipRow}>
           {orgTypes.map((type) => (
-            <TouchableOpacity key={type} activeOpacity={0.8} onPress={() => setOrganizationType(type)} style={[styles.choiceChip, organizationType === type && styles.choiceChipActive]}>
+            <TouchableOpacity hitSlop={TAP_SLOP} key={type} activeOpacity={0.8} onPress={() => setOrganizationType(type)} style={[styles.choiceChip, organizationType === type && styles.choiceChipActive]}>
               <Text style={[styles.choiceText, organizationType === type && styles.choiceTextActive]}>{type}</Text>
             </TouchableOpacity>
           ))}
@@ -159,7 +160,7 @@ function DocumentRow({ title, subtitle, filename, done }: { title: string; subti
       {done ? (
         <View style={styles.doneBadge}><Text style={styles.doneText}>✓</Text></View>
       ) : (
-        <TouchableOpacity activeOpacity={0.8} style={styles.uploadButton}><Text style={styles.uploadText}>Upload</Text></TouchableOpacity>
+        <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.8} style={styles.uploadButton}><Text style={styles.uploadText}>Upload</Text></TouchableOpacity>
       )}
       {filename && <Text style={styles.fileName}>{filename}</Text>}
     </View>

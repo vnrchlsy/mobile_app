@@ -10,6 +10,7 @@ import { VolunteerIcon } from "../components/AppIcons";
 import { OwnerTabs } from "../components/OwnerTabs";
 import { RootStackParamList } from "../navigation/types";
 import { BrowseShift, ShiftType, shiftTypeLabel, slotsLeftLabel } from "../volunteer";
+import { TAP_SLOP } from "../touch";
 
 const SHIFT_TYPES: ShiftType[] = ["walking", "feeding", "visitor", "event", "facility", "transport"];
 const FILTERS: Array<{ key: "" | ShiftType; label: string }> = [
@@ -74,10 +75,10 @@ export function KawangGawaScreen({ navigation }: Props) {
       <View style={styles.header}>
         <Text style={styles.title}>Kawang-Gawa</Text>
         <View style={styles.headerLinks}>
-          <TouchableOpacity onPress={() => navigation.navigate("kawanggawaSchedule")} hitSlop={10}>
+          <TouchableOpacity onPress={() => navigation.navigate("kawanggawaSchedule")} hitSlop={TAP_SLOP}>
             <Text style={styles.headerLink}>My schedule ›</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate("kawanggawaHistory")} hitSlop={10}>
+          <TouchableOpacity onPress={() => navigation.navigate("kawanggawaHistory")} hitSlop={TAP_SLOP}>
             <Text style={styles.headerLink}>History ›</Text>
           </TouchableOpacity>
         </View>
@@ -86,7 +87,7 @@ export function KawangGawaScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.filterRow}>
           {FILTERS.map((f) => (
-            <TouchableOpacity
+            <TouchableOpacity hitSlop={TAP_SLOP}
               key={f.key || "all"}
               style={[styles.filterChip, type === f.key && styles.filterChipActive]}
               onPress={() => setType(f.key)}

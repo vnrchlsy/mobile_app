@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 import { CheckIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -72,7 +73,7 @@ export function ReportSentScreen({ navigation, route }: Props) {
             <Text style={styles.primaryText}>See my reports</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity onPress={() => navigation.popToTop()} activeOpacity={0.7}>
+        <TouchableOpacity hitSlop={TAP_SLOP} onPress={() => navigation.popToTop()} activeOpacity={0.7}>
           <Text style={styles.secondary}>Back to home</Text>
         </TouchableOpacity>
       </ScrollView>

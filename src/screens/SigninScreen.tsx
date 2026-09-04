@@ -9,6 +9,7 @@ import { useApi } from "../api/useApi";
 import { useAuth } from "../auth/AuthContext";
 import { RootStackParamList } from "../navigation/types";
 import { FormField, PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";
+import { TAP_SLOP } from "../touch";
 
 const paw = require("../../assets/paw-white.png") as ImageSourcePropType;
 
@@ -92,7 +93,7 @@ export function SigninScreen({ navigation }: Props) {
 
         {!!error && <Text style={styles.formError}>{error}</Text>}
 
-        <TouchableOpacity
+        <TouchableOpacity hitSlop={TAP_SLOP}
           activeOpacity={0.75}
           onPress={() => navigation.navigate("forgotPassword")}
           style={styles.forgotWrap}
@@ -102,7 +103,7 @@ export function SigninScreen({ navigation }: Props) {
 
         <PrimaryButton label="Log in" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
 
-        <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate("accountType")}>
+        <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.navigate("accountType")}>
           <Text style={styles.linkCentered}>New to Kupkop? Create account</Text>
         </TouchableOpacity>
       </View>

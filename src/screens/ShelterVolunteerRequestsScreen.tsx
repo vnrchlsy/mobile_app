@@ -16,6 +16,7 @@ import { ConfirmModal } from "../components/ConfirmModal";
 import { RootStackParamList } from "../navigation/types";
 import { ChipTone, ListingCard, PendingRequest, ShelterShift, reliabilityChip } from "../shelterVolunteer";
 import { Reliability, shiftTypeLabel } from "../volunteer";
+import { TAP_SLOP } from "../touch";
 
 // The endpoint also returns `requested_at` per-row (backend ShiftRequestsView) even though
 // Task 4's PendingRequest type doesn't declare it — extend locally rather than widen the
@@ -304,7 +305,7 @@ export function ShelterVolunteerRequestsScreen({ navigation, route }: Props) {
           <View style={styles.pickerSheet}>
             <View style={styles.pickerHeader}>
               <Text style={styles.pickerTitle}>Assign an animal</Text>
-              <TouchableOpacity onPress={() => setPickerSignupId(null)} hitSlop={10}>
+              <TouchableOpacity onPress={() => setPickerSignupId(null)} hitSlop={TAP_SLOP}>
                 <Text style={styles.pickerClose}>Close</Text>
               </TouchableOpacity>
             </View>

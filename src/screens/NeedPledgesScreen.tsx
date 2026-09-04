@@ -12,6 +12,7 @@ import {
 import { useApi } from "../api/useApi";
 import { ChipTone, needProgressLabel, pledgeStatusChip, PledgeStatus } from "../community";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -87,12 +88,12 @@ export function NeedPledgesScreen({ navigation, route }: Props) {
           {needProgressLabel(need.quantity_received, need.quantity_needed)}
         </Text>
         <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.secondaryBtn}
+          <TouchableOpacity hitSlop={TAP_SLOP} style={styles.secondaryBtn}
             onPress={() => navigation.navigate("needForm", { need })}>
             <Text style={styles.secondaryLabel}>Edit</Text>
           </TouchableOpacity>
           {need.status === "open" ? (
-            <TouchableOpacity style={styles.secondaryBtn} onPress={confirmClose}>
+            <TouchableOpacity hitSlop={TAP_SLOP} style={styles.secondaryBtn} onPress={confirmClose}>
               <Text style={[styles.secondaryLabel, { color: colors.danger }]}>Close need</Text>
             </TouchableOpacity>
           ) : null}
@@ -116,7 +117,7 @@ export function NeedPledgesScreen({ navigation, route }: Props) {
                 </View>
                 <Text style={styles.meta}>Pledged {p.quantity}</Text>
                 {p.status === "pledged" ? (
-                  <TouchableOpacity style={styles.receiveBtn} onPress={() => confirmReceived(p)}
+                  <TouchableOpacity hitSlop={TAP_SLOP} style={styles.receiveBtn} onPress={() => confirmReceived(p)}
                     disabled={busyId === p.pledge_id}>
                     <Text style={styles.receiveLabel}>
                       {busyId === p.pledge_id ? "Confirming…" : "Mark received"}

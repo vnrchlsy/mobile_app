@@ -10,6 +10,7 @@ import { isStuck, pendingLabel } from "../outbox";
 import { useOutbox } from "../outbox/OutboxProvider";
 import { RootStackParamList } from "../navigation/types";
 import { relTime, sagipTitle, strayChip } from "../sagip";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -68,7 +69,7 @@ export function MyReportsScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.filterRow}>
           {FILTERS.map((f) => (
-            <TouchableOpacity
+            <TouchableOpacity hitSlop={TAP_SLOP}
               key={f.key}
               style={[styles.filterChip, filter === f.key && styles.filterChipActive]}
               onPress={() => setFilter(f.key)}

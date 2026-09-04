@@ -13,6 +13,7 @@ import { CheckIcon, DocumentIcon } from "../components/AppIcons";
 import { DOC_CONSENT_VERSION } from "../consent";
 import { RootStackParamList, ShelterDoc } from "../navigation/types";
 import { authColors } from "./AuthFormKit";
+import { TAP_SLOP } from "../touch";
 
 const MIN_PHOTOS = 3;
 
@@ -146,7 +147,7 @@ export function ShelterVerifyScreen({ navigation, route }: Props) {
           {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitText}>{isNgo ? "Continue to NGO papers" : "Submit for review"}</Text>}
         </TouchableOpacity>
 
-        <TouchableOpacity activeOpacity={0.75} onPress={onDefer}>
+        <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={onDefer}>
           <Text style={styles.deferLink}>I'll upload these later</Text>
         </TouchableOpacity>
       </ScrollView>

@@ -10,6 +10,7 @@ import { useApi } from "../api/useApi";
 import { useAuth } from "../auth/AuthContext";
 import { OwnerTabs } from "../components/OwnerTabs";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -48,10 +49,10 @@ export function AdoptScreen({ navigation }: Props) {
       <View style={styles.header}>
         <Text style={styles.title}>Adopt</Text>
         <View style={styles.headerLinks}>
-          <TouchableOpacity onPress={() => navigation.navigate("listingForm", undefined)} hitSlop={10}>
+          <TouchableOpacity onPress={() => navigation.navigate("listingForm", undefined)} hitSlop={TAP_SLOP}>
             <Text style={styles.headerLink}>+ List</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate("myInquiries")} hitSlop={10}>
+          <TouchableOpacity onPress={() => navigation.navigate("myInquiries")} hitSlop={TAP_SLOP}>
             <Text style={styles.headerLink}>My inquiries ›</Text>
           </TouchableOpacity>
         </View>
@@ -59,7 +60,7 @@ export function AdoptScreen({ navigation }: Props) {
 
       <View style={styles.filterRow}>
         {SPECIES.map((f) => (
-          <TouchableOpacity
+          <TouchableOpacity hitSlop={TAP_SLOP}
             key={f.key || "all"}
             style={[styles.filterChip, species === f.key && styles.filterChipActive]}
             onPress={() => setSpecies(f.key)}

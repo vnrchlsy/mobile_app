@@ -8,6 +8,7 @@ import { useApi } from "../api/useApi";
 import { RootStackParamList } from "../navigation/types";
 import { PASSWORD_RULE, passwordError } from "../passwordRules";
 import { FormField, PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";
+import { TAP_SLOP } from "../touch";
 
 type Props = NativeStackScreenProps<RootStackParamList, "resetPassword">;
 
@@ -103,7 +104,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
           style={styles.submitButton}
         />
 
-        <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate("signin")}>
+        <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.navigate("signin")}>
           <Text style={styles.linkCentered}>Back to log in</Text>
         </TouchableOpacity>
       </View>

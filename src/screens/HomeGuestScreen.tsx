@@ -15,6 +15,7 @@ import { AdoptIcon, HomeIcon, ProfileIcon, VolunteerIcon } from "../components/A
 import { SignupWall, SignupWallAction } from "../components/SignupWall";
 import { setIntent } from "../guestIntent";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const paw = require("../../assets/paw-white.png") as ImageSourcePropType;
 
@@ -66,7 +67,7 @@ export function HomeGuestScreen({ navigation }: Props) {
               <Text style={styles.cityChange}>Change ›</Text>
             </View>
           </View>
-          <TouchableOpacity
+          <TouchableOpacity hitSlop={TAP_SLOP}
             activeOpacity={0.85}
             style={styles.loginPill}
             onPress={() => navigation.navigate("signin")}
@@ -83,7 +84,7 @@ export function HomeGuestScreen({ navigation }: Props) {
             <Text style={styles.guestTitle}>You're browsing as a guest</Text>
             <Text style={styles.guestBody}>Sign up to adopt, save pets & help strays.</Text>
           </View>
-          <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate("accountType")}>
+          <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.navigate("accountType")}>
             <Text style={styles.guestLink}>Sign up ›</Text>
           </TouchableOpacity>
         </View>
@@ -92,7 +93,7 @@ export function HomeGuestScreen({ navigation }: Props) {
           <View>
             <Text style={styles.reportTitle}>Saw a stray?</Text>
             <Text style={styles.reportText}>Report it in seconds — help is near.</Text>
-            <TouchableOpacity activeOpacity={0.85} style={styles.reportButton} onPress={() => openWall("report")}>
+            <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.85} style={styles.reportButton} onPress={() => openWall("report")}>
               <Text style={styles.reportButtonText}>Report now</Text>
             </TouchableOpacity>
           </View>
@@ -103,7 +104,7 @@ export function HomeGuestScreen({ navigation }: Props) {
             since US-S4). This navigates DIRECTLY, not through the SignupWall like the gated actions
             above: browsing the map needs no account. Mirrors the owner Home's "See nearby strays"
             link. Closes Sprint 1's last remaining US-A1b Partial (guest home never pointed at it). */}
-        <TouchableOpacity
+        <TouchableOpacity hitSlop={TAP_SLOP}
           activeOpacity={0.7}
           style={styles.mapLinkRow}
           onPress={() => navigation.navigate("rescueMap")}

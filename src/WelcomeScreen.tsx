@@ -15,6 +15,21 @@ const paw = require("../assets/paw-white.png") as ImageSourcePropType;
 
 const W = 540;
 const H = 1170;
+/**
+ * §13.4 · one 44 pt tap slot, in this canvas's design units.
+ *
+ * `sy()` maps 1170 design units onto the screen height (874 pt on an iPhone 17 Pro), so
+ * 44 pt is 44 / 874 * 1170 ≈ 59 units. The three links below sit in adjacent slots of this
+ * size, which is why they moved down from the original 978 / 1014 / 1054.
+ *
+ * ⚠️ THEY COULD NOT BE FIXED WITH `hitSlop` LIKE EVERY OTHER LINK IN THE APP. They were
+ * ~27 pt apart, so 12 pt of slop each way would make neighbouring hit areas OVERLAP, and
+ * the topmost sibling silently wins a contested tap — turning "hard to press" into "presses
+ * the wrong thing". During the device walk my own stray taps at the guest link landed on
+ * Terms. Stacked controls need SPACING; slop only works when there is empty space to claim.
+ */
+const TAP_SLOT = 59;
+const LINK_TOP = 966;                    // clears the Google button (ends at 890 + 68 = 958)
 
 const BENEFIT_ROW_TOP_Y = [552, 608, 664];
 
@@ -253,21 +268,21 @@ export function WelcomeScreen({
           <TouchableOpacity
             activeOpacity={0.75}
             onPress={onLogin}
-            style={[styles.loginPressable, { top: sy(978), width: size.width }]}
+            style={[styles.loginPressable, { top: sy(LINK_TOP + 0 * TAP_SLOT), width: size.width }]}
           >
             <Text style={[styles.loginText, { fontSize: s(20), lineHeight: s(28) }]}>{copy.login}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             activeOpacity={0.75}
             onPress={onBrowseGuest}
-            style={[styles.browseGuestPressable, { top: sy(1014), width: size.width }]}
+            style={[styles.browseGuestPressable, { top: sy(LINK_TOP + 1 * TAP_SLOT), width: size.width }]}
           >
             <Text style={[styles.browseGuestText, { fontSize: s(18), lineHeight: s(24) }]}>{copy.browseGuest}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             activeOpacity={0.75}
             onPress={onTerms}
-            style={[styles.termsPressable, { top: sy(1054), width: size.width }]}
+            style={[styles.termsPressable, { top: sy(LINK_TOP + 2 * TAP_SLOT), width: size.width }]}
           >
             <Text style={[styles.termsText, { fontSize: s(16), lineHeight: s(22) }]}>{copy.terms}</Text>
           </TouchableOpacity>
@@ -369,7 +384,10 @@ const styles = StyleSheet.create({
   loginPressable: {
     position: "absolute",
     left: 0,
-    alignItems: "center"
+    alignItems: "center",
+    // The label alone is ~18 pt tall; the box is what makes it pressable.
+    minHeight: 44,
+    justifyContent: "center"
   },
   loginText: {
     color: "#5F5E5A",
@@ -378,7 +396,10 @@ const styles = StyleSheet.create({
   browseGuestPressable: {
     position: "absolute",
     left: 0,
-    alignItems: "center"
+    alignItems: "center",
+    // The label alone is ~18 pt tall; the box is what makes it pressable.
+    minHeight: 44,
+    justifyContent: "center"
   },
   browseGuestText: {
     color: "#1C7876",
@@ -388,7 +409,10 @@ const styles = StyleSheet.create({
   termsPressable: {
     position: "absolute",
     left: 0,
-    alignItems: "center"
+    alignItems: "center",
+    // The label alone is ~18 pt tall; the box is what makes it pressable.
+    minHeight: 44,
+    justifyContent: "center"
   },
   termsText: {
     color: "#9A988F",

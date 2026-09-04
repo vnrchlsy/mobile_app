@@ -10,6 +10,7 @@ import { VolunteerIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
 import { ShelterShift } from "../shelterVolunteer";
 import { shiftTypeLabel } from "../volunteer";
+import { TAP_SLOP } from "../touch";
 
 function shiftWhenLabel(startsAt: string, endsAt: string): string {
   const start = new Date(startsAt);
@@ -65,7 +66,7 @@ export function ShelterVolunteerScreen({ navigation }: Props) {
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Kawang-Gawa</Text>
-        <TouchableOpacity
+        <TouchableOpacity hitSlop={TAP_SLOP}
           style={styles.newBtn}
           activeOpacity={0.85}
           onPress={() => navigation.navigate("shelterVolunteerCreate")}
@@ -80,7 +81,7 @@ export function ShelterVolunteerScreen({ navigation }: Props) {
             <Text style={styles.sectionTitle}>Your volunteer activities</Text>
             <Text style={styles.sectionSub}>Posted shifts and their sign-ups.</Text>
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate("shelterVolunteerCalendar")} hitSlop={10}>
+          <TouchableOpacity onPress={() => navigation.navigate("shelterVolunteerCalendar")} hitSlop={TAP_SLOP}>
             <Text style={styles.calendarLink}>Calendar ›</Text>
           </TouchableOpacity>
         </View>

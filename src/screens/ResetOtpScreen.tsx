@@ -19,6 +19,7 @@ import {
 import { useApi } from "../api/useApi";
 import { RootStackParamList } from "../navigation/types";
 import { PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";
+import { TAP_SLOP } from "../touch";
 
 const CODE_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -127,7 +128,7 @@ export function ResetOtpScreen({ navigation, route }: Props) {
 
         <PrimaryButton label="Verify" onPress={onContinue} disabled={code.length !== CODE_LENGTH} style={styles.verifyButton} />
 
-        <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.goBack()}>
+        <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.goBack()}>
           <Text style={styles.changeEmail}>Wrong email? Change it</Text>
         </TouchableOpacity>
       </View>

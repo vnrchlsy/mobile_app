@@ -12,6 +12,7 @@ import { VolunteerIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
 import { ShelterShift } from "../shelterVolunteer";
 import { shiftTypeLabel } from "../volunteer";
+import { TAP_SLOP } from "../touch";
 
 function shiftWhenLabel(startsAt: string, endsAt: string): string {
   const start = new Date(startsAt);
@@ -76,7 +77,7 @@ export function ShelterVolunteerActivityScreen({ navigation, route }: Props) {
       ) : notFound ? (
         <View style={styles.centerFill}>
           <Text style={styles.empty}>This activity no longer exists. It may have been cancelled or removed.</Text>
-          <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()} hitSlop={10}>
+          <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()} hitSlop={TAP_SLOP}>
             <Text style={styles.backLinkText}>Go back</Text>
           </TouchableOpacity>
         </View>

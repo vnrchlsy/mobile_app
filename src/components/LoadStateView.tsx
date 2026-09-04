@@ -11,6 +11,7 @@
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { LoadState, loadStateCopy } from "../net";
+import { TAP_SLOP } from "../touch";
 
 const colors = { ink: "#12213A", muted: "#5F5E5A", teal: "#1C6B6B" };
 
@@ -38,7 +39,7 @@ export function LoadStateView({
       <Text style={styles.title}>{copy.title}</Text>
       {copy.body ? <Text style={styles.body}>{copy.body}</Text> : null}
       {copy.retry && onRetry ? (
-        <TouchableOpacity
+        <TouchableOpacity hitSlop={TAP_SLOP}
           onPress={onRetry}
           style={styles.retry}
           activeOpacity={0.8}

@@ -11,6 +11,7 @@ import { Modal, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, Vi
 import { GuestIntentAction } from "../guestIntent";
 import { CheckIcon, ProfileIcon, VolunteerIcon } from "./AppIcons";
 import { PrimaryButton, authColors } from "../screens/AuthFormKit";
+import { TAP_SLOP } from "../touch";
 
 export type SignupWallAction = GuestIntentAction;
 
@@ -97,11 +98,11 @@ export function SignupWall({ visible, action, subject, onCreateAccount, onLogin,
 
           <PrimaryButton label="Create free account" onPress={onCreateAccount} style={styles.createButton} />
 
-          <TouchableOpacity activeOpacity={0.75} onPress={onLogin}>
+          <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={onLogin}>
             <Text style={styles.loginLink}>Already have one? Log in</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity activeOpacity={0.75} onPress={onDismiss} style={styles.laterPressable}>
+          <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={onDismiss} style={styles.laterPressable}>
             <Text style={styles.laterLink}>Keep browsing</Text>
           </TouchableOpacity>
         </View>

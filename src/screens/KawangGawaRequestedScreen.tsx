@@ -8,6 +8,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { ClockIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 type Props = NativeStackScreenProps<RootStackParamList, "kawanggawaRequested">;
 
@@ -36,7 +37,7 @@ export function KawangGawaRequestedScreen({ navigation }: Props) {
           <Text style={styles.primaryText}>View my schedule</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
+        <TouchableOpacity hitSlop={TAP_SLOP}
           activeOpacity={0.7}
           style={styles.secondaryButton}
           onPress={() => navigation.navigate("kawanggawa")}

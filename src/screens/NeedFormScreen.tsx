@@ -8,6 +8,7 @@ import {
 
 import { useApi } from "../api/useApi";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -73,7 +74,7 @@ export function NeedFormScreen({ navigation, route }: Props) {
             <Text style={styles.groupLabel}>Category</Text>
             <View style={styles.segments}>
               {CATEGORIES.map((c) => (
-                <TouchableOpacity key={c} onPress={() => setCategory(c)}
+                <TouchableOpacity hitSlop={TAP_SLOP} key={c} onPress={() => setCategory(c)}
                   accessibilityRole="button"
                   accessibilityLabel={c}
                   accessibilityState={{ selected: category === c }}
@@ -89,13 +90,11 @@ export function NeedFormScreen({ navigation, route }: Props) {
 
         <Text style={styles.groupLabel}>How many needed?</Text>
         <View style={styles.stepper}>
-          <TouchableOpacity style={styles.stepBtn} onPress={() => setQty((q) => Math.max(1, q - 1))}
-            hitSlop={10}
+          <TouchableOpacity style={styles.stepBtn} onPress={() => setQty((q) => Math.max(1, q - 1))} hitSlop={TAP_SLOP}
             accessibilityRole="button" accessibilityLabel="Decrease quantity needed"
             accessibilityValue={{ now: qty }}><Text style={styles.stepGlyph}>–</Text></TouchableOpacity>
           <Text style={styles.qty}>{qty}</Text>
-          <TouchableOpacity style={styles.stepBtn} onPress={() => setQty((q) => q + 1)}
-            hitSlop={10}
+          <TouchableOpacity style={styles.stepBtn} onPress={() => setQty((q) => q + 1)} hitSlop={TAP_SLOP}
             accessibilityRole="button" accessibilityLabel="Increase quantity needed"
             accessibilityValue={{ now: qty }}><Text style={styles.stepGlyph}>+</Text></TouchableOpacity>
         </View>

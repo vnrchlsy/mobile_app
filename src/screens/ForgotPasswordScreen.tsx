@@ -8,6 +8,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useApi } from "../api/useApi";
 import { RootStackParamList } from "../navigation/types";
 import { FormField, PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";
+import { TAP_SLOP } from "../touch";
 
 type Props = NativeStackScreenProps<RootStackParamList, "forgotPassword">;
 
@@ -55,7 +56,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
 
         <PrimaryButton label="Send code" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
 
-        <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate("signin")}>
+        <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.navigate("signin")}>
           <Text style={styles.linkCentered}>Remembered it? Log in</Text>
         </TouchableOpacity>
       </View>

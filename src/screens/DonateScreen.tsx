@@ -9,6 +9,7 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacit
 import { useApi } from "../api/useApi";
 import { needProgressLabel } from "../community";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -85,7 +86,7 @@ export function DonateScreen({ navigation, route }: Props) {
                 <Text style={styles.needMeta}>
                   {need.category} · {needProgressLabel(need.quantity_received, need.quantity_needed)}
                 </Text>
-                <TouchableOpacity style={styles.pledgeBtn}
+                <TouchableOpacity hitSlop={TAP_SLOP} style={styles.pledgeBtn}
                   onPress={() => navigation.navigate("donatePledge", {
                     needId: need.need_id, needTitle: need.title, shelterName: orgName
                   })}>
@@ -96,7 +97,7 @@ export function DonateScreen({ navigation, route }: Props) {
           </View>
         ) : null}
 
-        <TouchableOpacity style={styles.myDonationsRow}
+        <TouchableOpacity hitSlop={TAP_SLOP} style={styles.myDonationsRow}
           onPress={() => navigation.navigate("myDonations")}>
           <Text style={styles.myDonationsLabel}>My donations ›</Text>
         </TouchableOpacity>

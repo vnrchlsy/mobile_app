@@ -7,6 +7,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 import { useApi } from "../api/useApi";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -84,15 +85,14 @@ export function DonatePledgeScreen({ navigation, route }: Props) {
 
         <Text style={styles.label}>How many can you give?</Text>
         <View style={styles.stepper}>
-          <TouchableOpacity style={styles.stepBtn} onPress={() => setQty((q) => Math.max(1, q - 1))}
-            hitSlop={10}
+          <TouchableOpacity style={styles.stepBtn} onPress={() => setQty((q) => Math.max(1, q - 1))} hitSlop={TAP_SLOP}
             accessibilityRole="button" accessibilityLabel="Decrease pledge quantity"
             accessibilityValue={{ now: qty }}>
             <Text style={styles.stepGlyph}>–</Text>
           </TouchableOpacity>
           <Text style={styles.qty}>{qty}</Text>
           <TouchableOpacity
-            style={styles.stepBtn} onPress={() => setQty((q) => q + 1)} hitSlop={10}
+            style={styles.stepBtn} onPress={() => setQty((q) => q + 1)} hitSlop={TAP_SLOP}
             accessibilityRole="button" accessibilityLabel="Increase pledge quantity"
             accessibilityValue={{ now: qty }}>
             <Text style={styles.stepGlyph}>+</Text>
