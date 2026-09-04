@@ -29,7 +29,11 @@ const H = 1170;
  * Terms. Stacked controls need SPACING; slop only works when there is empty space to claim.
  */
 const TAP_SLOT = 59;
-const LINK_TOP = 966;                    // clears the Google button (ends at 890 + 68 = 958)
+// Vertical order mirrors screens/user/gen-screens.js's `welcome()`: Get started (806, h68),
+// then the guest BUTTON, then the provider button, then two text links in their own tap slots.
+const GUEST_TOP = 888;                   // clears Get started (806 + 68 = 874)
+const GOOGLE_TOP = 966;                  // clears the guest button (888 + 64 = 952)
+const LINK_TOP = 1048;                   // clears the provider button (966 + 68 = 1034)
 
 const BENEFIT_ROW_TOP_Y = [552, 608, 664];
 
@@ -253,7 +257,7 @@ export function WelcomeScreen({
               styles.googleButton,
               {
                 left: sx(34),
-                top: sy(890),
+                top: sy(GOOGLE_TOP),
                 width: sx(472),
                 height: sy(68),
                 borderRadius: s(34)
@@ -265,24 +269,40 @@ export function WelcomeScreen({
             </Text>
           </TouchableOpacity>
 
+          {/* ⚠️ A BUTTON, not a text link — this is what screens/user/gen-screens.js has always
+              specified ("prominent, not buried — the friend-shared-a-stray-link visitor should
+              see this immediately"). The app had shipped it as an 18pt line of text, which was
+              both a drift from the design and the reason it was almost unpressable on a device. */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={onBrowseGuest}
+            style={[
+              styles.guestButton,
+              {
+                left: sx(34),
+                top: sy(GUEST_TOP),
+                width: sx(472),
+                height: sy(64),
+                borderRadius: s(32)
+              }
+            ]}
+          >
+            <Text style={[styles.guestButtonText, { fontSize: s(20), lineHeight: s(26) }]}>
+              {copy.browseGuest}
+            </Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             activeOpacity={0.75}
             onPress={onLogin}
-            style={[styles.loginPressable, { top: sy(LINK_TOP + 0 * TAP_SLOT), width: size.width }]}
+            style={[styles.loginPressable, { top: sy(LINK_TOP), width: size.width }]}
           >
             <Text style={[styles.loginText, { fontSize: s(20), lineHeight: s(28) }]}>{copy.login}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             activeOpacity={0.75}
-            onPress={onBrowseGuest}
-            style={[styles.browseGuestPressable, { top: sy(LINK_TOP + 1 * TAP_SLOT), width: size.width }]}
-          >
-            <Text style={[styles.browseGuestText, { fontSize: s(18), lineHeight: s(24) }]}>{copy.browseGuest}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.75}
             onPress={onTerms}
-            style={[styles.termsPressable, { top: sy(LINK_TOP + 2 * TAP_SLOT), width: size.width }]}
+            style={[styles.termsPressable, { top: sy(LINK_TOP + TAP_SLOT), width: size.width }]}
           >
             <Text style={[styles.termsText, { fontSize: s(16), lineHeight: s(22) }]}>{copy.terms}</Text>
           </TouchableOpacity>
@@ -393,16 +413,16 @@ const styles = StyleSheet.create({
     color: "#5F5E5A",
     textAlign: "center"
   },
-  browseGuestPressable: {
+  guestButton: {
     position: "absolute",
-    left: 0,
     alignItems: "center",
-    // The label alone is ~18 pt tall; the box is what makes it pressable.
-    minHeight: 44,
-    justifyContent: "center"
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E3E1D9"
   },
-  browseGuestText: {
-    color: "#1C7876",
+  guestButtonText: {
+    color: "#14504F",
     fontWeight: "800",
     textAlign: "center"
   },
