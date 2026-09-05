@@ -102,6 +102,13 @@ type FormFieldProps = {
   autoComplete?: TextInputProps["autoComplete"];
   error?: string;
   /**
+   * Submit-on-return. A person who has just typed their password expects the return key to
+   * log them in rather than hunting for a button — it is the standard behaviour of every
+   * login form, and its absence here is a small papercut on the most-used screen in the app.
+   */
+  returnKeyType?: TextInputProps["returnKeyType"];
+  onSubmitEditing?: () => void;
+  /**
    * US-X2 · a stable selector for the E2E suite. React Native maps `testID` to the platform
    * accessibility identifier, which is what Maestro's `id:` matches on.
    *
@@ -123,7 +130,9 @@ export function FormField({
   keyboardType,
   autoComplete,
   error,
-  testID
+  testID,
+  returnKeyType,
+  onSubmitEditing
 }: FormFieldProps) {
   return (
     <View style={styles.fieldGroup}>
@@ -137,6 +146,8 @@ export function FormField({
           autoCapitalize={autoCapitalize}
           keyboardType={keyboardType}
           autoComplete={autoComplete}
+          returnKeyType={returnKeyType}
+          onSubmitEditing={onSubmitEditing}
           style={[styles.inputText, styles.textInput]}
         />
         {onToggleSecure && (

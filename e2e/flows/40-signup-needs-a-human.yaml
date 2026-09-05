@@ -43,22 +43,35 @@ appId: ph.kupkop.app
 - tapOn:
     id: "field.signup.password"
 - inputText: ${MAESTRO_SIGNUP_PASSWORD}
-- hideKeyboard
+# ⚠️ NOT `hideKeyboard`. Maestro's dismiss action needs a standard input accessory this
+# app's fields do not expose, and it FAILS the flow rather than degrading. Tapping the
+# screen's own heading is the documented alternative and is stable: it is static text, so
+# there is no risk of activating something. (Found by running it — the YAML parsed fine and
+# every selector existed.)
+- tapOn:
+    id: "screen.signup"
 - tapOn:
     id: "btn.signup.submit"
-- assertVisible:
-    id: "screen.otp"
+- extendedWaitUntil:
+    visible:
+      id: "screen.otp"
     timeout: 20000
 # Six one-character boxes, so each digit is placed individually.
 - tapOn:
     id: "field.otp.0"
 - inputText: ${MAESTRO_OTP}
-- hideKeyboard
+- tapOn:
+    id: "screen.signup"
+- extendedWaitUntil:
+    visible:
+      id: "btn.otp.verify"
+      enabled: true
+    timeout: 10000
 - tapOn:
     id: "btn.otp.verify"
-    enabled: true
-- assertVisible:
-    id: "screen.signupSuccess"
+- extendedWaitUntil:
+    visible:
+      id: "screen.signupSuccess"
     timeout: 20000
 - tapOn:
     id: "btn.signupSuccess.continue"

@@ -20,14 +20,16 @@ appId: ph.kupkop.app
 # always "home", so a returning shelter lands there and HomeScreen resets it to the shelter
 # shell after reading /me. If that redirect ever breaks, a shelter admin gets the owner home
 # screen — which is not their app — and this is what would say so.
-- assertVisible:
-    id: "screen.shelterDashboard"
+- extendedWaitUntil:
+    visible:
+      id: "screen.shelterDashboard"
     timeout: 30000
 
 - tapOn:
     id: "tab.shelter.profile"
-- assertVisible:
-    id: "screen.shelterProfile"
+- extendedWaitUntil:
+    visible:
+      id: "screen.shelterProfile"
     timeout: 20000
 
 # ...and back, so the tab bar is exercised in both directions rather than one-way.

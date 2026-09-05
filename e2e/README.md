@@ -96,6 +96,18 @@ MAESTRO_OTP=123456 \
   maestro test e2e/flows/40-signup-needs-a-human.yaml
 ```
 
+## Environment the flows need
+
+Learned by running them, each one a real failure first:
+
+| Requirement | Why |
+|---|---|
+| `clearKeychain` before launch | tokens live in SecureStore (the iOS keychain), which `clearState` does **not** wipe — the app relaunched still signed in |
+| `location: inuse` permission | the report flow's submit is gated on a GPS fix; without the grant it waits forever on a dialog no assertion mentions. `allow` is rejected for location specifically |
+| a simulated location | `xcrun simctl location <udid> set 14.6507,121.1029` — permission alone gives no fix |
+| an account that can inquire | the adoption inquiry is gated on Verified Member + verified phone (US-A3/A4). A bare account is correctly refused, so the fixture needs the same standing a real adopter has |
+| ⚠️ **login is rate-limited** | running the sign-in repeatedly WILL throttle the account (HTTP 429, ~30 min). This is the backend working; space out reruns or use separate fixtures |
+
 ## Seed requirements
 
 `20-browse-and-inquire` needs at least one listing and `30-volunteer-signup` at least one open

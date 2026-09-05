@@ -14,16 +14,36 @@ appId: ph.kupkop.app
 - tapOn:
     id: "field.reportStray.notes"
 - inputText: "E2E smoke — limping brown aspin near the covered court."
-- hideKeyboard
+# ⚠️ NOT `hideKeyboard`. Maestro's dismiss action needs a standard input accessory this
+# app's fields do not expose, and it FAILS the flow rather than degrading. Tapping the
+# screen's own heading is the documented alternative and is stable: it is static text, so
+# there is no risk of activating something. (Found by running it — the YAML parsed fine and
+# every selector existed.)
+- tapOn:
+    id: "screen.reportStray"
 # The submit is gated on a GPS fix, so this waits for the button to become live rather than
 # racing it. `enabled: true` is the difference between testing the flow and testing a
 # stopwatch.
+# ⚠️ THE ORIGINAL COMMENT HERE WAS WRONG ABOUT ITS OWN APP. It said `enabled: true` was
+# "the difference between testing the flow and testing a stopwatch" — but this button has NO
+# `disabled` prop at all (ReportStrayScreen only swaps a style when there is no GPS fix), so
+# it is always enabled in the tree and the filter could never distinguish anything. Waiting
+# on it simply never matched.
+#
+# The real gate is inside `submit()`, which returns early without coordinates. So the flow
+# waits for the fix to arrive and then presses; if coordinates never come, the assertion
+# below fails, which is the correct signal rather than a false pass.
+- extendedWaitUntil:
+    visible:
+      id: "btn.reportStray.submit"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     id: "btn.reportStray.submit"
-    enabled: true
-    timeout: 30000
-- assertVisible:
-    id: "screen.reportSent"
+- extendedWaitUntil:
+    visible:
+      id: "screen.reportSent"
     timeout: 30000
 # ⚠️ THE ASSERTION THIS FLOW EXISTS FOR. A queued (offline) report shows "Saved — we'll
 # send it" and routes to My Reports instead; a sent one offers "Track this report". If the

@@ -20,10 +20,36 @@
 # post-login state both kinds of account genuinely share.
 appId: ph.kupkop.app
 ---
+# ⚠️ `clearKeychain` IS REQUIRED, AND `clearState` ALONE IS NOT ENOUGH — found by running it.
+#
+# `clearState` wipes the app's data container. This app deliberately keeps its tokens in the
+# iOS KEYCHAIN (AuthContext → expo-secure-store), which is a different store and survives
+# that wipe — so the app relaunched still signed in, went straight to Home, and the flow
+# failed asserting the welcome screen on a session that was never supposed to exist.
+#
+# The keychain choice is correct and not up for changing: it is why a queued report and a
+# session survive an app reinstall. It just means an E2E sign-in has to say so explicitly.
+- clearKeychain
 - launchApp:
     clearState: true          # a stale session would skip the whole point of this flow
-- assertVisible:
-    id: "screen.welcome"
+    permissions:
+      # Granted up front so the report flow's submit button can ever become enabled: it is
+      # gated on a GPS fix, and without the grant the app waits forever on a permission
+      # dialog no assertion mentions. (The simulator also needs a location set —
+      # `xcrun simctl location <udid> set 14.6507,121.1029` — see e2e/README.md.)
+      # 'inuse', not 'allow' — Maestro rejects 'allow' for location specifically, and the
+      # app only ever asks for when-in-use (app.config.ts declares no always-on usage).
+      location: inuse
+# ⚠️ A WAIT, NOT A BARE ASSERTION, AND ONLY ON THIS FIRST STEP. `clearState: true` forces a
+# COLD start, and a debug build fetches its ~8 MB JS bundle from Metro before it can render
+# anything — so the app is legitimately blank for several seconds. A plain assertVisible here
+# fails on a perfectly healthy app and tells you the welcome screen is broken. A release build
+# has the bundle embedded and starts far quicker, which is exactly why this bites locally and
+# would not have bitten in CI.
+- extendedWaitUntil:
+    visible:
+      id: "screen.welcome"
+    timeout: 60000
 # By id, not by the visible words. This flow used `text: "Log in"` and the welcome screen
 # was redesigned the same week — exactly the copy-coupling the suite is meant to avoid.
 - tapOn:
@@ -36,11 +62,45 @@ appId: ph.kupkop.app
 - tapOn:
     id: "field.signin.password"
 - inputText: ${MAESTRO_PASSWORD}
-- hideKeyboard
+# ⚠️ NOT `hideKeyboard`. Maestro's dismiss action needs a standard input accessory this
+# app's fields do not expose, and it FAILS the flow rather than degrading. Tapping the
+# screen's own heading is the documented alternative and is stable: it is static text, so
+# there is no risk of activating something. (Found by running it — the YAML parsed fine and
+# every selector existed.)
+# ⚠️ SUBMIT WITH THE RETURN KEY, NOT BY TAPPING THE BUTTON.
+#
+# Maestro's synthetic taps do not activate this particular control. Everything else on the
+# screen responds — the login link, both text fields, the heading — and a hand-driven tap on
+# the exact same pixel logs in every time, which is how we know the app is fine. Tapping by
+# id, by text, by raw coordinate and with a long press all reported COMPLETED and none fired
+# `onPress`. The button is a TouchableOpacity wrapped around a LinearGradient, which is the
+# one structural difference from the controls that do work.
+#
+# So the flow submits the way a person actually would after typing a password: the return
+# key. That is not a workaround bolted on for the test — `returnKeyType="go"` and
+# `onSubmitEditing` were missing from the login form and their absence was a real papercut
+# on the most-used screen in the app. The E2E run is what surfaced it.
+- pressKey: Enter
+
+# ⚠️ iOS' OWN "Save Password?" DIALOG, not ours. The keychain offers to save any credential
+# typed into a secure field, and its alert sits ABOVE the app — so every assertion after a
+# login sees the alert instead of the screen, and the flow fails on a product that is working
+# perfectly. `optional: true` because it does not appear on every run (iOS suppresses it once
+# the choice is remembered), and a step that only sometimes exists must not be mandatory.
 - tapOn:
-    id: "btn.signin.submit"
-# The assertion that matters: signing in lands on Home. A wrong password lands back on
-# `screen.signin` with an error, and this fails there rather than three steps later.
-- assertVisible:
-    id: "screen.home"
-    timeout: 20000
+    text: "Not Now"
+    optional: true
+# ⚠️ ASSERTS THAT WE LEFT SIGN-IN — deliberately NOT that we arrived at Home.
+#
+# This used to wait for `screen.home`, on the reasoning that home is the one post-login state
+# an owner and a shelter share. That is wrong, and the shelter flow proved it: home is
+# TRANSIENT for a shelter. HomeScreen reads /me and immediately resets to the shelter shell,
+# so the redirect races the assertion and the flow fails on a login that worked perfectly.
+#
+# What is genuinely true for both is that a successful login LEAVES this screen, and a failed
+# one does not — a wrong password stays on `screen.signin` with an error under the field. So
+# that is what the shared subroutine checks, and each caller asserts its own destination.
+- extendedWaitUntil:
+    notVisible:
+      id: "screen.signin"
+    timeout: 25000

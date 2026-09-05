@@ -6,8 +6,14 @@
 appId: ph.kupkop.app
 ---
 - runFlow: 00-signin.yaml
+# The subroutine only proves we left sign-in; the destination is each caller's to assert.
+- extendedWaitUntil:
+    visible:
+      id: "screen.home"
+    timeout: 25000
 - tapOn:
     id: "tab.profile"
-- assertVisible:
-    id: "screen.profile"
+- extendedWaitUntil:
+    visible:
+      id: "screen.profile"
     timeout: 20000

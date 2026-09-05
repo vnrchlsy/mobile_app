@@ -22,9 +22,14 @@ appId: ph.kupkop.app
     id: "chk.kawanggawaDetail.waiver"
 - tapOn:
     id: "chk.kawanggawaDetail.contact"
+- extendedWaitUntil:
+    visible:
+      id: "btn.kawanggawaDetail.request"
+      enabled: true
+    timeout: 10000
 - tapOn:
     id: "btn.kawanggawaDetail.request"
-    enabled: true
-- assertVisible:
-    id: "screen.kawanggawaRequested"
+- extendedWaitUntil:
+    visible:
+      id: "screen.kawanggawaRequested"
     timeout: 20000

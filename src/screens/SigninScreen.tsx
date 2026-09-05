@@ -56,6 +56,18 @@ export function SigninScreen({ navigation }: Props) {
         setError("Email or password is incorrect.");
         return;
       }
+      if (res.status === 429) {
+        // ⚠️ A THROTTLE IS NOT "something went wrong". Found by an E2E run tripping the login
+        // rate limit: the catch-all below told the person to try again, which is precisely
+        // what the throttle exists to stop — so they retry, extend the lockout, and the app
+        // never explains why. ExportDataScreen already gets this right for its 3/day limit.
+        const wait = Number(res.data?.error?.details?.retry_after);
+        const mins = Number.isFinite(wait) ? Math.max(1, Math.ceil(wait / 60)) : null;
+        setError(mins
+          ? `Too many sign-in attempts. Try again in about ${mins} minute${mins === 1 ? "" : "s"}.`
+          : "Too many sign-in attempts. Please wait a few minutes and try again.");
+        return;
+      }
       if (res.status === 403) {
         navigation.navigate("otp", { email: email.trim(), mode: "unverified" });
         return;
@@ -113,6 +125,8 @@ export function SigninScreen({ navigation }: Props) {
           onToggleSecure={() => setPasswordVisible((visible) => !visible)}
           autoComplete="password"
           error={passwordError}
+          returnKeyType="go"
+          onSubmitEditing={onSubmit}
         />
 
         {!!error && <Text style={styles.formError}>{error}</Text>}
