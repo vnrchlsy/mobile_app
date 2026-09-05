@@ -10,6 +10,8 @@ import {
 } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { ChipTone, needProgressLabel, pledgeStatusChip, PledgeStatus } from "../community";
 import { RootStackParamList } from "../navigation/types";
 import { TAP_SLOP } from "../touch";
@@ -36,10 +38,16 @@ export function NeedPledgesScreen({ navigation, route }: Props) {
   const api = useApi();
   const { need } = route.params;
   const [pledges, setPledges] = useState<Pledge[] | null>(null);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    api.get(`/needs/${need.need_id}/pledges`).then((r) => setPledges(r.ok ? r.data.results : []));
+    setRes(null);
+    api.get(`/needs/${need.need_id}/pledges`).then((r) => {
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setPledges(r.data.results);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [need.need_id]);
   useFocusEffect(load);
@@ -100,12 +108,14 @@ export function NeedPledgesScreen({ navigation, route }: Props) {
         </View>
 
         <Text style={styles.sectionTitle}>Pledges</Text>
-        {pledges === null ? (
-          <ActivityIndicator style={{ marginTop: 30 }} color={colors.teal} />
-        ) : pledges.length === 0 ? (
-          <Text style={styles.empty}>No pledges yet.</Text>
+        {loadState(res, pledges?.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, pledges?.length)}
+            emptyTitle="No pledges yet."
+            onRetry={load}
+          />
         ) : (
-          pledges.map((p) => {
+          (pledges ?? []).map((p) => {
             const chip = pledgeStatusChip(p.status);
             return (
               <View key={p.pledge_id} style={styles.pledgeCard}>

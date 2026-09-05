@@ -8,6 +8,8 @@ import {
 } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { ChipTone, pledgeIsCancellable, pledgeStatusChip, PledgeStatus } from "../community";
 import { RootStackParamList } from "../navigation/types";
 import { TAP_SLOP } from "../touch";
@@ -38,10 +40,18 @@ type Props = NativeStackScreenProps<RootStackParamList, "myDonations">;
 export function MyDonationsScreen({ navigation }: Props) {
   const api = useApi();
   const [pledges, setPledges] = useState<Pledge[] | null>(null);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    api.get("/me/pledges").then((r) => setPledges(r.ok ? r.data.results : []));
+    setRes(null);
+    // ⚠️ was `setPledges(r.ok ? r.data.results : [])` — a failure became an empty list, and
+    // the render below turned that into "You haven't pledged anything yet."
+    api.get("/me/pledges").then((r) => {
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setPledges(r.data.results);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(load, [load]);
@@ -73,13 +83,15 @@ export function MyDonationsScreen({ navigation }: Props) {
         <Text style={styles.title}>My donations</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {pledges === null ? (
-          <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal} />
-        ) : pledges.length === 0 ? (
-          <Text style={styles.empty}>You haven't pledged anything yet. A shelter's wishlist is a
-            great place to start.</Text>
+        {loadState(res, pledges?.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, pledges?.length)}
+            emptyTitle="You haven't pledged anything yet."
+            emptyBody="A shelter's wishlist is a great place to start."
+            onRetry={load}
+          />
         ) : (
-          pledges.map((p) => {
+          (pledges ?? []).map((p) => {
             const chip = pledgeStatusChip(p.status);
             return (
               <View key={p.pledge_id} style={styles.pledgeCard}>

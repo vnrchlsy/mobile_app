@@ -7,6 +7,8 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { matchReasons, matchStrength } from "../community";
 import { MatchShape, RootStackParamList } from "../navigation/types";
 
@@ -25,12 +27,20 @@ export function ReportMatchesScreen({ navigation, route }: Props) {
   const api = useApi();
   const { reportId } = route.params;
   const [matches, setMatches] = useState<MatchShape[] | null>(null);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
   const [forbidden, setForbidden] = useState(false);
 
   const load = useCallback(() => {
+    setRes(null);
+    // ⚠️ was `else { setMatches([]); setForbidden(r.status === 403); }` — so a 500 or an
+    // offline request left matches = [] and forbidden = false, and the render told someone
+    // whose pet is LOST that there were "No matches yet". `forbidden` keeps its own branch
+    // because its copy is more specific than the generic `gone` state.
     api.get(`/reports/${reportId}/matches`).then((r) => {
+      setRes({ ok: r.ok, status: r.status });
       if (r.ok) setMatches(r.data.results);
-      else { setMatches([]); setForbidden(r.status === 403); }
+      else setForbidden(r.status === 403);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reportId]);
@@ -47,14 +57,17 @@ export function ReportMatchesScreen({ navigation, route }: Props) {
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.intro}>You decide — nothing happens until you confirm.</Text>
-        {matches === null ? (
-          <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal} />
-        ) : forbidden ? (
+        {forbidden ? (
           <Text style={styles.empty}>Only the reporter can see a report's matches.</Text>
-        ) : matches.length === 0 ? (
-          <Text style={styles.empty}>No matches yet. We'll notify you if one turns up.</Text>
+        ) : loadState(res, matches?.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, matches?.length)}
+            emptyTitle="No matches yet."
+            emptyBody="We'll notify you if one turns up."
+            onRetry={load}
+          />
         ) : (
-          matches.map((m) => {
+          (matches ?? []).map((m) => {
             const strength = matchStrength(m.score ?? 0);
             const reasons = m.signals ? matchReasons(m.signals) : ["a possible match"];
             const tone = strength.tone === "ok"
