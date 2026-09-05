@@ -63,16 +63,22 @@ const REMAINING = FETCHING.filter((f) => !readCode(f).includes("LoadStateView"))
 const DISCARDS = /\br\.ok\s*&&\s*set[A-Z]/g;
 
 /**
- * THE RATCHET. US-R1 drives this to zero; until then it may only ever go DOWN.
+ * THE RATCHET, now at ZERO — US-R1 killed all seven sites (2026-09-05).
  *
- * Seven live sites across six files as of 2026-09-05 — four of them `GET /me`, where a
- * failed identity call leaves the screen rendering with `me = null` (blank fields, or a
- * crash on first property access; they are different bugs and at least one may be live).
+ * ⚠️ NEVER RAISE THIS NUMBER to make a build green. At zero it is no longer a countdown
+ * but a prohibition: any non-zero value means a screen just re-acquired the bug that made
+ * the rescue map announce "No strays reported near Marikina right now" while eight reports
+ * sat within 10 km of the person reading it.
  *
- * ⚠️ NEVER RAISE THIS NUMBER to make a build green. Lowering it is the whole point;
- * raising it means a new screen just acquired the bug this file exists to prevent.
+ * What the seven actually did, checked before converting rather than assumed — none of
+ * them crashed, and every one of them stated something false instead:
+ *   NeedFormScreen        POSTed to /shelters/null/needs, then blamed the user's network
+ *   ProfileScreen         showed a Verified Member their own account as unverified
+ *   ShelterProfileScreen  showed a verified shelter as unverified AND gated, counts zeroed
+ *   ShelterDashboardScreen "0 listings, 0 adopted, 0 donations", stated as fact
+ *   StoryDetailScreen     spun forever (§13.3: "no infinite spinners")
  */
-const MAX_DISCARDS = 7;
+const MAX_DISCARDS = 0;
 
 // ── meta: the scan found something ──────────────────────────────────────────────────
 // Without these, a broken path or a renamed directory leaves every assertion below

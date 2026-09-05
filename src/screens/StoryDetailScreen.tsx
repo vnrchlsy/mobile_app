@@ -1,12 +1,14 @@
 // US-T2 · one story. React is optimistic (flip + count locally, reconcile from the response);
 // flag confirms first (it's a report, not a like) then POSTs to the shared moderation pipeline.
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View
+  Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View
 } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { storyTypeChip, StoryType } from "../community";
 import { RootStackParamList } from "../navigation/types";
 
@@ -40,11 +42,21 @@ export function StoryDetailScreen({ navigation, route }: Props) {
   const api = useApi();
   const { storyId } = route.params;
   const [story, setStory] = useState<Story | null>(null);
+  // US-R1 · keep the RESULT. The previous line discarded it (`r.ok && setStory(...)`), which
+  // left `story` null forever on failure — and the `if (!story)` branch below rendered a
+  // spinner, so a story that could never load span indefinitely. §13.3 names that outcome
+  // specifically: "cached/empty states render (no infinite spinners)".
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
 
-  useEffect(() => {
-    api.get(`/stories/${storyId}`).then((r) => r.ok && setStory(r.data));
+  const load = useCallback(() => {
+    setRes(null);
+    api.get(`/stories/${storyId}`).then((r) => {
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setStory(r.data);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storyId]);
+  useEffect(load, [load]);
 
   async function toggleReact() {
     if (!story) return;
@@ -76,7 +88,19 @@ export function StoryDetailScreen({ navigation, route }: Props) {
   }
 
   if (!story) {
-    return <View style={styles.screen}><ActivityIndicator style={{ marginTop: 120 }} color={colors.teal} /></View>;
+    // No `count` argument: this is a DETAIL route, so `loadState` never returns "empty" —
+    // "No stories yet" would be nonsense on a page about one specific story. Loading,
+    // offline and error are the only outcomes that can happen here.
+    return (
+      <View style={styles.screen}>
+        <LoadStateView
+          state={loadState(res)}
+          emptyTitle="Couldn't load this story"
+          emptyBody="It may have been removed."
+          onRetry={load}
+        />
+      </View>
+    );
   }
   const chip = storyTypeChip(story.story_type);
   return (

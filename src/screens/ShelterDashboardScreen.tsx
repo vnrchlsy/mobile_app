@@ -9,6 +9,8 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 import { Me, ShelterDashboard, ShelterTier } from "../api/types";
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { AlertIcon, CheckIcon, ClockIcon } from "../components/AppIcons";
 import { ShelterTabs } from "../components/ShelterTabs";
 import { RootStackParamList } from "../navigation/types";
@@ -36,14 +38,23 @@ export function ShelterDashboardScreen({ navigation }: Props) {
   const api = useApi();
   const [dash, setDash] = useState<ShelterDashboard | null>(null);
   const [me, setMe] = useState<Me | null>(null);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      api.get("/shelter/dashboard").then((r) => r.ok && setDash(r.data));
-      api.get("/me").then((r) => r.ok && setMe(r.data));
+  // US-R1 · named so the same function serves the focus refetch AND the retry button.
+  const load = useCallback(() => {
+      // US-R1 · keep the RESULT of both. Discarding them left `dash` and `me` null, and the
+      // `?? ` fallbacks below then rendered "0 listings, 0 adopted, 0 donations" and a
+      // community_rescue tier as FACT — a verified shelter shown its own work as zero.
+      // Same class as the rescue map's "No strays reported": a failed request rendered as
+      // a confident statement about the world.
+      api.get("/shelter/dashboard").then((r) => {
+        setRes({ ok: r.ok, status: r.status });
+        if (r.ok) setDash(r.data);
+      });
+      api.get("/me").then((r) => { if (r.ok) setMe(r.data); });
       // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus only
-    }, [])
-  );
+    }, []);
+  useFocusEffect(load);
 
   const state: ShelterBannerState = dash ? shelterBannerState(dash) : "incomplete";
   const verified = state === "verified";
@@ -60,6 +71,19 @@ export function ShelterDashboardScreen({ navigation }: Props) {
     // banner (the first thing a pending shelter sees) is the more obvious entry point.
     if (state === "incomplete") navigation.navigate("shelterVerify", { tier });
     else if (state === "pending") navigation.navigate("verifyDocuments");
+  }
+
+  // US-R1 · when the load FAILED and we have nothing, say so instead of rendering the
+  // `?? ` fallbacks below as fact. Those fallbacks are correct defaults for a shelter that
+  // genuinely has no listings yet; they are a lie for one whose request didn't arrive.
+  // (Full per-panel treatment for partial failure is US-R5's decision — this is only the
+  // "don't state something false" half.)
+  if (!dash && loadState(res).kind !== "ready" && loadState(res).kind !== "empty") {
+    return (
+      <View style={styles.screen}>
+        <LoadStateView state={loadState(res)} onRetry={load} />
+      </View>
+    );
   }
 
   return (

@@ -32,14 +32,34 @@ export function NeedFormScreen({ navigation, route }: Props) {
   const [myId, setMyId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // ⚠️ A form is the one place a full-screen error state is WRONG (US-R2's rule): it
+  // would throw away whatever the shelter has already typed. Warn inline and refuse
+  // to submit instead — an empty editable form over real data invites overwriting it
+  // with blanks.
+  const [prefillFailed, setPrefillFailed] = useState(false);
 
   useEffect(() => {
-    if (!editing) api.get("/me").then((r) => r.ok && setMyId(r.data.account_id));
+    // US-R1 · keep the RESULT. The previous line was `r.ok && setMyId(...)`, which discarded
+    // the failure — leaving `myId` null and the submit below POSTing to
+    // `/shelters/null/needs`. The server 404s, and the catch-all error told the shelter
+    // "Couldn't save. Please try again." — blaming their network for a prefill we never
+    // loaded, and inviting them to retry a request that can never succeed.
+    if (!editing) {
+      api.get("/me").then((r) => {
+        if (r.ok) setMyId(r.data.account_id);
+        else setPrefillFailed(true);
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function submit() {
     if (busy) return;
+    if (!editing && !myId) {
+      setError("We couldn't load your shelter profile, so this can't be saved yet. "
+        + "Check your connection and reopen this form.");
+      return;
+    }
     if (!title.trim()) { setError("Give the need a short title."); return; }
     setBusy(true);
     setError(null);
@@ -67,6 +87,12 @@ export function NeedFormScreen({ navigation, route }: Props) {
           <TextInput style={styles.input} value={title} onChangeText={setTitle}
             placeholder="e.g. Dog food (adult, dry)" placeholderTextColor="#9A988F" />
         </View>
+        {prefillFailed ? (
+          <Text style={styles.error} accessibilityRole="alert">
+            We couldn't load your shelter profile, so this form can't be saved yet. Check your
+            connection and reopen it.
+          </Text>
+        ) : null}
         {!title.trim() && error ? <Text style={styles.error}>{error}</Text> : null}
 
         {!editing ? (

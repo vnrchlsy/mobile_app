@@ -8,6 +8,8 @@ import { useCallback, useState } from "react";
 import { Image, ImageSourcePropType, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { Me } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import { OwnerTabs } from "../components/OwnerTabs";
@@ -28,17 +30,25 @@ export function ProfileScreen({ navigation }: Props) {
   const api = useApi();
   const { city, signOut } = useAuth();
   const [me, setMe] = useState<Me | null>(null);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | undefined>(undefined);
 
-  useFocusEffect(
-    useCallback(() => {
-      api.get("/me").then((r) => r.ok && setMe(r.data));
+  // US-R1 · named so the same function serves the focus refetch AND the retry button.
+  const load = useCallback(() => {
+      // US-R1 · keep the RESULT. Discarding it left `me` null, and `approvedMember` below is
+      // `me?.capabilities.some(...) ?? false` — so a failed /me showed a Verified Member
+      // their own account as unverified, with a blank name and no photo. The account was
+      // fine; only the request had failed.
+      api.get("/me").then((r) => {
+        setRes({ ok: r.ok, status: r.status });
+        if (r.ok) setMe(r.data);
+      });
       // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch only on focus, not on every api identity change
-    }, [])
-  );
+    }, []);
+  useFocusEffect(load);
 
   const pendingMember = me?.capabilities.some((c) => c.capability === "rescuer" && c.status === "pending") ?? false;
   const approvedMember = me?.capabilities.some((c) => c.capability === "rescuer" && c.status === "approved") ?? false;
@@ -72,6 +82,19 @@ export function ProfileScreen({ navigation }: Props) {
     // Single stack (see RootNavigator) — signing out doesn't cross a stack boundary on its own,
     // so land the user back on welcome explicitly rather than stranding them on a gated screen.
     navigation.reset({ index: 0, routes: [{ name: "welcome" }] });
+  }
+
+  // US-R1 · when the load FAILED and we have nothing, say so instead of rendering the
+  // `?? ` fallbacks below as fact. Those fallbacks are correct defaults for a shelter that
+  // genuinely has no listings yet; they are a lie for one whose request didn't arrive.
+  // (Full per-panel treatment for partial failure is US-R5's decision — this is only the
+  // "don't state something false" half.)
+  if (!me && loadState(res).kind !== "ready" && loadState(res).kind !== "empty") {
+    return (
+      <View style={styles.screen}>
+        <LoadStateView state={loadState(res)} onRetry={load} />
+      </View>
+    );
   }
 
   return (

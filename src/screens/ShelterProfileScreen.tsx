@@ -15,6 +15,8 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 import { Me, ShelterDashboard } from "../api/types";
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { useAuth } from "../auth/AuthContext";
 import { CheckIcon, ClockIcon, LockIcon } from "../components/AppIcons";
 import { ShelterTabs } from "../components/ShelterTabs";
@@ -27,13 +29,21 @@ export function ShelterProfileScreen({ navigation }: Props) {
   const { signOut } = useAuth();
   const [me, setMe] = useState<Me | null>(null);
   const [dash, setDash] = useState<ShelterDashboard | null>(null);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
   // US-C1 · a REAL count, not the hardcoded "3 active". Active = shifts still open or full.
   const [activeShifts, setActiveShifts] = useState<number | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      api.get("/me").then((r) => r.ok && setMe(r.data));
-      api.get("/shelter/dashboard").then((r) => r.ok && setDash(r.data));
+  // US-R1 · named so the same function serves the focus refetch AND the retry button.
+  const load = useCallback(() => {
+      // US-R1 · keep the RESULT. Discarding it left `me` null, and `gated` below is derived
+      // as `me?.shelter?.verification_status !== "approved"` — so a failed /me showed an
+      // APPROVED shelter its own account as unverified and gated, with every capability
+      // apparently revoked. The counts fell back to zero on the same failure.
+      api.get("/me").then((r) => {
+        setRes({ ok: r.ok, status: r.status });
+        if (r.ok) setMe(r.data);
+      });
+      api.get("/shelter/dashboard").then((r) => { if (r.ok) setDash(r.data); });
       api.get("/shelter/shifts").then((r) => {
         if (r.ok) {
           const rows: Array<{ status: string }> = r.data.results ?? [];
@@ -41,8 +51,8 @@ export function ShelterProfileScreen({ navigation }: Props) {
         }
       });
       // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus only
-    }, [])
-  );
+    }, []);
+  useFocusEffect(load);
 
   const volunteerValue = activeShifts === null
     ? undefined
@@ -55,6 +65,19 @@ export function ShelterProfileScreen({ navigation }: Props) {
   const badge = isTier1 ? "Verified Rescue" : "Verified Shelter";
   const sub = isTier1 ? "Community rescue" : "Registered NGO";
   const counts = dash?.counts ?? { draft_listings: 0, adopted: 0, donations: 0 };
+
+  // US-R1 · when the load FAILED and we have nothing, say so instead of rendering the
+  // `?? ` fallbacks below as fact. Those fallbacks are correct defaults for a shelter that
+  // genuinely has no listings yet; they are a lie for one whose request didn't arrive.
+  // (Full per-panel treatment for partial failure is US-R5's decision — this is only the
+  // "don't state something false" half.)
+  if (!me && loadState(res).kind !== "ready" && loadState(res).kind !== "empty") {
+    return (
+      <View style={styles.screen}>
+        <LoadStateView state={loadState(res)} onRetry={load} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.screen}>
