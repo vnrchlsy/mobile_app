@@ -10,7 +10,7 @@
 // A renderer-based test would cover a handful of screens deeply. This covers EVERY screen for
 // the one defect that matters, needs no new dependency, and cannot rot: a new icon-only
 // button without a label fails here the moment it is written.
-import { readdirSync, readFileSync } from "fs";
+import { existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
 
 const SCREENS = join(__dirname, "..", "screens");
@@ -80,6 +80,38 @@ const CRITICAL = [
   "ExportDataScreen.tsx",
   "WaiverScreen.tsx",            // consent before a volunteer shift
 ];
+
+/**
+ * US-G1 · the scan has a scope, and the scope is real.
+ *
+ * Neither of these existed until Sprint 8, and both close a way this file could pass while
+ * checking nothing:
+ *
+ *   `scan()` returning [] — a moved directory or a changed extension leaves every
+ *   assertion below filtering an empty array. Vacuously green.
+ *
+ *   A GHOST NAME in CRITICAL — `it.each` still runs for a file that no longer exists,
+ *   `screens.filter(c => c.file === file)` returns [], and the test passes having checked
+ *   a file that isn't there. This is not hypothetical: `loadStateScreens.test.ts` carried
+ *   exactly that bug (a hand-typed "AdoptBrowseScreen.tsx" that never existed) and its
+ *   remainder count was wrong by 8x for a whole sprint as a result.
+ *
+ * ⚠️ CRITICAL stays hand-written ON PURPOSE — D-S7-5 makes this gate depth-first on the
+ * welfare-critical paths rather than breadth-first across the app, and that scope is a
+ * decision, not an oversight. What was missing is any check that the decision still points
+ * at real files.
+ */
+describe("the scan has a scope", () => {
+  it("found controls to check", () => {
+    expect(scan(SCREENS).length).toBeGreaterThan(50);
+    expect(scan(COMPONENTS).length).toBeGreaterThan(0);
+  });
+
+  it("every CRITICAL screen still exists", () => {
+    const ghosts = CRITICAL.filter((f) => !existsSync(join(SCREENS, f)));
+    expect(ghosts).toEqual([]);
+  });
+});
 
 describe("icon-only controls are announced", () => {
   const screens = scan(SCREENS);
