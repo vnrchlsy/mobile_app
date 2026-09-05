@@ -57,7 +57,22 @@ export function LoadStateView({
 
   const copy = loadStateCopy(state, emptyTitle, emptyBody, subject);
   return (
-    <View style={styles.wrap} accessible accessibilityLabel={`${copy.title}. ${copy.body}`}>
+    /**
+     * ⚠️ `testID` NAMES THE STATE, so a test can assert WHICH state a screen is in without
+     * matching its words. The offline walk originally asserted the sentence "You're offline"
+     * and failed against a screen that was rendering exactly that — the whole point of ids
+     * over copy, demonstrated on the component that exists to standardise the copy.
+     *
+     * It also removes a blind spot the copy version had: an "offline OR stale" assertion
+     * passes if EITHER appears, so three screens satisfied it purely through the stale
+     * banner and the offline branch was never actually exercised.
+     */
+    <View
+      testID={`loadstate.${state.kind}`}
+      style={styles.wrap}
+      accessible
+      accessibilityLabel={`${copy.title}. ${copy.body}`}
+    >
       <Text style={styles.title}>{copy.title}</Text>
       {copy.body ? <Text style={styles.body}>{copy.body}</Text> : null}
       {copy.retry && onRetry ? (

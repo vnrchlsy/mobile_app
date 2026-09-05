@@ -18,7 +18,7 @@ const colors = { warn: "#8a5a12", warnBg: "#FAEEDA", warnLine: "#E7D3AE" };
 
 export function StaleBanner({ offline }: { offline: boolean }) {
   return (
-    <Text style={styles.banner} accessibilityRole="alert">
+    <Text testID="banner.stale" style={styles.banner} accessibilityRole="alert">
       {offline
         ? "You're offline — showing what we saved earlier."
         : "Couldn't refresh — showing what we saved earlier."}

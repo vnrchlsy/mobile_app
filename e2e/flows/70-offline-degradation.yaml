@@ -22,10 +22,16 @@
 # testing anyway.
 #
 # ⚠️ TWO OUTCOMES ARE BOTH CORRECT, and the assertions are written to accept either:
-#   · nothing cached  → the whole-screen offline state ("You're offline")
-#   · rows cached     → those rows, with StaleBanner above them ("showing what we saved
-#                       earlier"), which is what US-X1 built the cache for
-# What is NEVER correct is the empty copy. That is the only thing asserted absolutely.
+#   · nothing cached  → `loadstate.offline`
+#   · rows cached     → the rows, with `banner.stale` above them — what US-X1 built the cache for
+#
+# ⚠️ Asserted by ID, not by sentence. The first version matched the words "You're offline" and
+# FAILED against a screen displaying exactly those words. Worse, its "offline OR stale" form
+# passed on three screens purely through the stale branch, so the offline branch was never
+# actually exercised — an assertion satisfied by the half you were not testing.
+#
+# What is NEVER correct is the empty copy. That stays a text assertion on purpose: it is the
+# literal sentence from the 2026-09-04 walk, and matching it exactly is the point.
 appId: ph.kupkop.app
 ---
 - launchApp          # NO clearState/clearKeychain — the session from step 1 is the point
@@ -45,7 +51,7 @@ appId: ph.kupkop.app
 # someone there are no strays near them because it could not reach the server.
 - assertNotVisible: "No strays reported near"
 - assertVisible:
-    text: ".*(You're offline|showing what we saved earlier).*"
+    id: "loadstate.offline|banner.stale"
 - tapOn:
     id: "btn.back"
 
@@ -58,7 +64,7 @@ appId: ph.kupkop.app
     timeout: 20000
 - assertNotVisible: "No pets up for adoption"
 - assertVisible:
-    text: ".*(You're offline|showing what we saved earlier).*"
+    id: "loadstate.offline|banner.stale"
 
 # ── volunteer shifts ───────────────────────────────────────────────────────────────
 - tapOn:
@@ -69,7 +75,7 @@ appId: ph.kupkop.app
     timeout: 20000
 - assertNotVisible: "No open shifts right now"
 - assertVisible:
-    text: ".*(You're offline|showing what we saved earlier).*"
+    id: "loadstate.offline|banner.stale"
 
 # ── my reports · a list with no cache, so this is the pure offline state ────────────
 - tapOn:
@@ -84,4 +90,11 @@ appId: ph.kupkop.app
     visible:
       id: "screen.myReports"
     timeout: 20000
-- assertVisible: "You're offline"
+# ⚠️ THE PURE CASE, AND THE ONE THAT CAUGHT THE FLAW ABOVE. This screen has no cache, so
+# only `loadstate.offline` is correct — no stale banner can satisfy it. The earlier version
+# asserted the SENTENCE "You're offline" and failed against a screen rendering exactly that,
+# which is how the copy-matching problem surfaced at all.
+- extendedWaitUntil:
+    visible:
+      id: "loadstate.offline"
+    timeout: 20000
