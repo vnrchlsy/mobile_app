@@ -6,6 +6,8 @@ import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { VolunteerIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
 import { ShelterShift } from "../shelterVolunteer";
@@ -40,19 +42,18 @@ type Props = NativeStackScreenProps<RootStackParamList, "shelterVolunteer">;
 export function ShelterVolunteerScreen({ navigation }: Props) {
   const api = useApi();
   const [shifts, setShifts] = useState<ShelterShift[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  // US-R3 · consolidation, not a bug fix — this screen already split loading/error/empty
+  // by hand and got it right. LoadStateView adds the one distinction its own boolean
+  // could not make: offline versus the server refusing.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
 
   useFocusEffect(
     useCallback(() => {
+      setRes(null);
       api.get("/shelter/shifts").then((r) => {
-        if (r.ok) {
-          setShifts(r.data?.results ?? []);
-          setError(false);
-        } else {
-          setError(true);
-        }
-        setLoaded(true);
+        setRes({ ok: r.ok, status: r.status });
+        if (r.ok) setShifts(r.data?.results ?? []);
       });
       // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus only
     }, [])
@@ -86,12 +87,12 @@ export function ShelterVolunteerScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
 
-        {!loaded ? (
-          <Text style={styles.empty}>Loading…</Text>
-        ) : error ? (
-          <Text style={styles.empty}>Couldn't load your activities. Pull to refresh or try again shortly.</Text>
-        ) : shifts.length === 0 ? (
-          <Text style={styles.empty}>No volunteer activities posted yet — tap "+ Post an activity" to start.</Text>
+        {loadState(res, shifts.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, shifts.length)}
+            emptyTitle="No volunteer activities posted yet"
+            emptyBody={'Tap "+ Post an activity" to start.'}
+          />
         ) : (
           shifts.map((s) => {
             const chip = STATUS_CHIP[s.status];

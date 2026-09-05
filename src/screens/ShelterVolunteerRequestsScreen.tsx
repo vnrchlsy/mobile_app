@@ -11,6 +11,8 @@ import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { AlertIcon } from "../components/AppIcons";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { RootStackParamList } from "../navigation/types";
@@ -71,8 +73,10 @@ export function ShelterVolunteerRequestsScreen({ navigation, route }: Props) {
   // there is no way to attach one after the fact.
   const [shiftLoaded, setShiftLoaded] = useState(false);
   const [requests, setRequests] = useState<RequestRow[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [loadError, setLoadError] = useState(false);
+  // US-R2 · PRIMARY. Three GETs on this screen: requests is what it is FOR, while the shift
+  // header and the listings picker are SECONDARY and already degrade on their own ("You can
+  // still skip"). Only a failed requests load takes the whole screen.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
   const [busySignupId, setBusySignupId] = useState<string | null>(null);
 
@@ -94,14 +98,10 @@ export function ShelterVolunteerRequestsScreen({ navigation, route }: Props) {
   }, [shiftId]);
 
   const loadRequests = useCallback(() => {
+    setRes(null);
     api.get(`/shelter/shifts/${shiftId}/requests`).then((r) => {
-      if (r.ok) {
-        setRequests(r.data?.results ?? []);
-        setLoadError(false);
-      } else {
-        setLoadError(true);
-      }
-      setLoaded(true);
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setRequests(r.data?.results ?? []);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, [shiftId]);
@@ -217,13 +217,9 @@ export function ShelterVolunteerRequestsScreen({ navigation, route }: Props) {
         </View>
       )}
 
-      {!loaded ? (
+      {loadState(res).kind !== "ready" ? (
         <View style={styles.centerFill}>
-          <ActivityIndicator color={colors.teal} />
-        </View>
-      ) : loadError ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>Couldn't load requests. Pull down or go back and try again.</Text>
+          <LoadStateView state={loadState(res)} subject="shift" onRetry={loadRequests} />
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>

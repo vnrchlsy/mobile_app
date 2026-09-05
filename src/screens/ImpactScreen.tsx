@@ -7,6 +7,8 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { impactTiles, Impact } from "../community";
 import { BadgeShape, RootStackParamList } from "../navigation/types";
 
@@ -26,11 +28,16 @@ export function ImpactScreen({ navigation }: Props) {
   const api = useApi();
   const [impact, setImpact] = useState<Impact | null>(null);
   const [badges, setBadges] = useState<Badge[] | null>(null);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
 
   const load = useCallback(() => {
+    setRes(null);
+    // ⚠️ was `else setBadges([])` — a failure rendered an empty badge grid, showing someone
+    // none of the badges they have actually earned.
     api.get("/me/impact").then((r) => {
+      setRes({ ok: r.ok, status: r.status });
       if (r.ok) { setImpact(r.data.impact); setBadges(r.data.badges); }
-      else setBadges([]);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -58,11 +65,16 @@ export function ImpactScreen({ navigation }: Props) {
         ) : null}
 
         <Text style={styles.sectionTitle}>Badges</Text>
-        {badges === null ? (
-          <ActivityIndicator style={{ marginTop: 30 }} color={colors.teal} />
+        {loadState(res, badges?.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, badges?.length)}
+            emptyTitle="No badges yet"
+            emptyBody="They appear here as you help."
+            onRetry={load}
+          />
         ) : (
           <View style={styles.grid}>
-            {badges.map((b) => (
+            {(badges ?? []).map((b) => (
               <TouchableOpacity key={b.badge_code} activeOpacity={0.8}
                 style={[styles.badgeTile, b.earned ? null : styles.badgeTileDim]}
                 onPress={() => navigation.navigate("badgeComparison", { badge: b })}>

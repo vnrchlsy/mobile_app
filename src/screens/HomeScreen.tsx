@@ -10,6 +10,8 @@ import { useCallback, useState } from "react";
 import { Alert, Image, ImageSourcePropType, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { Listing, Me } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import { OwnerTabs } from "../components/OwnerTabs";
@@ -45,6 +47,17 @@ export function HomeScreen({ navigation, route }: Props) {
   const [hasUnread, setHasUnread] = useState(false);
   const [listings, setListings] = useState<Listing[]>([]);
   const [rescues, setRescues] = useState<MapReport[]>([]);
+  // US-R2 · FOUR fetches, and neither list is "the" primary — they are peer panels, so this
+  // screen takes the per-panel branch of the rule rather than the whole-screen one. Blanking
+  // Home because the adoption strip timed out would hide the rescue strip that did load, and
+  // Home is the highest-traffic screen in the app.
+  //
+  // ⚠️ The rescue panel is why this matters most. Its empty copy is "No strays reported
+  // nearby yet." — word for word the statement the 2026-09-04 device walk caught the rescue
+  // MAP making while eight reports sat within 10 km. The same lie was live on Home the whole
+  // time, on a screen far more people see.
+  const [listingsRes, setListingsRes] = useState<{ ok: boolean; status: number } | null>(null);
+  const [rescuesRes, setRescuesRes] = useState<{ ok: boolean; status: number } | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -66,11 +79,13 @@ export function HomeScreen({ navigation, route }: Props) {
       // Adoption preview — first 2 available listings near the user's city.
       const cityParam = city ? `&city=${encodeURIComponent(city)}` : "";
       api.get(`/listings?page_size=2${cityParam}`).then((r) => {
+        setListingsRes({ ok: r.ok, status: r.status });
         if (r.ok) setListings(r.data?.results ?? []);
       });
       // Nearby rescues — first 2 reported strays near the user's city.
       const rescueCity = city ?? "Marikina";
       api.get(`/reports/map?city=${encodeURIComponent(rescueCity)}&status=reported`).then((r) => {
+        setRescuesRes({ ok: r.ok, status: r.status });
         if (r.ok) setRescues((r.data?.reports ?? []).slice(0, 2));
       });
       // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch only on focus, not on every api identity change

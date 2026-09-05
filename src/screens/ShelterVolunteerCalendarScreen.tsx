@@ -8,6 +8,8 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { VolunteerIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
 import { ShelterShift } from "../shelterVolunteer";
@@ -57,19 +59,18 @@ type Props = NativeStackScreenProps<RootStackParamList, "shelterVolunteerCalenda
 export function ShelterVolunteerCalendarScreen({ navigation }: Props) {
   const api = useApi();
   const [shifts, setShifts] = useState<ShelterShift[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  // US-R3 · consolidation, not a bug fix — this screen already split loading/error/empty
+  // by hand and got it right. LoadStateView adds the one distinction its own boolean
+  // could not make: offline versus the server refusing.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
 
   useFocusEffect(
     useCallback(() => {
+      setRes(null);
       api.get("/shelter/shifts").then((r) => {
-        if (r.ok) {
-          setShifts(r.data?.results ?? []);
-          setError(false);
-        } else {
-          setError(true);
-        }
-        setLoaded(true);
+        setRes({ ok: r.ok, status: r.status });
+        if (r.ok) setShifts(r.data?.results ?? []);
       });
       // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus only
     }, [])
@@ -88,17 +89,12 @@ export function ShelterVolunteerCalendarScreen({ navigation }: Props) {
         <View style={styles.back} />
       </View>
 
-      {!loaded ? (
+      {loadState(res, groups.length).kind !== "ready" ? (
         <View style={styles.centerFill}>
-          <ActivityIndicator color={colors.teal} />
-        </View>
-      ) : error ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>Couldn't load your schedule. Pull to refresh or try again shortly.</Text>
-        </View>
-      ) : groups.length === 0 ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>No volunteer activities posted yet.</Text>
+          <LoadStateView
+            state={loadState(res, groups.length)}
+            emptyTitle="No volunteer activities posted yet."
+          />
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
