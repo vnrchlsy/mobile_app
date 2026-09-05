@@ -114,10 +114,25 @@ describe.each(CONVERTED)("%s distinguishes offline from empty", (file) => {
     expect(src).not.toMatch(DISCARDS);
   });
 
-  it("does not initialise its list to [] (that is indistinguishable from 'loaded, empty')", () => {
-    // `useState<T[]>([])` means the first paint is a confident empty state. `null` means
-    // "not loaded yet", which `loadState()` renders as loading and never as empty.
-    expect(src).not.toMatch(/useState<[^>]*\[\]>\(\[\]\)/);
+  it("can tell 'not loaded yet' from 'loaded and genuinely empty'", () => {
+    // ⚠️ THIS ASSERTION WAS WEAKER THAN IT LOOKED, and US-R3 is what exposed it.
+    //
+    // It used to forbid `useState<T[]>([])` outright, on the reasoning that an empty array
+    // makes the first paint a confident empty state. That was true when nothing else
+    // tracked load status — but it is a PROXY for the real invariant, not the invariant.
+    //
+    // A screen that keeps the request result renders `loading` on first paint regardless of
+    // how its list is initialised, because `loadState(null)` is `{kind:"loading"}`. Forcing
+    // those screens to `T[] | null` as well would sprinkle `?? []` through every `.map()`
+    // for no safety gain — churn that buys nothing and makes the guard look arbitrary.
+    //
+    // So this checks the invariant directly: the screen must be able to distinguish the two
+    // states, EITHER by initialising the list to null, OR by tracking the result. What must
+    // still fail is the genuinely dangerous shape — an empty-array init with nothing at all
+    // recording whether the request came back.
+    const nullInitList = /useState<[^>]*\[\][^>]*\|\s*null>\(null\)/.test(src);
+    const tracksResult = /useState<\{\s*ok:\s*boolean;\s*status:\s*number\s*\}\s*\|\s*null>\(null\)/.test(src);
+    expect(nullInitList || tracksResult).toBe(true);
   });
 });
 

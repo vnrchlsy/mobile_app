@@ -7,6 +7,8 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 import { RescueCaseSummary } from "../api/types";
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { RootStackParamList } from "../navigation/types";
 import { relTime, sagipTitle, strayChip } from "../sagip";
 
@@ -25,15 +27,21 @@ type Props = NativeStackScreenProps<RootStackParamList, "myRescues">;
 export function MyRescuesScreen({ navigation }: Props) {
   const api = useApi();
   const [cases, setCases] = useState<RescueCaseSummary[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  // US-R3 · `loaded` tracked that a response ARRIVED, never that it succeeded — so
+  // `loaded && length === 0` was true both for a genuine empty list and for a failed
+  // request, and rendered the same sentence for both.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
 
-  useFocusEffect(useCallback(() => {
+
+  const load = useCallback(() => {
+    setRes(null);
     api.get("/me/rescues").then((r) => {
+      setRes({ ok: r.ok, status: r.status });
       if (r.ok) setCases(r.data?.cases ?? []);
-      setLoaded(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
-  }, []));
+  }, []);
+  useFocusEffect(load);
 
   return (
     <View style={styles.screen}>
@@ -45,8 +53,12 @@ export function MyRescuesScreen({ navigation }: Props) {
         <Text style={styles.title}>My rescues</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {loaded && cases.length === 0 ? (
-          <Text style={styles.empty}>You haven't claimed a case yet.</Text>
+        {loadState(res, cases.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, cases.length)}
+            emptyTitle="You haven't claimed a case yet."
+            onRetry={load}
+          />
         ) : (
           cases.map((c) => {
             // An expired claim shows its own lapsed state rather than the report's

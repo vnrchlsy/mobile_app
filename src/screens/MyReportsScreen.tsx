@@ -6,6 +6,8 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View , Alert } from "re
 
 import { MyReport, StrayStatus } from "../api/types";
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { isStuck, pendingLabel } from "../outbox";
 import { useOutbox } from "../outbox/OutboxProvider";
 import { RootStackParamList } from "../navigation/types";
@@ -33,16 +35,19 @@ export function MyReportsScreen({ navigation }: Props) {
   const api = useApi();
   const { queue, retry, discard } = useOutbox();
   const [reports, setReports] = useState<MyReport[]>([]);
+  // US-R3 · `loaded` tracked that a response ARRIVED, never that it succeeded.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
   const [filter, setFilter] = useState<"all" | StrayStatus>("all");
-  const [loaded, setLoaded] = useState(false);
 
-  useFocusEffect(useCallback(() => {
+  const load = useCallback(() => {
+    setRes(null);
     api.get("/me/reports").then((r) => {
+      setRes({ ok: r.ok, status: r.status });
       if (r.ok) setReports(r.data?.results ?? []);
-      setLoaded(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
-  }, []));
+  }, []);
+  useFocusEffect(load);
 
   const shown = filter === "all" ? reports : reports.filter((r) => r.status === filter);
 
@@ -118,9 +123,20 @@ export function MyReportsScreen({ navigation }: Props) {
           );
         })}
 
-        {loaded && shown.length === 0 && queue.length === 0 ? (
-          <Text style={styles.empty}>No reports here yet.</Text>
-        ) : (
+        {/* ⚠️ US-R3 · the queue guard is load-bearing and must survive the conversion. Reports
+            composed offline (US-O3) render ABOVE this block and exist independently of the
+            server list. Showing "No reports here yet." while one of them sits on screen would
+            be the same false statement in a new place — so the empty copy is suppressed while
+            anything is queued. An offline/error state is NOT suppressed: it is true, and it
+            explains why the server's reports are missing while the queued ones are visible. */}
+        {loadState(res, shown.length).kind !== "ready"
+          && !(loadState(res, shown.length).kind === "empty" && queue.length > 0) ? (
+            <LoadStateView
+              state={loadState(res, shown.length)}
+              emptyTitle="No reports here yet."
+              onRetry={load}
+            />
+          ) : (
           shown.map((r) => {
             const chip = strayChip(r.status);
             const tone = TONE[chip.tone];
