@@ -1,47 +1,66 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { useState } from "react";
-import {
-  Image,
-  ImageSourcePropType,
-  LayoutChangeEvent,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from "react-native";
+import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { TAP_SLOP } from "./touch";
+
+/**
+ * The landing screen — rebuilt 2026-09-05 to be lighter and to lay itself out.
+ *
+ * ⚠️ WHAT CHANGED STRUCTURALLY, AND WHY IT MATTERS MORE THAN THE LOOK.
+ *
+ * Every element used to be absolutely positioned on a 540×1170 canvas, scaled with sx()/sy()
+ * so the build matched `screens/user/gen-screens.js` pixel for pixel. That is a faithful way
+ * to ship a mockup and a poor way to ship an app:
+ *
+ *   - Text could not reflow. Copy was pinned at a y-coordinate, so a longer line, a
+ *     translation, or the largest dynamic-type setting overlapped the row beneath it rather
+ *     than pushing it down. **US-W1's "largest dynamic type clips nothing" was unachievable
+ *     on this screen by construction**, which is worth more than the visual refresh.
+ *   - Spacing was arithmetic. The comment block that used to live here derived GUEST_TOP 888
+ *     from "806 + 68 = 874", and every copy change re-opened that sum. Flex `gap` states the
+ *     same intent in a way that cannot drift.
+ *
+ * The 44 pt lesson that produced those constants is NOT discarded — it is the reason the
+ * action stack below uses a real `gap` and explicit `minHeight`s. Stacked controls need
+ * SPACING; `hitSlop` only works when there is empty space to claim, and at ~27 pt apart the
+ * old links' slop would have overlapped, letting the topmost sibling silently win a
+ * contested tap. See `touch.ts`.
+ *
+ * ⚠️ The fake status bar (a hard-coded "9:41" and a drawn battery) is gone. It existed
+ * because App.tsx sets `<StatusBar hidden />` and the mockup drew one. Shipping a fake clock
+ * to real users is a mockup artefact, not a feature; the real inset does the job.
+ *
+ * ⚠️ "Browse as a guest" is now a prominent TEXT button rather than a third white box, and
+ * that touches a recorded decision, so: the note in gen-screens.js says it must be
+ * "prominent, not buried — the friend-shared-a-stray-link visitor should see this
+ * immediately", and it was made a box because it had shipped as an 18 pt line of text that
+ * was almost unpressable. Both concerns are still met — it is teal, weight 700, directly
+ * under the primary actions, and carries an explicit 48 pt target. What it no longer does is
+ * make three stacked boxes compete for the same glance.
+ */
 const logo = require("../assets/kupkop-logo-trimmed.png") as ImageSourcePropType;
 const paw = require("../assets/paw-white.png") as ImageSourcePropType;
 
-const W = 540;
-const H = 1170;
-/**
- * §13.4 · one 44 pt tap slot, in this canvas's design units.
- *
- * `sy()` maps 1170 design units onto the screen height (874 pt on an iPhone 17 Pro), so
- * 44 pt is 44 / 874 * 1170 ≈ 59 units. The three links below sit in adjacent slots of this
- * size, which is why they moved down from the original 978 / 1014 / 1054.
- *
- * ⚠️ THEY COULD NOT BE FIXED WITH `hitSlop` LIKE EVERY OTHER LINK IN THE APP. They were
- * ~27 pt apart, so 12 pt of slop each way would make neighbouring hit areas OVERLAP, and
- * the topmost sibling silently wins a contested tap — turning "hard to press" into "presses
- * the wrong thing". During the device walk my own stray taps at the guest link landed on
- * Terms. Stacked controls need SPACING; slop only works when there is empty space to claim.
- */
-const TAP_SLOT = 59;
-// Vertical order mirrors screens/user/gen-screens.js's `welcome()`: Get started (806, h68),
-// then the guest BUTTON, then the provider button, then two text links in their own tap slots.
-const GUEST_TOP = 888;                   // clears Get started (806 + 68 = 874)
-const GOOGLE_TOP = 966;                  // clears the guest button (888 + 64 = 952)
-const LINK_TOP = 1048;                   // clears the provider button (966 + 68 = 1034)
-
-const BENEFIT_ROW_TOP_Y = [552, 608, 664];
+/** V2 palette (design system). No eyeballed hexes. */
+const c = {
+  bg: "#F4F5F2",
+  ink: "#12213A",
+  teal: "#1C6B6B",
+  tealDk: "#14504F",
+  forest: "#11241F",
+  muted: "#5F5E5A",
+  line: "#E3E1D9",
+  white: "#FFFFFF",
+  onHero: "#EAF4F2",
+  onHeroSoft: "#BBD9D4",
+  fine: "#9A988F",
+};
 
 type WelcomeCopy = {
-  time: string;
   tagline: string;
   subtitle: string;
-  benefits: string[];
+  pillars: string[];
   getStarted: string;
   continueWithGoogle: string;
   login: string;
@@ -50,38 +69,38 @@ type WelcomeCopy = {
 };
 
 const DEFAULT_COPY: WelcomeCopy = {
-  time: "9:41",
   tagline: "Kupkop. Kalinga. Kinabukasan.",
   subtitle: "The app made for Filipino fur parents.",
-  benefits: [
-    "Spot a stray? Help's a tap away.",
-    "Meet your forever furry friend.",
-    "Every peso reaches the shelter."
-  ],
+  /**
+   * ⚠️ THIS IS THE CROWDING FIX, AND IT IS A REAL COPY DECISION — not a style tweak.
+   *
+   * These were three full sentences, each on its own row beside a 38 pt paw:
+   *   "Spot a stray? Help's a tap away." · "Meet your forever furry friend."
+   *   "Every peso reaches the shelter."
+   *
+   * Good lines, and they are the house voice — but stacked under a tagline AND a subtitle
+   * they made five blocks of prose the eye has to work through before it reaches a button.
+   * They are now three words in a single row: what the app is for, at a glance.
+   *
+   * The warmth did not go in the bin. It moved to the subtitle, which is the one full
+   * sentence on the screen, and those three sentences are exactly the right copy for the
+   * onboarding cards that follow — where there is room to read.
+   */
+  pillars: ["Rescue", "Adopt", "Donate"],
   getStarted: "Get started",
   continueWithGoogle: "Continue with Google",
   login: "Already have an account? Log in",
   browseGuest: "Browse as a guest",
-  terms: "By continuing you agree to our Terms & Privacy."
+  terms: "By continuing you agree to our Terms & Privacy.",
 };
 
-type WelcomeCopyInput = Partial<Omit<WelcomeCopy, "benefits">> & {
-  benefits?: string[];
-};
+type WelcomeCopyInput = Partial<Omit<WelcomeCopy, "pillars">> & { pillars?: string[] };
 
 const mergeCopy = (copy?: WelcomeCopyInput): WelcomeCopy => ({
   ...DEFAULT_COPY,
   ...copy,
-  benefits: copy?.benefits ?? DEFAULT_COPY.benefits
+  pillars: copy?.pillars ?? DEFAULT_COPY.pillars,
 });
-
-const getBenefitRows = (benefits: string[]) =>
-  benefits.map((label, index) => ({
-    top:
-      BENEFIT_ROW_TOP_Y[index] ??
-      BENEFIT_ROW_TOP_Y[BENEFIT_ROW_TOP_Y.length - 1] + 56 * (index - BENEFIT_ROW_TOP_Y.length + 1),
-    label
-  }));
 
 type WelcomeScreenProps = {
   copy?: WelcomeCopyInput;
@@ -98,348 +117,252 @@ export function WelcomeScreen({
   onContinueWithGoogle,
   onLogin,
   onBrowseGuest,
-  onTerms
+  onTerms,
 }: WelcomeScreenProps) {
   const copy = mergeCopy(copyInput);
-  const benefits = getBenefitRows(copy.benefits);
-  const [size, setSize] = useState({ width: 0, height: 0 });
-
-  function onLayout(event: LayoutChangeEvent) {
-    const { width, height } = event.nativeEvent.layout;
-    setSize({ width, height });
-  }
-
-  const ready = size.width > 0 && size.height > 0;
-  const sx = (value: number) => (ready ? (value / W) * size.width : value);
-  const sy = (value: number) => (ready ? (value / H) * size.height : value);
-  const s = (value: number) => (ready ? value * Math.min(size.width / W, size.height / H) : value);
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.root} onLayout={onLayout} testID="screen.welcome">
-      {ready && (
-        <>
-          <LinearGradient
-            colors={["#1C6B6B", "#11241F"]}
-            style={[styles.hero, { height: sy(760) }]}
-          />
+    <View style={styles.root} testID="screen.welcome">
+      <LinearGradient colors={[c.teal, c.forest]} style={styles.hero}>
+        {/* Decoration only — hidden from screen readers, which would otherwise announce
+            three unnamed images before the person reaches anything they can act on. */}
+        <Image
+          source={paw}
+          resizeMode="contain"
+          tintColor={c.white}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+          style={[styles.decorPaw, styles.decorPawA]}
+        />
+        <Image
+          source={paw}
+          resizeMode="contain"
+          tintColor={c.white}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+          style={[styles.decorPaw, styles.decorPawB]}
+        />
 
-          <Text style={[styles.time, { left: sx(34), top: sy(38), fontSize: s(22), lineHeight: s(26) }]}>
-            {copy.time}
-          </Text>
-
-          <View
-            style={[
-              styles.battery,
-              { left: sx(470), top: sy(47), width: sx(40), height: sy(18), borderRadius: s(5) }
-            ]}
-          >
-            <View style={[styles.batteryDot, { width: s(10), height: s(10), borderRadius: s(5) }]} />
-            <View style={[styles.batteryDot, { width: s(10), height: s(10), borderRadius: s(5) }]} />
-          </View>
-
-          <Image
-            source={paw}
-            resizeMode="contain"
-            tintColor="#D9F3EF"
-            style={[
-              styles.decorPaw,
-              { left: sx(16), top: sy(200), width: sx(132), height: sx(132), transform: [{ rotate: "-18deg" }] }
-            ]}
-          />
-          <Image
-            source={paw}
-            resizeMode="contain"
-            tintColor="#D9F3EF"
-            style={[
-              styles.decorPaw,
-              { left: sx(430), top: sy(150), width: sx(96), height: sx(96), transform: [{ rotate: "14deg" }] }
-            ]}
-          />
-          <Image
-            source={paw}
-            resizeMode="contain"
-            tintColor="#D9F3EF"
-            style={[
-              styles.decorPaw,
-              { left: sx(410), top: sy(452), width: sx(120), height: sx(120), transform: [{ rotate: "8deg" }] }
-            ]}
-          />
-
-          <View
-            style={[
-              styles.logoCard,
-              {
-                left: sx(133),
-                top: sy(158),
-                width: sx(274),
-                height: sy(302),
-                borderRadius: s(36)
-              }
-            ]}
-          >
+        <View style={[styles.heroInner, { paddingTop: insets.top + 28 }]}>
+          <View style={styles.logoCard}>
             <Image source={logo} resizeMode="contain" style={styles.logoImage} />
           </View>
 
-          <Text
-            style={[
-              styles.tagline,
-              { top: sy(470), width: size.width, fontSize: s(21), lineHeight: s(28) }
-            ]}
-          >
+          {/* accessibilityRole="header" gives a screen reader a landmark to jump to — US-W1
+              is about navigability, and a hero with no header is a wall of flat text. */}
+          <Text style={styles.tagline} accessibilityRole="header">
             {copy.tagline}
           </Text>
-          <Text
-            style={[
-              styles.subtitle,
-              { top: sy(500), width: size.width, fontSize: s(19), lineHeight: s(27) }
-            ]}
-          >
-            {copy.subtitle}
-          </Text>
+          <Text style={styles.subtitle}>{copy.subtitle}</Text>
 
-          {benefits.map((benefit) => (
-            <View
-              key={benefit.label}
-              style={[
-                styles.benefitRow,
-                {
-                  left: sx(55),
-                  top: sy(benefit.top),
-                  width: sx(452),
-                  height: s(46)
-                }
-              ]}
-            >
-              <Image
-                source={paw}
-                resizeMode="contain"
-                style={{ width: sx(38), height: sx(38), transform: [{ translateY: -s(4) }] }}
-              />
-              <Text
-                style={[
-                  styles.benefitText,
-                  {
-                    marginLeft: sx(23),
-                    width: sx(390),
-                    fontSize: s(21),
-                    lineHeight: s(34)
-                  }
-                ]}
-              >
-                {benefit.label}
-              </Text>
-            </View>
-          ))}
+          <View style={styles.pillarRow}>
+            {copy.pillars.map((label, i) => (
+              <View key={label} style={styles.pillarItem}>
+                {i > 0 ? <View style={styles.pillarDot} /> : null}
+                <Text style={styles.pillarText}>{label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </LinearGradient>
 
-          <View style={[styles.actions, { top: sy(760), height: size.height - sy(760) }]} />
+      {/* The action sheet. `gap` is what keeps the controls apart — see the header on why
+          spacing, not hitSlop, is what makes a stack of controls pressable. */}
+      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) + 12 }]}>
+        <TouchableOpacity
+          testID="btn.welcome.getStarted"
+          activeOpacity={0.85}
+          onPress={onGetStarted}
+          accessibilityRole="button"
+          accessibilityLabel={copy.getStarted}
+          style={styles.primaryWrap}
+        >
+          <LinearGradient colors={["#238383", c.tealDk]} style={styles.primary}>
+            <Text style={styles.primaryText}>{copy.getStarted}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={onGetStarted}
-            style={[
-              styles.primaryButton,
-              {
-                left: sx(34),
-                top: sy(806),
-                width: sx(472),
-                height: sy(68),
-                borderRadius: s(34)
-              }
-            ]}
-          >
-            <Text style={[styles.primaryText, { fontSize: s(24), lineHeight: s(30) }]}>{copy.getStarted}</Text>
-          </TouchableOpacity>
+        {/* White fill + soft shadow, deliberately NO border: in V2 the shadow is what says
+            "raised and tappable", and a stroke here reads as the old V1 language. */}
+        <TouchableOpacity
+          testID="btn.welcome.google"
+          activeOpacity={0.85}
+          onPress={onContinueWithGoogle}
+          accessibilityRole="button"
+          accessibilityLabel={copy.continueWithGoogle}
+          style={styles.secondary}
+        >
+          <Text style={styles.secondaryText}>{copy.continueWithGoogle}</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={onContinueWithGoogle}
-            style={[
-              styles.googleButton,
-              {
-                left: sx(34),
-                top: sy(GOOGLE_TOP),
-                width: sx(472),
-                height: sy(68),
-                borderRadius: s(34)
-              }
-            ]}
-          >
-            <Text style={[styles.googleText, { fontSize: s(22), lineHeight: s(28) }]}>
-              {copy.continueWithGoogle}
-            </Text>
-          </TouchableOpacity>
+        <TouchableOpacity
+          testID="btn.welcome.guest"
+          activeOpacity={0.75}
+          onPress={onBrowseGuest}
+          hitSlop={TAP_SLOP}
+          accessibilityRole="button"
+          accessibilityLabel={copy.browseGuest}
+          style={styles.guest}
+        >
+          <Text style={styles.guestText}>{copy.browseGuest}</Text>
+        </TouchableOpacity>
 
-          {/* ⚠️ A BUTTON, not a text link — this is what screens/user/gen-screens.js has always
-              specified ("prominent, not buried — the friend-shared-a-stray-link visitor should
-              see this immediately"). The app had shipped it as an 18pt line of text, which was
-              both a drift from the design and the reason it was almost unpressable on a device. */}
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={onBrowseGuest}
-            style={[
-              styles.guestButton,
-              {
-                left: sx(34),
-                top: sy(GUEST_TOP),
-                width: sx(472),
-                height: sy(64),
-                borderRadius: s(32)
-              }
-            ]}
-          >
-            <Text style={[styles.guestButtonText, { fontSize: s(20), lineHeight: s(26) }]}>
-              {copy.browseGuest}
-            </Text>
-          </TouchableOpacity>
+        <TouchableOpacity
+          testID="btn.welcome.login"
+          activeOpacity={0.75}
+          onPress={onLogin}
+          hitSlop={TAP_SLOP}
+          accessibilityRole="button"
+          accessibilityLabel="Already have an account? Log in"
+          style={styles.link}
+        >
+          <Text style={styles.linkText}>{copy.login}</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.75}
-            onPress={onLogin}
-            style={[styles.loginPressable, { top: sy(LINK_TOP), width: size.width }]}
-          >
-            <Text style={[styles.loginText, { fontSize: s(20), lineHeight: s(28) }]}>{copy.login}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.75}
-            onPress={onTerms}
-            style={[styles.termsPressable, { top: sy(LINK_TOP + TAP_SLOT), width: size.width }]}
-          >
-            <Text style={[styles.termsText, { fontSize: s(16), lineHeight: s(22) }]}>{copy.terms}</Text>
-          </TouchableOpacity>
-        </>
-      )}
+        <TouchableOpacity
+          testID="btn.welcome.terms"
+          activeOpacity={0.75}
+          onPress={onTerms}
+          hitSlop={TAP_SLOP}
+          accessibilityRole="link"
+          accessibilityLabel="Read our Terms and Privacy Policy"
+          style={styles.termsPressable}
+        >
+          <Text style={styles.termsText}>{copy.terms}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
+  root: { flex: 1, backgroundColor: c.bg },
+
+  // ── hero ──────────────────────────────────────────────────────────────────────────
+  // `flex: 1` rather than a fixed 760/1170 slice: the sheet below sizes itself from its
+  // content, and the hero takes what is left. On a small phone the hero gives way; on a
+  // tall one it grows. Neither case needs a new constant.
+  hero: { flex: 1, overflow: "hidden" },
+  heroInner: {
     flex: 1,
-    overflow: "hidden",
-    backgroundColor: "#F5F6F3"
-  },
-  hero: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    right: 0
-  },
-  time: {
-    position: "absolute",
-    color: "#FFFFFF",
-    fontWeight: "800"
-  },
-  battery: {
-    position: "absolute",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
     alignItems: "center",
-    flexDirection: "row",
     justifyContent: "center",
-    gap: 7
+    paddingHorizontal: 34,
+    paddingBottom: 36,
+    gap: 14,
   },
-  batteryDot: {
-    backgroundColor: "#FFFFFF"
-  },
+  decorPaw: { position: "absolute", opacity: 0.07 },
+  decorPawA: { left: -18, top: "18%", width: 150, height: 150, transform: [{ rotate: "-18deg" }] },
+  decorPawB: { right: -26, top: "52%", width: 128, height: 128, transform: [{ rotate: "14deg" }] },
+
   logoCard: {
-    position: "absolute",
-    overflow: "hidden",
+    // ⚠️ `flexShrink` + `aspectRatio`, not a fixed 168 square. The action sheet below sizes
+    // itself from its content (~356 pt), so on a short device — an SE, or any phone once
+    // dynamic type grows the labels — a rigid logo pushes the hero past its bounds and the
+    // tagline is what gets clipped. Shrinking the decoration is always the right trade
+    // against clipping the words. This is the same claim the header makes about the old
+    // absolute layout, so it had better be true of the new one.
+    height: 168,
+    aspectRatio: 1,
+    flexShrink: 1,
+    borderRadius: 42,          // squircle, per the V2 language — not a circle
+    backgroundColor: c.white,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF"
+    marginBottom: 10,
+    shadowColor: "#0B1F2A",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 6,
   },
-  logoImage: {
-    width: "82%",
-    height: "82%"
-  },
+  logoImage: { width: "78%", height: "78%" },
+
+  // 30/800 with tight tracking is the V2 screen-title scale. The tagline is the headline
+  // here, so it carries the weight and the subtitle stays quiet underneath it.
   tagline: {
-    position: "absolute",
-    left: 0,
-    color: "#CFE6E2",
-    textAlign: "center"
+    color: c.white,
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    textAlign: "center",
   },
   subtitle: {
-    position: "absolute",
-    left: 0,
-    color: "#FFFFFF",
-    fontWeight: "800",
-    textAlign: "center"
+    color: c.onHeroSoft,
+    fontSize: 17,
+    lineHeight: 24,
+    textAlign: "center",
+    maxWidth: 320,
   },
-  benefitRow: {
-    position: "absolute",
-    flexDirection: "row",
-    alignItems: "center"
+
+  pillarRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
+  pillarItem: { flexDirection: "row", alignItems: "center" },
+  pillarDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: c.onHeroSoft,
+    opacity: 0.7,
+    marginHorizontal: 14,
   },
-  benefitText: {
-    color: "#EAF4F2"
+  pillarText: {
+    color: c.onHero,
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
-  actions: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    backgroundColor: "#F5F6F3"
+
+  // ── action sheet ──────────────────────────────────────────────────────────────────
+  sheet: {
+    backgroundColor: c.bg,
+    paddingHorizontal: 30,
+    paddingTop: 26,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    marginTop: -30,            // laps over the gradient, so the sheet reads as lifted
+    gap: 12,
   },
-  primaryButton: {
-    position: "absolute",
+
+  primaryWrap: {
+    borderRadius: 30,
+    shadowColor: "#12213A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 7,
+    elevation: 3,
+  },
+  primary: {
+    height: 60,
+    borderRadius: 30,          // rx = half the height: a true pill
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#1C7876"
   },
-  primaryText: {
-    color: "#FFFFFF",
-    fontWeight: "800"
-  },
-  googleButton: {
-    position: "absolute",
+  primaryText: { color: c.white, fontSize: 20, lineHeight: 26, fontWeight: "700" },
+
+  secondary: {
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: c.white,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: "#E3E1D9",
-    backgroundColor: "#FFFFFF"
+    shadowColor: "#12213A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 7,
+    elevation: 2,
   },
-  googleText: {
-    color: "#1F3A5F",
-    fontWeight: "800"
-  },
-  loginPressable: {
-    position: "absolute",
-    left: 0,
-    alignItems: "center",
-    // The label alone is ~18 pt tall; the box is what makes it pressable.
-    minHeight: 44,
-    justifyContent: "center"
-  },
-  loginText: {
-    color: "#5F5E5A",
-    textAlign: "center"
-  },
-  guestButton: {
-    position: "absolute",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E3E1D9"
-  },
-  guestButtonText: {
-    color: "#14504F",
-    fontWeight: "800",
-    textAlign: "center"
-  },
-  termsPressable: {
-    position: "absolute",
-    left: 0,
-    alignItems: "center",
-    // The label alone is ~18 pt tall; the box is what makes it pressable.
-    minHeight: 44,
-    justifyContent: "center"
-  },
-  termsText: {
-    color: "#9A988F",
-    textAlign: "center"
-  },
-  decorPaw: {
-    position: "absolute",
-    opacity: 0.1
-  }
+  secondaryText: { color: c.ink, fontSize: 17, lineHeight: 22, fontWeight: "700" },
+
+  // Prominent by colour and weight rather than by a third box — and with an explicit
+  // 48 pt target, which is the part the old 18 pt text link never had.
+  guest: { minHeight: 48, alignItems: "center", justifyContent: "center" },
+  guestText: { color: c.tealDk, fontSize: 17, lineHeight: 22, fontWeight: "700" },
+
+  link: { minHeight: 44, alignItems: "center", justifyContent: "center" },
+  linkText: { color: c.muted, fontSize: 15, lineHeight: 20, textAlign: "center" },
+
+  termsPressable: { minHeight: 44, alignItems: "center", justifyContent: "center" },
+  termsText: { color: c.fine, fontSize: 13, lineHeight: 18, textAlign: "center" },
 });

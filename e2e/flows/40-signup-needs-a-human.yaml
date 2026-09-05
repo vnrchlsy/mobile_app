@@ -25,7 +25,7 @@ appId: ph.kupkop.app
 - assertVisible:
     id: "screen.welcome"
 - tapOn:
-    text: "Get started"
+    id: "btn.welcome.getStarted"
 - assertVisible:
     id: "screen.accountType"
 - tapOn:

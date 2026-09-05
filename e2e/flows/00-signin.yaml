@@ -10,8 +10,10 @@ appId: ph.kupkop.app
     clearState: true          # a stale session would skip the whole point of this flow
 - assertVisible:
     id: "screen.welcome"
+# By id, not by the visible words. This flow used `text: "Log in"` and the welcome screen
+# was redesigned the same week — exactly the copy-coupling the suite is meant to avoid.
 - tapOn:
-    text: "Log in"
+    id: "btn.welcome.login"
 - assertVisible:
     id: "screen.signin"
 - tapOn:
