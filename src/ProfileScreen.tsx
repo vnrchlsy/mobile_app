@@ -1,3 +1,6 @@
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
+import { setStatusBarStyle } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
 import { Image, ImageSourcePropType, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -31,10 +34,20 @@ const pets: PetRowProps[] = [
 ];
 
 export function ProfileScreen({ onAddPet, onSettings, onStartRescuer, onOpenPet, onTabPress }: ProfileScreenProps) {
+  // Dark header strip — see the note in WelcomeScreen on why this is focus-scoped rather
+  // than a rendered <StatusBar>: the declarative form is last-mounted-wins, which left white
+  // glyphs on the next screen's cream background.
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle("light");
+      return () => setStatusBarStyle("dark");
+    }, []),
+  );
+
   return (
     <View style={styles.screen}>
       <LinearGradient colors={["#1C7876", "#12524C"]} style={styles.hero}>
-        <TopStatus variant="light" />
+        <TopStatus />
         <Text style={styles.headerTitle}>My Profile</Text>
         <View style={styles.initialsCircle}>
           <Text style={styles.initials}>AR</Text>

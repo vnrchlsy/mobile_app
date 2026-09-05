@@ -29,7 +29,12 @@ export default function App() {
             inside AuthProvider (it needs a token to send). */}
         <OutboxProvider>
         <NavigationContainer ref={navRef}>
-          <StatusBar hidden />
+          {/* The REAL status bar. It was hidden app-wide so that screens could draw their
+              own — a mockup's hard-coded "9:41" and a hand-drawn battery, shipped to users
+              who have a real clock and a real battery, both of which they would rather see.
+              `dark` because the app is a light surface; the two screens with a dark strip at
+              the top (welcome, profile) override it locally. */}
+          <StatusBar style="dark" />
           <SessionGuard navRef={navRef} />
           {/* US-E4 · registers this install's push token and routes a tapped
               notification through the type whitelist. Renders nothing. */}

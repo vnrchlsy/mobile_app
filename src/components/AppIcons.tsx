@@ -82,14 +82,6 @@ export function ProfileIcon({ color, size = 28 }: IconProps) {
   );
 }
 
-export function BatteryIcon({ color }: { color: string }) {
-  return (
-    <View style={[styles.battery, { borderColor: color }]}> 
-      <View style={[styles.batteryDot, { backgroundColor: color }]} />
-      <View style={[styles.batteryDot, { backgroundColor: color }]} />
-    </View>
-  );
-}
 
 export function BellIcon({ color }: { color: string }) {
   return (
@@ -295,21 +287,6 @@ const styles = StyleSheet.create({
   },
   profileBody: {
     position: "absolute"
-  },
-  battery: {
-    width: 29,
-    height: 14,
-    borderWidth: 2,
-    borderRadius: 4,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 4
-  },
-  batteryDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3
   },
   bellWrap: {
     width: 26,

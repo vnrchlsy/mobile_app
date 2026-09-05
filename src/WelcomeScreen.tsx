@@ -1,4 +1,7 @@
+import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
+import { setStatusBarStyle } from "expo-status-bar";
+import { useCallback } from "react";
 import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -121,6 +124,26 @@ export function WelcomeScreen({
 }: WelcomeScreenProps) {
   const copy = mergeCopy(copyInput);
   const insets = useSafeAreaInsets();
+
+  /**
+   * ⚠️ SET ON FOCUS, NOT RENDERED AS <StatusBar style="light" />.
+   *
+   * The declarative component is LAST-MOUNTED-WINS, and React Navigation keeps previous
+   * screens mounted underneath the current one. So this screen's "light" kept winning after
+   * navigating away, and the next screen — a cream background — drew white glyphs on it.
+   * The clock was very nearly invisible, which is a 4.5:1 contrast failure introduced by the
+   * very change meant to stop showing people a fake clock.
+   *
+   * Tying it to focus is what makes it a per-SCREEN property rather than a per-mount one:
+   * light while this dark surface is showing, back to the app default when it is not.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle("light");
+      return () => setStatusBarStyle("dark");
+    }, []),
+  );
+
 
   return (
     <View style={styles.root} testID="screen.welcome">

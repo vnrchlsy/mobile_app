@@ -1,37 +1,23 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
-import { BatteryIcon } from "./AppIcons";
-
-type TopStatusProps = {
-  variant?: "light" | "dark";
-};
-
-export function TopStatus({ variant = "dark" }: TopStatusProps) {
-  const color = variant === "light" ? "#FFFFFF" : "#1F3A5F";
-  return (
-    <View style={styles.statusBar}>
-      <Text style={[styles.time, { color }]}>9:41</Text>
-      <View style={styles.batteryWrap}>
-        <BatteryIcon color={color} />
-      </View>
-    </View>
-  );
+/**
+ * The strip the status bar occupies.
+ *
+ * It used to DRAW a status bar: a hard-coded "9:41" and a hand-drawn battery, copied from the
+ * mockup. Real users have a real clock and a real battery and would rather see those, so the
+ * app now shows the system status bar (App.tsx) and this reserves the room for it.
+ *
+ * Kept as a component rather than deleted so the five screens using it keep their spacing
+ * with no layout change — the height is the same 52 it always was, it is simply empty now.
+ * A screen whose top strip is DARK must also set `<StatusBar style="light" />` locally, or
+ * the system draws dark glyphs on a dark ground.
+ */
+export function TopStatus() {
+  return <View style={styles.statusBar} />;
 }
 
 const styles = StyleSheet.create({
   statusBar: {
-    height: 52
+    height: 52,
   },
-  time: {
-    position: "absolute",
-    left: 31,
-    top: 17,
-    fontSize: 14,
-    fontWeight: "800"
-  },
-  batteryWrap: {
-    position: "absolute",
-    right: 26,
-    top: 20
-  }
 });

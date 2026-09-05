@@ -41,12 +41,6 @@ type AuthHeaderProps = {
 export function AuthHeader({ title, activeStep, onBack, stepCount = AUTH_STEP_COUNT }: AuthHeaderProps) {
   return (
     <View style={styles.header}>
-      <Text style={styles.statusTime}>9:41</Text>
-      <View style={styles.statusBattery}>
-        <View style={styles.statusBatteryDot} />
-        <View style={styles.statusBatteryDot} />
-      </View>
-
       <TouchableOpacity
         activeOpacity={0.75}
         onPress={onBack}
@@ -80,12 +74,6 @@ type SimpleHeaderProps = {
 export function SimpleHeader({ title, onBack }: SimpleHeaderProps) {
   return (
     <View style={styles.header}>
-      <Text style={styles.statusTime}>9:41</Text>
-      <View style={styles.statusBattery}>
-        <View style={styles.statusBatteryDot} />
-        <View style={styles.statusBatteryDot} />
-      </View>
-
       {!!onBack && (
         <TouchableOpacity
           activeOpacity={0.75}
@@ -209,36 +197,11 @@ export function PrimaryButton({ label, onPress, disabled, loading, style, testID
 
 const styles = StyleSheet.create({
   header: {
+    // Unchanged at 132. This height always reserved a strip for the status bar; it used to
+    // be filled with a drawn one, and is now simply left for the real one to draw into. That
+    // is why removing the fake bar shifts nothing on the 15 screens using these headers.
     height: 132,
     paddingHorizontal: 28
-  },
-  statusTime: {
-    position: "absolute",
-    left: 30,
-    top: 16,
-    color: authColors.ink,
-    fontSize: 14,
-    fontWeight: "800"
-  },
-  statusBattery: {
-    position: "absolute",
-    right: 22,
-    top: 17,
-    width: 28,
-    height: 14,
-    borderWidth: 2,
-    borderColor: authColors.ink,
-    borderRadius: 4,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 4
-  },
-  statusBatteryDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: authColors.ink
   },
   backButton: {
     position: "absolute",

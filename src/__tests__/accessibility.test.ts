@@ -261,3 +261,45 @@ describe("nested actions inside an accessible container", () => {
     expect([...new Set(offenders)]).toEqual([]);
   });
 });
+
+// ── no screen draws its own status bar ──────────────────────────────────────────────
+//
+// Twenty screens shipped a hard-coded "9:41" and a hand-drawn battery, copied from the
+// mockups. Real users have a real clock and a real battery and would rather see those — and
+// a fake clock is worse than useless on a phone, because it is confidently wrong all day.
+//
+// The mockups in screens/user/gen-screens.js still draw one, correctly: a PNG of a phone
+// needs to look like a phone. That is exactly why this guard exists — the next person
+// porting a screen from a mockup will copy it again, and nothing else would notice.
+//
+// ⚠️ DELIBERATELY NARROW. The obvious rule — "no hard-coded times" — would fail on every
+// volunteer screen, which legitimately renders shift times like "9:41 AM" from data. This
+// matches only the mockups' canonical clock rendered as literal JSX text, and the drawn
+// battery. A narrow guard that is always right beats a broad one people learn to silence.
+describe("no screen draws a fake status bar", () => {
+  const files: Array<{ name: string; src: string }> = [SCREENS, COMPONENTS, join(__dirname, "..")]
+    .flatMap((dir) =>
+      readdirSync(dir, { withFileTypes: true })
+        .filter((e) => e.isFile() && e.name.endsWith(".tsx"))
+        .map((e) => ({ name: e.name, src: readFileSync(join(dir, e.name), "utf8") })));
+
+  it("has files to scan", () => {
+    expect(files.length).toBeGreaterThan(50);
+  });
+
+  it("renders no hard-coded clock", () => {
+    // `>9:41<` as JSX text. A shift time from data reaches the tree as {expr}, never as a
+    // literal, so this cannot fire on one.
+    const offenders = files
+      .filter(({ src }) => /<Text[^>]*>\s*9:41\s*<\/Text>|>\s*9:41\s*</.test(src))
+      .map((f) => f.name);
+    expect(offenders).toEqual([]);
+  });
+
+  it("draws no battery", () => {
+    const offenders = files
+      .filter(({ src }) => /<BatteryIcon\b|styles\.battery\b|statusBattery/.test(src))
+      .map((f) => f.name);
+    expect(offenders).toEqual([]);
+  });
+});
