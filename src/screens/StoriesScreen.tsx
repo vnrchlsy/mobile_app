@@ -3,7 +3,7 @@
 // count. Compose from the header; tap a card for its detail.
 import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import {
   ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View
 } from "react-native";

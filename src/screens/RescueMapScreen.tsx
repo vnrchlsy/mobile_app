@@ -4,7 +4,7 @@
 // geom (§12.5 / decision 11), so the strays live in the colour-coded list, not as map markers.
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapView, { Circle } from "react-native-maps";
 
