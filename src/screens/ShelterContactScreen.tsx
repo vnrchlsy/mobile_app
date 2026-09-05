@@ -23,6 +23,15 @@ export function ShelterContactScreen({ navigation, route }: Props) {
   const [error, setError] = useState<string | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
 
+  // ⚠️ US-R4 · NOT a detail route — this is FORM PREFILL, and it belongs to US-R5.
+  // @loadStateExempt form prefill, not a detail route — a blank editable field is the
+  // safe failure here; US-R5 owns the dangerous one (empty default saved over real data).
+  //
+  // The distinction matters: a detail route that fails should say so and offer a retry. A
+  // form that fails to prefill must NOT, because the screen is still perfectly usable — the
+  // field just stays blank and editable, which is the safe direction. What R5 has to check
+  // is the opposite failure, an empty default rendered OVER real data and then saved.
+  //
   // Prefilled from the signup name — without this the shelter is asked for a name it just
   // gave, which reads as the form having lost it. Editable, because the public contact isn't
   // always the admin who created the account.

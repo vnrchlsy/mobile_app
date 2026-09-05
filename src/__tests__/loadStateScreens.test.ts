@@ -55,9 +55,30 @@ const ALL = readdirSync(SCREENS).filter((f) => f.endsWith(".tsx"));
 /** Screens that talk to the API — the only ones that can have this bug. */
 const FETCHING = ALL.filter((f) => readCode(f).includes("api.get("));
 
+/**
+ * Screens that opt OUT of conversion, by carrying `@loadStateExempt` FOLLOWED BY A REASON.
+ *
+ * US-R4 needed this because two of the files the scan matches are not screen loads at all:
+ * ExportDataScreen's `api.get` is what its button does, and ShelterContactScreen's is form
+ * prefill. Without a way to say so, the countdown below bottoms out at a permanent non-zero
+ * number and reads as unfinished work forever — which is how a countdown stops being read.
+ *
+ * ⚠️ AN UNCAPPED OPT-OUT IS HOW A GUARD DIES. It is the one edit that makes a red build green
+ * without changing any behaviour, so it is deliberately the most awkward thing here: the
+ * marker lives in the source (never in a list in this file), it must carry a reason on the
+ * same line, and the count is ratcheted like MAX_DISCARDS. Read from RAW text, because
+ * readCode() strips exactly the comments the marker lives in.
+ */
+const EXEMPT_MARK = "@loadStateExempt";
+const EXEMPT = FETCHING.filter((f) => readFileSync(join(SCREENS, f), "utf8").includes(EXEMPT_MARK));
+
+/** ⚠️ NEVER RAISE THIS to make a build green — see MAX_DISCARDS. */
+const MAX_EXEMPT = 2;
+
 /** Derived by subtraction: converting a screen moves it here with no edit to this file. */
 const CONVERTED = FETCHING.filter((f) => readCode(f).includes("LoadStateView"));
-const REMAINING = FETCHING.filter((f) => !readCode(f).includes("LoadStateView"));
+const REMAINING = FETCHING.filter(
+  (f) => !readCode(f).includes("LoadStateView") && !EXEMPT.includes(f));
 
 /** `r.ok && setX(...)` — the exact shape of the rescue-map bug. */
 const DISCARDS = /\br\.ok\s*&&\s*set[A-Z]/g;
@@ -136,6 +157,24 @@ describe.each(CONVERTED)("%s distinguishes offline from empty", (file) => {
   });
 });
 
+// ── ratcheted: the opt-out ─────────────────────────────────────────────────────────
+describe("opting out is possible, awkward, and capped", () => {
+  it("stays at or under the exemption ratchet", () => {
+    // eslint-disable-next-line no-console
+    console.log(`[US-O1] exempt: ${EXEMPT.length} — ${EXEMPT.join(", ") || "none"}`);
+    expect(EXEMPT.length).toBeLessThanOrEqual(MAX_EXEMPT);
+  });
+
+  it.each(EXEMPT.length ? EXEMPT : ["(none)"])("%s gives a reason for opting out", (file) => {
+    if (file === "(none)") return;
+    const line = readFileSync(join(SCREENS, file), "utf8")
+      .split("\n").find((l) => l.includes(EXEMPT_MARK)) ?? "";
+    // A bare marker is a silent exemption. The reason is the whole cost of opting out.
+    expect(line.slice(line.indexOf(EXEMPT_MARK) + EXEMPT_MARK.length).trim().length)
+      .toBeGreaterThan(20);
+  });
+});
+
 // ── ratcheted: the dangerous pattern, app-wide ──────────────────────────────────────
 it("no new screen acquires the discard-the-failure pattern", () => {
   const sites = FETCHING.flatMap((f) =>
@@ -153,9 +192,11 @@ it("reports how many fetching screens still collapse a failure into an empty sta
   // eslint-disable-next-line no-console
   console.log(
     `[US-O1] fetching screens: ${FETCHING.length} · converted: ${CONVERTED.length} · ` +
-    `REMAINING: ${REMAINING.length}`);
+    `exempt: ${EXEMPT.length} · REMAINING: ${REMAINING.length}`);
   // Deliberately not an assertion. The number is large and goes down over Sprint 8's
   // Track R; failing the build on it today would just get the file deleted. The ratchet
   // above is where the enforcement lives.
-  expect(CONVERTED.length + REMAINING.length).toBe(FETCHING.length);
+  // Every fetching screen is accounted for in exactly one bucket — the arithmetic is what
+  // stops a screen from quietly falling out of all three.
+  expect(CONVERTED.length + REMAINING.length + EXEMPT.length).toBe(FETCHING.length);
 });

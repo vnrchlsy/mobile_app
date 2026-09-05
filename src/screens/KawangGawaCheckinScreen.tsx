@@ -134,7 +134,7 @@ export function KawangGawaCheckinScreen({ navigation, route }: Props) {
           {/* count is passed HERE and only here: "no shift today" is a real, correct answer
               this screen must be able to give, and it is not the same as a failure. */}
           <LoadStateView
-            state={loadState(res, item ? 1 : 0)}
+            state={loadState(res, 0)}
             emptyTitle="No shift today"
             emptyBody="You don't have a shift scheduled for today."
             subject="shift"

@@ -43,6 +43,22 @@ export function ExportDataScreen({ navigation }: Props) {
   const [ready, setReady] = useState<Ready | null>(null);
   const [error, setError] = useState<string | undefined>();
 
+  /**
+   * ⚠️ US-R4 · DELIBERATELY NOT CONVERTED TO LoadStateView, and this note exists so nobody
+   * "finishes the job" later.
+   * @loadStateExempt this GET is a button action, not a screen load — nothing is
+   * claimed on first paint, and it already tells offline from the 3/day throttle.
+   *
+   * The `api.get` below is not a screen load — it is what the button does. There is no
+   * first-paint state to get wrong here: nothing is claimed about the person's data until
+   * they ask, and the failure is already told apart three ways (offline, the deliberate
+   * 3/day throttle, everything else). LoadStateView cannot say "you've exported a few times
+   * today", so routing this through it would lose the one message that tells someone their
+   * export will work tomorrow.
+   *
+   * The source scan matches this file on `api.get(`. That is the scan being conservative,
+   * not a screen that still needs converting.
+   */
   async function prepare() {
     if (busy) return;
     setBusy(true);

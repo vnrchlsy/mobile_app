@@ -6,12 +6,14 @@
 // regardless (§12.5 stores a city, never coordinates), so neither is a control the user
 // actually holds. They appear under ALWAYS ON as stated facts. See `privacyRows`.
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator, ScrollView, StyleSheet, Switch, Text, View,
+  ScrollView, StyleSheet, Switch, Text, View,
 } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { RootStackParamList } from "../navigation/types";
 import { privacyRows, Settings } from "../settings";
 
@@ -29,15 +31,22 @@ type Props = NativeStackScreenProps<RootStackParamList, "settingsPrivacy">;
 export function SettingsPrivacyScreen({ navigation }: Props) {
   const api = useApi();
   const [settings, setSettings] = useState<Settings | null>(null);
+  // `error` is now the SAVE error only. It used to carry the load failure too, which is how
+  // this screen ended up distinguishing offline in its save path (below) but not in its load
+  // path — the same request failing in two places, described two different ways.
   const [error, setError] = useState<string | undefined>();
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setRes(null);
     api.get("/me/settings").then((r) => {
+      setRes({ ok: r.ok, status: r.status });
       if (r.ok) setSettings(r.data);
-      else setError("Couldn't load your settings.");
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   async function toggle(key: keyof Settings, next: boolean) {
     if (!settings) return;
@@ -63,7 +72,7 @@ export function SettingsPrivacyScreen({ navigation }: Props) {
       <View style={styles.screen}>
         <Header navigation={navigation} />
         <View style={styles.loading}>
-          {error ? <Text style={styles.error}>{error}</Text> : <ActivityIndicator color={colors.teal} />}
+          <LoadStateView state={loadState(res)} subject="settings page" onRetry={load} />
         </View>
       </View>
     );

@@ -10,7 +10,9 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 import { MeVerification, MeVerificationDoc } from "../api/types";
 import { useApi } from "../api/useApi";
-import { AlertIcon, CheckIcon, ClockIcon, DocumentIcon } from "../components/AppIcons";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
+import { AlertIcon, CheckIcon, DocumentIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
 import { docChip, docLabel, groupAttention, splitDocs } from "../verifications";
 
@@ -38,19 +40,23 @@ const CHIP_STYLE = {
 
 export function VerifyDocumentsScreen({ navigation }: Props) {
   const api = useApi();
-  const [loading, setLoading] = useState(true);
   const [verification, setVerification] = useState<MeVerification | null>(null);
+  // US-R4 · a failed fetch fell through to "No documents to track yet." — shown to a shelter
+  // whose documents were REJECTED and whose org is sitting in draft because of it. The one
+  // screen that exists to tell them what to fix was telling them there was nothing to fix.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      setLoading(true);
-      api.get("/me/verifications").then((r) => {
-        if (r.ok) setVerification((r.data?.verifications ?? [])[0] ?? null);
-        setLoading(false);
-      });
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus only
-    }, [])
-  );
+
+  const load = useCallback(() => {
+    setRes(null);
+    api.get("/me/verifications").then((r) => {
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setVerification((r.data?.verifications ?? [])[0] ?? null);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus only
+  }, []);
+
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const { attention, approved } = splitDocs(verification?.documents ?? []);
   const flagged = attention.filter((d) => d.status === "rejected");
@@ -85,15 +91,18 @@ export function VerifyDocumentsScreen({ navigation }: Props) {
         <Text style={styles.h1}>Document status</Text>
         <Text style={styles.sub}>Each file is reviewed on its own.</Text>
 
-        {loading && !verification ? (
+        {!verification ? (
           <View style={styles.emptyCard}>
-            <ClockIcon color={colors.teal} size={34} />
-            <Text style={styles.emptyText}>Checking your documents…</Text>
-          </View>
-        ) : !verification ? (
-          <View style={styles.emptyCard}>
-            <DocumentIcon color={colors.muted} />
-            <Text style={styles.emptyText}>No documents to track yet.</Text>
+            {/* count IS passed here: "nothing submitted yet" is a true and useful answer this
+                screen must still be able to give — it just may not be given about a request
+                that never came back. */}
+            <LoadStateView
+              state={loadState(res, 0)}
+              emptyTitle="No documents to track yet"
+              emptyBody="Anything you submit for verification will show up here."
+              subject="document status"
+              onRetry={load}
+            />
           </View>
         ) : (
           <>
@@ -227,7 +236,6 @@ const styles = StyleSheet.create({
     shadowRadius: 7,
     elevation: 2
   },
-  emptyText: { color: colors.muted, fontSize: 16 },
   noteBanner: {
     marginTop: 22,
     flexDirection: "row",

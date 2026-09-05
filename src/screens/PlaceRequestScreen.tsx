@@ -14,6 +14,8 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacit
 
 import { ListingDetail, MyInquiry } from "../api/types";
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { RootStackParamList } from "../navigation/types";
 
 const colors = {
@@ -29,25 +31,31 @@ export function PlaceRequestScreen({ navigation, route }: Props) {
   const api = useApi();
   const { inquiryId } = route.params;
 
-  const [loaded, setLoaded] = useState(false);
   const [inquiry, setInquiry] = useState<MyInquiry | null>(null);
+  // US-R4 · a FAILED /me/inquiries left `found` undefined exactly like a successful one that
+  // does not contain this offer, so both rendered "This placement offer wasn't found." —
+  // telling someone offline that a real, live offer of a home for their pet does not exist.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
   const [listing, setListing] = useState<ListingDetail | null>(null);
   const [deciding, setDeciding] = useState<Decision | null>(null);
   const [error, setError] = useState<string | undefined>(undefined);
 
   const load = useCallback(() => {
+    setRes(null);
     api.get("/me/inquiries").then((r) => {
+      setRes({ ok: r.ok, status: r.status });
       const found: MyInquiry | undefined = r.ok
         ? (r.data?.results ?? []).find((iq: MyInquiry) => iq.inquiry_id === inquiryId)
         : undefined;
       setInquiry(found ?? null);
       if (found) {
+        // Secondary, per US-R2's multi-fetch rule: the photo and city are decoration on a
+        // decision the inquiry itself already carries. Its failure degrades this panel, and
+        // must not take down a screen someone is using to accept or decline a home.
         api.get(`/listings/${found.listing.listing_id}`).then((lr) => {
           if (lr.ok) setListing(lr.data);
-          setLoaded(true);
         });
-      } else {
-        setLoaded(true);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
@@ -89,7 +97,14 @@ export function PlaceRequestScreen({ navigation, route }: Props) {
       </View>
 
       {!inquiry ? (
-        <Text style={styles.empty}>{loaded ? "This placement offer wasn't found." : "Loading…"}</Text>
+        // The list came back fine and this offer is not in it: withdrawn, or never addressed
+        // to this account. That is `gone` — a real answer — not a network failure.
+        <LoadStateView
+          state={res?.ok ? ({ kind: "gone" } as const) : loadState(res)}
+          subject="placement offer"
+          onRetry={load}
+          onBack={() => navigation.goBack()}
+        />
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {listing?.photos?.length ? (
@@ -166,7 +181,6 @@ const styles = StyleSheet.create({
   backGlyph: { color: colors.ink, fontSize: 30, fontWeight: "800", marginTop: -4 },
   title: { color: colors.ink, fontSize: 22, fontWeight: "800" },
   content: { paddingHorizontal: 26, paddingTop: 12, paddingBottom: 60 },
-  empty: { marginTop: 60, color: colors.muted, fontSize: 16, textAlign: "center" },
   photo: { width: "100%", height: 220, borderRadius: 22, marginBottom: 18, backgroundColor: colors.line },
   name: { color: colors.ink, fontSize: 28, fontWeight: "800", letterSpacing: -0.5 },
   sub: { marginTop: 6, color: colors.muted, fontSize: 16 },

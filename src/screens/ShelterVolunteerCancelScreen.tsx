@@ -16,6 +16,8 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { AlertIcon, CheckIcon, VolunteerIcon } from "../components/AppIcons";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { RootStackParamList } from "../navigation/types";
@@ -44,9 +46,7 @@ export function ShelterVolunteerCancelScreen({ navigation, route }: Props) {
 
   const [shift, setShift] = useState<ShelterShift | null>(null);
   const [affected, setAffected] = useState<number | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [loadError, setLoadError] = useState(false);
-  const [notFound, setNotFound] = useState(false);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
 
   const [phase, setPhase] = useState<Phase>("review");
   const [confirmVisible, setConfirmVisible] = useState(false);
@@ -59,25 +59,25 @@ export function ShelterVolunteerCancelScreen({ navigation, route }: Props) {
       api.get(`/shelter/shifts/${shiftId}/roster`),
       api.get(`/shelter/shifts/${shiftId}/requests`)
     ]).then(([shiftRes, rosterRes, requestsRes]) => {
-      if (shiftRes.status === 404) {
-        setNotFound(true);
-        setLoaded(true);
-        return;
-      }
-      if (!shiftRes.ok || !rosterRes.ok || !requestsRes.ok) {
-        setLoadError(true);
-        setLoaded(true);
-        return;
-      }
+      // ⚠️ ALL-OR-NOTHING, AND THAT INVERTS US-R2's MULTI-FETCH RULE ON PURPOSE.
+      //
+      // Elsewhere a failed secondary degrades its own panel and the screen still renders.
+      // Here the secondaries ARE the answer: `affected` is the blast radius printed directly
+      // above a destructive confirm. Rendering with a failed roster would tell a shelter
+      // admin "0 volunteers signed up" about an activity twelve people have arranged their
+      // Saturday around — and then take the cancel.
+      //
+      // So the worst of the three decides the state. 404 on the shift still resolves to
+      // `gone` through loadState, which is where the old hand-rolled `notFound` branch went.
+      const worst = [shiftRes, rosterRes, requestsRes].find((r) => !r.ok) ?? shiftRes;
+      setRes({ ok: worst.ok, status: worst.status });
+      if (!worst.ok) return;
       const approved = (rosterRes.data?.results ?? []).filter(
         (r: RosterRow) => r.status === "approved"
       ).length;
       const pending = (requestsRes.data?.results ?? []).length;
       setShift(shiftRes.data);
       setAffected(approved + pending);
-      setNotFound(false);
-      setLoadError(false);
-      setLoaded(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, [shiftId]);
@@ -135,21 +135,13 @@ export function ShelterVolunteerCancelScreen({ navigation, route }: Props) {
             <Text style={styles.primaryText}>Back to activities</Text>
           </TouchableOpacity>
         </View>
-      ) : phase === "submitting" || !loaded ? (
+      ) : phase === "submitting" ? (
         <View style={styles.centerFill}>
           <ActivityIndicator color={colors.teal} />
         </View>
-      ) : notFound ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>This activity no longer exists. It may have been cancelled or removed.</Text>
-          <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()} hitSlop={TAP_SLOP}>
-            <Text style={styles.backLinkText}>Go back</Text>
-          </TouchableOpacity>
-        </View>
-      ) : loadError || !shift || affected === null ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>Couldn't load this activity. Pull down or go back and try again.</Text>
-        </View>
+      ) : !shift || affected === null ? (
+        <LoadStateView state={loadState(res)} subject="activity" onRetry={load}
+          onBack={() => navigation.goBack()} />
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.summaryCard}>
@@ -220,9 +212,6 @@ const styles = StyleSheet.create({
   backGlyph: { color: colors.ink, fontSize: 30, fontWeight: "800", marginTop: -4 },
   title: { color: colors.ink, fontSize: 19, fontWeight: "800" },
   centerFill: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
-  empty: { color: colors.muted, fontSize: 15, textAlign: "center", lineHeight: 21 },
-  backLink: { marginTop: 16 },
-  backLinkText: { color: colors.teal, fontSize: 14, fontWeight: "800" },
   content: { flex: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 60, alignItems: "center" },
   summaryCard: {
     width: "100%", flexDirection: "row", alignItems: "center", gap: 14,
