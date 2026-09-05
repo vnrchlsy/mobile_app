@@ -29,7 +29,43 @@
  * carries the account's phone number, and caching identity is how a screen ends up showing a
  * stale verification badge — the exact failure US-R1 fixed on ProfileScreen.
  */
-import AsyncStorage from "@react-native-async-storage/async-storage";
+/**
+ * ⚠️ RESOLVED LAZILY, INSIDE A try/catch, AND THAT IS NOT DEFENSIVE PROGRAMMING FOR ITS OWN
+ * SAKE — a plain top-level import of this module BRICKED THE APP.
+ *
+ * AsyncStorage throws `NativeModule: AsyncStorage is null` at MODULE LOAD when its native
+ * side is not linked into the binary. Not on first use — on import. So every try/catch in
+ * this file was useless against it: the app died at startup with a red screen before any of
+ * them could run, on the welcome screen, for a feature nothing had asked for yet.
+ *
+ * That is exactly the hazard `app.config.ts` documents with `runtimeVersion: appVersion`:
+ * JS that calls into native code the binary lacks. The runtimeVersion policy stops an OTA
+ * from CAUSING it; this stops it from being fatal if it happens anyway — a missing native
+ * module now costs the cache, not the app.
+ *
+ * `undefined` = not yet resolved, `null` = resolved and unavailable. The distinction is what
+ * keeps this to one require attempt rather than one per call.
+ */
+type Store = {
+  getItem(k: string): Promise<string | null>;
+  setItem(k: string, v: string): Promise<void>;
+  getAllKeys(): Promise<readonly string[]>;
+  multiRemove(keys: string[]): Promise<void>;
+};
+
+let resolved: Store | null | undefined;
+
+function storage(): Store | null {
+  if (resolved !== undefined) return resolved;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const mod = require("@react-native-async-storage/async-storage");
+    resolved = (mod?.default ?? mod ?? null) as Store | null;
+  } catch {
+    resolved = null;
+  }
+  return resolved;
+}
 
 /** How long a cached body may be served before it is treated as absent. */
 const TTL_MS = 10 * 60 * 1000;
@@ -66,7 +102,9 @@ type Entry<T> = { storedAt: number; value: T };
 export async function readCache<T = unknown>(path: string): Promise<T | null> {
   if (!isCacheable(path)) return null;
   try {
-    const raw = await AsyncStorage.getItem(PREFIX + path);
+    const store = storage();
+    if (!store) return null;
+    const raw = await store.getItem(PREFIX + path);
     if (!raw) return null;
     const entry = JSON.parse(raw) as Entry<T>;
     if (typeof entry?.storedAt !== "number") return null;
@@ -83,7 +121,9 @@ export async function writeCache(path: string, value: unknown): Promise<void> {
   if (!isCacheable(path)) return;
   try {
     const entry: Entry<unknown> = { storedAt: Date.now(), value };
-    await AsyncStorage.setItem(PREFIX + path, JSON.stringify(entry));
+    const store = storage();
+    if (!store) return;
+    await store.setItem(PREFIX + path, JSON.stringify(entry));
   } catch {
     // Full disk, quota — losing a cache write is not worth failing a screen over.
   }
@@ -99,13 +139,15 @@ export async function writeCache(path: string, value: unknown): Promise<void> {
  */
 export async function clearCache(): Promise<void> {
   try {
-    const keys = await AsyncStorage.getAllKeys();
+    const store = storage();
+    if (!store) return;
+    const keys = await store.getAllKeys();
     const ours = keys.filter((k) => k.startsWith(PREFIX));
-    // `removeMany` over our own prefix, never `clear()`. AsyncStorage is a shared store —
+    // `multiRemove` over our own prefix, never `clear()`. AsyncStorage is a shared store —
     // any library can put a key in it — and a blanket wipe on every session end would take
     // theirs too. (The unsent-report outbox is safe either way: it uses SecureStore on
     // purpose, because a queued report holds the animal's precise location.)
-    if (ours.length) await AsyncStorage.removeMany(ours);
+    if (ours.length) await store.multiRemove(ours);
   } catch {
     // Nothing useful to do — and throwing here would break sign-out itself.
   }

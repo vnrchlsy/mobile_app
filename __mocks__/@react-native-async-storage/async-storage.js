@@ -1,8 +1,13 @@
 /**
  * US-X1 · in-memory AsyncStorage for jest.
  *
- * Version 3.x no longer ships `jest/async-storage-mock`, which earlier versions did — so
- * without this every test touching the cache fails with "Native module is null". A root
+ * Recent versions no longer ship `jest/async-storage-mock`, which earlier ones did — so
+ * without this every test touching the cache fails with "Native module is null".
+ *
+ * ⚠️ Mirrors the 2.2.0 API (`multiGet`/`multiSet`/`multiRemove`), which is the version Expo
+ * SDK 54 expects. A first pass installed 3.1.1 via `pnpm add` — outside Expo's compatibility
+ * matrix, with a renamed API (`removeMany`) that `@types/...@4` does not describe. `npx expo
+ * install` is what picks an SDK-compatible version; plain `pnpm add` is not. A root
  * `__mocks__` directory adjacent to node_modules is applied automatically for a node_modules
  * package, so no `jest.mock()` call is needed at any call site.
  *
@@ -26,13 +31,13 @@ const AsyncStorage = {
   async getAllKeys() {
     return [...store.keys()];
   },
-  async getMany(keys) {
+  async multiGet(keys) {
     return keys.map((k) => [k, store.has(k) ? store.get(k) : null]);
   },
-  async setMany(entries) {
+  async multiSet(entries) {
     for (const [k, v] of entries) store.set(k, String(v));
   },
-  async removeMany(keys) {
+  async multiRemove(keys) {
     for (const k of keys) store.delete(k);
   },
   async clear() {
