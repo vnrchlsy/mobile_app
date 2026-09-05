@@ -33,6 +33,8 @@ export function ShelterVerifyNgoScreen({ navigation, route }: Props) {
   const prcValid = PRC_RE.test(prc.trim());
   // BAI is required unless the shelter is submitting SEC now and BAI later.
   const docsReady = !!sec && (baiPending || !!bai);
+  // Kept for the button's APPEARANCE only — a form that cannot yet be sent may look
+  // secondary, but it must still be pressable and must say why. See onSubmit.
   const canSubmit = docsReady && vetName.trim().length > 0 && prcValid && !submitting;
 
   async function presign(): Promise<string | null> {
@@ -53,8 +55,25 @@ export function ShelterVerifyNgoScreen({ navigation, route }: Props) {
     }
   }
 
+  /**
+   * Design-system rule: NEVER disable a submit button because of validation. A greyed button
+   * gives a person nothing to press and no explanation. `submitting` still blocks — a request
+   * in flight is not a validation error.
+   */
   async function onSubmit() {
-    if (!canSubmit) return;
+    if (submitting) return;
+    if (!docsReady) {
+      setError("Upload the required documents first.");
+      return;
+    }
+    if (vetName.trim().length === 0) {
+      setError("Enter the vet's name.");
+      return;
+    }
+    if (!prcValid) {
+      setError("Enter a valid PRC number (6\u20138 digits).");
+      return;
+    }
     setSubmitting(true);
     setError(undefined);
     try {
@@ -135,7 +154,7 @@ export function ShelterVerifyNgoScreen({ navigation, route }: Props) {
 
         {!!error && <Text style={styles.formError}>{error}</Text>}
 
-        <TouchableOpacity activeOpacity={0.85} style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]} onPress={onSubmit} disabled={!canSubmit}>
+        <TouchableOpacity activeOpacity={0.85} style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]} onPress={onSubmit}>
           {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitText}>Submit for review</Text>}
         </TouchableOpacity>
       </ScrollView>

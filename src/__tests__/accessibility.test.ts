@@ -303,3 +303,46 @@ describe("no screen draws a fake status bar", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+// ── a submit button is never disabled by validation ─────────────────────────────────
+//
+// Design-system rule: "Never disable a submit button because of validation errors. Keep it
+// enabled and tappable; a disabled button gives the user nothing to press and no feedback
+// about why." Seven screens broke it — the whole auth and shelter-onboarding chain — and
+// SignupScreen carried a comment claiming it followed the rule directly above the line that
+// broke it. A comment asserting compliance is not compliance.
+//
+// This is an accessibility rule as much as a usability one: a greyed control is the one a
+// screen reader user cannot act on either, and nothing tells them what is missing.
+//
+// ⚠️ Busy-disabling is FINE and deliberately still allowed. `disabled={submitting}` (or
+// `loading={submitting}`, which PrimaryButton turns into the same thing) blocks a request
+// already in flight — that is not a validation error, and double-submitting a signup is a
+// real bug. The rule is about VALIDATION state only, so this matches the names validation
+// state actually goes by rather than banning `disabled` outright.
+describe("submit buttons are not disabled by validation", () => {
+  const VALIDATION_FLAG = /disabled=\{!\s*(canSubmit|isValid|formValid|canSend|canContinue|valid)\b/;
+
+  const files: Array<{ name: string; src: string }> = readdirSync(SCREENS)
+    .filter((f) => f.endsWith(".tsx"))
+    .map((f) => ({
+      name: f,
+      src: readFileSync(join(SCREENS, f), "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/^\s*\/\/.*$/gm, ""),
+    }));
+
+  it("has files to scan", () => {
+    expect(files.length).toBeGreaterThan(50);
+  });
+
+  it("finds submit buttons at all", () => {
+    // Without this, renaming PrimaryButton would empty the check silently.
+    const withSubmit = files.filter(({ src }) => /PrimaryButton|onPress=\{onSubmit\}/.test(src));
+    expect(withSubmit.length).toBeGreaterThan(5);
+  });
+
+  it("disables none of them on validation state", () => {
+    expect(files.filter(({ src }) => VALIDATION_FLAG.test(src)).map((f) => f.name)).toEqual([]);
+  });
+});

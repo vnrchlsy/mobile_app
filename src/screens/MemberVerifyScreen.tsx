@@ -46,8 +46,27 @@ export function MemberVerifyScreen({ navigation }: Props) {
     }
   }
 
+  /**
+   * Design-system rule: never disable a submit button because of validation — say what is
+   * missing instead. `submitting` still blocks, because that is a request in flight.
+   *
+   * Three separate things can be missing here and the old dead button named none of them,
+   * which on a verification form is the difference between finishing and giving up.
+   */
   async function handleSubmit() {
-    if (!canSubmit || submitting) return;
+    if (submitting) return;
+    if (!fileUrl) {
+      setError("Upload a photo of your ID first.");
+      return;
+    }
+    if (socialUrl.trim().length === 0) {
+      setError("Add a link to your Facebook profile.");
+      return;
+    }
+    if (!consent) {
+      setError("Tick the consent box to continue.");
+      return;
+    }
     setSubmitting(true);
     setError(undefined);
     try {
@@ -162,7 +181,7 @@ export function MemberVerifyScreen({ navigation }: Props) {
           activeOpacity={0.85}
           style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
           onPress={handleSubmit}
-          disabled={!canSubmit || submitting}
+          disabled={submitting}
         >
           {submitting ? (
             <ActivityIndicator color="#FFFFFF" />

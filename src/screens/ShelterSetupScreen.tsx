@@ -38,11 +38,22 @@ export function ShelterSetupScreen({ navigation, route }: Props) {
   const [error, setError] = useState<string | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
 
-  const canSubmit = orgName.trim().length > 0 && city.trim().length > 0 && !submitting;
+  const [orgNameError, setOrgNameError] = useState<string | undefined>(undefined);
+  const [cityError, setCityError] = useState<string | undefined>(undefined);
 
+  /**
+   * Design-system rule: NEVER disable a submit button because of validation. A greyed button
+   * gives a person nothing to press and no explanation. `submitting` still blocks — a request
+   * in flight is not a validation error.
+   */
   async function onSubmit() {
-    if (!canSubmit) return;
+    if (submitting) return;
     setError(undefined);
+    const missingOrg = orgName.trim().length === 0 ? "Enter your organization's name." : undefined;
+    const missingCity = city.trim().length === 0 ? "Enter your city." : undefined;
+    setOrgNameError(missingOrg);
+    setCityError(missingCity);
+    if (missingOrg || missingCity) return;
     // registration_number is required only when a registration type is chosen (a community
     // rescue may have neither) — mirror the server rule so the user isn't bounced by a 400.
     if (regType && !regNumber.trim()) {
@@ -88,7 +99,9 @@ export function ShelterSetupScreen({ navigation, route }: Props) {
         <Text style={styles.title}>Tell us about your org</Text>
         <Text style={styles.caption}>This is what adopters and donors will see.</Text>
 
-        <FormField label="Organization name" value={orgName} onChangeText={setOrgName} autoCapitalize="words" />
+        <FormField label="Organization name" value={orgName} error={orgNameError}
+          onChangeText={(v) => { setOrgName(v); if (orgNameError) setOrgNameError(undefined); }}
+          autoCapitalize="words" />
 
         <Text style={styles.groupLabel}>Type</Text>
         <ChipRow options={ORG_TYPES} value={orgType} onChange={setOrgType} />
@@ -99,13 +112,15 @@ export function ShelterSetupScreen({ navigation, route }: Props) {
           <FormField label={`${regType} registration no.`} value={regNumber} onChangeText={setRegNumber} autoCapitalize="characters" />
         )}
 
-        <FormField label="City" value={city} onChangeText={setCity} autoCapitalize="words" />
+        <FormField label="City" value={city} error={cityError}
+          onChangeText={(v) => { setCity(v); if (cityError) setCityError(undefined); }}
+          autoCapitalize="words" />
         <FormField label="Street address (optional)" value={line1} onChangeText={setLine1} autoCapitalize="words" />
         <FormField label="Barangay (optional)" value={barangay} onChangeText={setBarangay} autoCapitalize="words" />
 
         {!!error && <Text style={styles.formError}>{error}</Text>}
 
-        <PrimaryButton label="Continue" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submit} />
+        <PrimaryButton label="Continue" onPress={onSubmit} loading={submitting} style={styles.submit} />
         <Text style={styles.next}>Next: how people reach you</Text>
       </ScrollView>
     </View>

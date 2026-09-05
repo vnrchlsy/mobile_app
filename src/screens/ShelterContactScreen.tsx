@@ -52,11 +52,22 @@ export function ShelterContactScreen({ navigation, route }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
-  const canSubmit = name.trim().length > 0 && phone.trim().length > 0 && !submitting;
+  const [nameError, setNameError] = useState<string | undefined>(undefined);
+  const [phoneError, setPhoneError] = useState<string | undefined>(undefined);
 
+  /**
+   * Design-system rule: NEVER disable a submit button because of validation. A greyed button
+   * gives a person nothing to press and no explanation. `submitting` still blocks — a request
+   * in flight is not a validation error.
+   */
   async function onSubmit() {
-    if (!canSubmit) return;
+    if (submitting) return;
     setError(undefined);
+    const missingName = name.trim().length === 0 ? "Enter a contact name." : undefined;
+    const missingPhone = phone.trim().length === 0 ? "Enter a mobile number." : undefined;
+    setNameError(missingName);
+    setPhoneError(missingPhone);
+    if (missingName || missingPhone) return;
     setSubmitting(true);
     try {
       const patch = await api.patch("/shelter/profile", {
@@ -98,12 +109,14 @@ export function ShelterContactScreen({ navigation, route }: Props) {
           autoCapitalize="words"
         />
         <FormField label="Role (optional)" value={role} onChangeText={setRole} autoCapitalize="words" />
-        <FormField label="Mobile number" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+        <FormField label="Mobile number" value={phone} error={phoneError}
+          onChangeText={(v) => { setPhone(v); if (phoneError) setPhoneError(undefined); }}
+          keyboardType="phone-pad" />
         <FormField label="Website / Facebook (optional)" value={website} onChangeText={setWebsite} autoCapitalize="none" keyboardType="url" />
 
         {!!error && <Text style={styles.formError}>{error}</Text>}
 
-        <PrimaryButton label="Send code" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submit} />
+        <PrimaryButton label="Send code" onPress={onSubmit} loading={submitting} style={styles.submit} />
       </ScrollView>
     </View>
   );

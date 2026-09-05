@@ -16,11 +16,22 @@ export function ForgotPasswordScreen({ navigation }: Props) {
   const api = useApi();
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState<string | undefined>(undefined);
 
-  const canSubmit = email.trim().length > 0 && !submitting;
-
+  /**
+   * Design-system rule: NEVER disable a submit button because of validation. A greyed
+   * button gives a person nothing to press and no explanation; an enabled one answers the
+   * question the moment they press it, and is the affordance a screen reader can reach.
+   * `submitting` still blocks — a request in flight is not a validation error, and
+   * PrimaryButton derives `isDisabled` from `loading` on its own.
+   */
   async function onSubmit() {
-    if (!canSubmit) return;
+    if (submitting) return;
+    if (email.trim().length === 0) {
+      setEmailError("Enter your email.");
+      return;
+    }
+    setEmailError(undefined);
     setSubmitting(true);
     try {
       await api.post("/auth/password/forgot", { email: email.trim() });
@@ -54,7 +65,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
         />
         <Text style={styles.helper}>Use the email you signed up with.</Text>
 
-        <PrimaryButton label="Send code" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
+        <PrimaryButton label="Send code" onPress={onSubmit} loading={submitting} style={styles.submitButton} />
 
         <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.navigate("signin")}>
           <Text style={styles.linkCentered}>Remembered it? Log in</Text>

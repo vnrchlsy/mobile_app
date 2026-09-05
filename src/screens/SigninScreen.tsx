@@ -23,12 +23,30 @@ export function SigninScreen({ navigation }: Props) {
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [emailError, setEmailError] = useState<string | undefined>(undefined);
+  const [passwordError, setPasswordError] = useState<string | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
 
-  const canSubmit = email.trim().length > 0 && password.length > 0 && !submitting;
-
+  /**
+   * Design-system rule: NEVER disable a submit button because of validation.
+   *
+   * This screen used `disabled={!canSubmit}`, so with an empty field the only control on
+   * the screen was greyed out and said nothing about why. A person who cannot see what is
+   * missing has nothing to act on — they can only guess, or leave. An enabled button that
+   * answers the question the moment they press it is strictly more usable, and it is the
+   * one affordance a screen reader can also reach and announce.
+   *
+   * `submitting` is a different thing and still blocks: that is a request in flight, not a
+   * validation error, and double-submitting a login is a real bug. `PrimaryButton` derives
+   * `isDisabled` from `loading` on its own, so passing `loading={submitting}` is enough.
+   */
   async function onSubmit() {
-    if (!canSubmit) return;
+    if (submitting) return;
+    const missingEmail = email.trim().length === 0 ? "Enter your email." : undefined;
+    const missingPassword = password.length === 0 ? "Enter your password." : undefined;
+    setEmailError(missingEmail);
+    setPasswordError(missingPassword);
+    if (missingEmail || missingPassword) return;
     setError(undefined);
     setSubmitting(true);
     try {
@@ -75,10 +93,12 @@ export function SigninScreen({ navigation }: Props) {
           onChangeText={(value) => {
             setEmail(value);
             if (error) setError(undefined);
+            if (emailError) setEmailError(undefined);
           }}
           autoCapitalize="none"
           keyboardType="email-address"
           autoComplete="email"
+          error={emailError}
         />
         <FormField
           testID="field.signin.password"
@@ -87,10 +107,12 @@ export function SigninScreen({ navigation }: Props) {
           onChangeText={(value) => {
             setPassword(value);
             if (error) setError(undefined);
+            if (passwordError) setPasswordError(undefined);
           }}
           secure={!passwordVisible}
           onToggleSecure={() => setPasswordVisible((visible) => !visible)}
           autoComplete="password"
+          error={passwordError}
         />
 
         {!!error && <Text style={styles.formError}>{error}</Text>}
@@ -103,7 +125,7 @@ export function SigninScreen({ navigation }: Props) {
           <Text style={styles.forgotText}>Forgot password?</Text>
         </TouchableOpacity>
 
-        <PrimaryButton testID="btn.signin.submit" label="Log in" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
+        <PrimaryButton testID="btn.signin.submit" label="Log in" onPress={onSubmit} loading={submitting} style={styles.submitButton} />
 
         <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.navigate("accountType")}>
           <Text style={styles.linkCentered}>New to Kupkop? Create account</Text>
