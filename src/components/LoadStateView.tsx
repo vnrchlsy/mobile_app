@@ -16,12 +16,22 @@ import { TAP_SLOP } from "../touch";
 const colors = { ink: "#12213A", muted: "#5F5E5A", teal: "#1C6B6B" };
 
 export function LoadStateView({
-  state, emptyTitle, emptyBody, onRetry,
+  state, emptyTitle, emptyBody, onRetry, subject,
 }: {
   state: LoadState;
   emptyTitle?: string;
   emptyBody?: string;
   onRetry?: () => void;
+  /**
+   * US-R2 · what this screen is about — "listing", "report", "story". A DETAIL route passes
+   * it so the copy names what failed ("Couldn't load this listing") instead of the generic
+   * "Couldn't load that". Bare noun, no article.
+   *
+   * ⚠️ Detail routes must ALSO pass no `count` to `loadState`, so `empty` can never fire.
+   * "No listings yet" on a page about one listing is exactly the nonsense this prop exists
+   * alongside — naming the subject without that is only half the fix.
+   */
+  subject?: string;
 }) {
   if (state.kind === "ready") return null;
 
@@ -33,7 +43,7 @@ export function LoadStateView({
     );
   }
 
-  const copy = loadStateCopy(state, emptyTitle, emptyBody);
+  const copy = loadStateCopy(state, emptyTitle, emptyBody, subject);
   return (
     <View style={styles.wrap} accessible accessibilityLabel={`${copy.title}. ${copy.body}`}>
       <Text style={styles.title}>{copy.title}</Text>

@@ -95,8 +95,7 @@ export function StoryDetailScreen({ navigation, route }: Props) {
       <View style={styles.screen}>
         <LoadStateView
           state={loadState(res)}
-          emptyTitle="Couldn't load this story"
-          emptyBody="It may have been removed."
+          subject="story"
           onRetry={load}
         />
       </View>

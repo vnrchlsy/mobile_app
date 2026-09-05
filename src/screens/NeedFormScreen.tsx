@@ -7,6 +7,7 @@ import {
 } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { PrefillWarning } from "../components/PrefillWarning";
 import { RootStackParamList } from "../navigation/types";
 import { TAP_SLOP } from "../touch";
 
@@ -88,10 +89,8 @@ export function NeedFormScreen({ navigation, route }: Props) {
             placeholder="e.g. Dog food (adult, dry)" placeholderTextColor="#9A988F" />
         </View>
         {prefillFailed ? (
-          <Text style={styles.error} accessibilityRole="alert">
-            We couldn't load your shelter profile, so this form can't be saved yet. Check your
-            connection and reopen it.
-          </Text>
+          <PrefillWarning message={"We couldn't load your shelter profile, so this form can't be "
+            + "saved yet. Check your connection and reopen it."} />
         ) : null}
         {!title.trim() && error ? <Text style={styles.error}>{error}</Text> : null}
 

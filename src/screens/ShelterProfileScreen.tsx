@@ -35,6 +35,9 @@ export function ShelterProfileScreen({ navigation }: Props) {
 
   // US-R1 · named so the same function serves the focus refetch AND the retry button.
   const load = useCallback(() => {
+      // US-R2 · PRIMARY. This screen is about the shelter's own identity and gating, both
+      // derived from /me — so /me failing takes the whole screen, while the dashboard
+      // counts below are SECONDARY and degrade on their own.
       // US-R1 · keep the RESULT. Discarding it left `me` null, and `gated` below is derived
       // as `me?.shelter?.verification_status !== "approved"` — so a failed /me showed an
       // APPROVED shelter its own account as unverified and gated, with every capability

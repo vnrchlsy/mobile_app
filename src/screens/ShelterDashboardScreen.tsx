@@ -42,6 +42,9 @@ export function ShelterDashboardScreen({ navigation }: Props) {
 
   // US-R1 · named so the same function serves the focus refetch AND the retry button.
   const load = useCallback(() => {
+      // US-R2 · PRIMARY. This screen is about the counts, so a failed /shelter/dashboard
+      // takes the whole screen. /me below is SECONDARY (name and tier, not substance) and
+      // is allowed to fail quietly rather than blank a dashboard that otherwise loaded.
       // US-R1 · keep the RESULT of both. Discarding them left `dash` and `me` null, and the
       // `?? ` fallbacks below then rendered "0 listings, 0 adopted, 0 donations" and a
       // community_rescue tier as FACT — a verified shelter shown its own work as zero.

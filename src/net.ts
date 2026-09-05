@@ -24,6 +24,10 @@ export function isOffline(res: Apiish | null | undefined): boolean {
 export type LoadState =
   | { kind: "loading" }
   | { kind: "offline" }
+  // US-R2 · 404/403 on a DETAIL route. Distinct from `error` because it is not a fault and
+  // not retryable: the row was deleted, or the viewer's access ended (an expired claim,
+  // §12.5). Telling someone to "try again" for either is a lie they can act on forever.
+  | { kind: "gone" }
   | { kind: "error"; retryable: boolean }
   | { kind: "empty" }
   | { kind: "ready" };
@@ -41,9 +45,35 @@ export type LoadState =
  * Collapsing empty into error is the bug this prevents: an owner with no reports yet was
  * being shown a failure for the perfectly ordinary state of not having filed one.
  */
+/**
+ * US-R2 · THE RULE FOR SCREENS THAT FETCH MORE THAN ONCE.
+ *
+ * `ShelterDashboardScreen` and `ShelterProfileScreen` each issue two or three GETs, so
+ * PARTIAL failure is a real outcome and "did it load?" has no single answer. The decision,
+ * so US-R5's conversions do not each invent one:
+ *
+ *   PRIMARY fetch fails  -> whole-screen state. The screen is *about* that data; rendering
+ *                           a shell around a hole is worse than saying it didn't load.
+ *   SECONDARY fetch fails -> leave the rest of the screen alone and degrade that panel
+ *                           only. Blanking a shelter's whole dashboard because one counter
+ *                           timed out throws away the parts that did arrive.
+ *
+ * Deciding which is which is a per-screen judgement, and it is the ONLY judgement a
+ * converter should have to make: on the dashboards, `/shelter/dashboard` is primary and
+ * `/me` is secondary (it supplies the name and tier, not the substance).
+ *
+ * ⚠️ The failure mode this exists to prevent is the opposite of the rescue map's: not a
+ * confident empty state, but a confident PARTIAL one — a dashboard showing three real
+ * counters and one fabricated zero, with nothing to say which is which.
+ */
 export function loadState(res: Apiish | null | undefined, count?: number): LoadState {
   if (res === null || res === undefined) return { kind: "loading" };
+  // ⚠️ ORDER MATTERS. `client.ts` returns status 0 for a network failure, which is also
+  // `!ok` — so the offline check must come before any status branch below, or every
+  // offline request would be classified as "gone" and the user told their report was
+  // deleted when the phone simply had no signal.
   if (isOffline(res)) return { kind: "offline" };
+  if (res.status === 404 || res.status === 403) return { kind: "gone" };
   if (!res.ok) return { kind: "error", retryable: res.status >= 500 };
   if (count === 0) return { kind: "empty" };
   return { kind: "ready" };
@@ -55,6 +85,12 @@ export function loadState(res: Apiish | null | undefined, count?: number): LoadS
  */
 export function loadStateCopy(
   state: LoadState, emptyTitle = "Nothing here yet", emptyBody = "",
+  /**
+   * US-R2 · the thing this screen is about — "listing", "report", "story". Detail routes
+   * pass it so the copy names what failed; list screens pass nothing and read exactly as
+   * they did before. Bare noun, no article: the sentences add "this".
+   */
+  subject?: string,
 ): { title: string; body: string; retry: boolean } {
   switch (state.kind) {
     case "offline":
@@ -63,9 +99,17 @@ export function loadStateCopy(
         body: "Showing what we have. Reconnect to see the latest.",
         retry: true,
       };
+    case "gone":
+      // No retry. That is the whole difference from `error` — the affordance would be a
+      // promise the app cannot keep.
+      return {
+        title: subject ? `This ${subject} is no longer available` : "This is no longer available",
+        body: "It may have been removed, or you no longer have access to it.",
+        retry: false,
+      };
     case "error":
       return {
-        title: "Couldn't load that",
+        title: subject ? `Couldn't load this ${subject}` : "Couldn't load that",
         body: state.retryable ? "Something went wrong on our end." : "Please try again.",
         retry: true,
       };
