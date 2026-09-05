@@ -43,6 +43,7 @@ export function OwnerTabs({ active }: OwnerTabsProps) {
           return (
             <TouchableOpacity
               key={tab.key}
+              testID={`tab.${tab.key}`}
               activeOpacity={0.75}
               style={styles.tabItem}
               accessibilityRole="tab"

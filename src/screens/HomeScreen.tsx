@@ -117,7 +117,7 @@ export function HomeScreen({ navigation, route }: Props) {
   const approvedMember = me?.capabilities.some((c) => c.capability === "rescuer" && c.status === "approved") ?? false;
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.home">
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <View style={styles.headerCopy}>
@@ -186,6 +186,7 @@ export function HomeScreen({ navigation, route }: Props) {
             <Text style={styles.reportTitle}>Saw a stray?</Text>
             <Text style={styles.reportText}>Report it in seconds — help is near.</Text>
             <TouchableOpacity
+              testID="btn.home.report"
               activeOpacity={0.85}
               style={styles.reportButton}
               onPress={() => navigation.navigate("reportStray")}
@@ -201,7 +202,7 @@ export function HomeScreen({ navigation, route }: Props) {
           <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.7} onPress={() => navigation.navigate("rescueMap")}>
             <Text style={styles.sagipLink}>See nearby strays ›</Text>
           </TouchableOpacity>
-          <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.7} onPress={() => navigation.navigate("myReports")}>
+          <TouchableOpacity testID="btn.home.myReports" hitSlop={TAP_SLOP} activeOpacity={0.7} onPress={() => navigation.navigate("myReports")}>
             <Text style={styles.sagipLink}>My reports ›</Text>
           </TouchableOpacity>
           <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.7} onPress={() => navigation.navigate("myRescues")}>
@@ -228,7 +229,7 @@ export function HomeScreen({ navigation, route }: Props) {
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Adopt near you</Text>
-          <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.7} onPress={() => navigation.navigate("adopt")}>
+          <TouchableOpacity testID="btn.home.adopt" hitSlop={TAP_SLOP} activeOpacity={0.7} onPress={() => navigation.navigate("adopt")}>
             <Text style={styles.seeAll}>See all ›</Text>
           </TouchableOpacity>
         </View>

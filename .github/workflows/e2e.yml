@@ -1,0 +1,102 @@
+## US-X2 · the money-path E2E smoke (§15.4).
+##
+## ⚠️ DELIBERATELY NOT ON `push` OR `pull_request`. §15.4 puts this in the pre-release gate,
+## not the per-PR one: it boots a simulator, installs a native build and drives a real
+## backend, so it is minutes where the unit suite is seconds. A slow required check is one
+## people learn to route around, and the check they route around is the one that mattered.
+##
+## It runs on demand, and on a release tag — the two moments someone is actually about to
+## ship. The per-PR net is `ci.yml`, which includes `e2eSelectors.test.ts`: that keeps the
+## flows and the app from drifting apart between releases, in milliseconds, without a
+## simulator. See e2e/README.md for what that does and does not prove.
+name: mobile e2e (pre-release)
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: 'Backend the build points at (never production)'
+        required: true
+        default: 'https://staging.kupkop.invalid/api/v1'
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: mobile-e2e-${{ github.ref }}
+  cancel-in-progress: false        # never cancel a release-gate run half way
+
+jobs:
+  smoke:
+    name: maestro · money paths
+    # macOS, because the flows drive the iOS simulator. This runner is expensive, which is
+    # the other half of why this is not a per-PR job.
+    runs-on: macos-14
+    timeout-minutes: 45
+
+    ## ⚠️ CREDENTIALS COME FROM REPOSITORY SECRETS AND ARE NEVER IN THE REPO. They belong to
+    ## a THROWAWAY account on a dev or staging backend — never a real user's, never
+    ## production. `e2eSelectors.test.ts` fails the build if a literal one appears in a flow.
+    env:
+      MAESTRO_EMAIL: ${{ secrets.MAESTRO_EMAIL }}
+      MAESTRO_PASSWORD: ${{ secrets.MAESTRO_PASSWORD }}
+      EXPO_PUBLIC_API_BASE: ${{ github.event.inputs.api_base || vars.E2E_API_BASE }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Fail before spending twenty minutes on a native build if the account was never
+      # configured. The alternative is a red run that looks like a product failure.
+      - name: Require the test account
+        run: |
+          if [ -z "$MAESTRO_EMAIL" ] || [ -z "$MAESTRO_PASSWORD" ]; then
+            echo "::error::MAESTRO_EMAIL / MAESTRO_PASSWORD are not set."
+            echo "Set them as repository secrets for a THROWAWAY dev account — see e2e/README.md."
+            exit 1
+          fi
+          case "$EXPO_PUBLIC_API_BASE" in
+            "") echo "::error::EXPO_PUBLIC_API_BASE is not set."; exit 1 ;;
+            # These flows create real rows — reports, inquiries, shift requests. Pointing
+            # them at production would file live stray reports nobody filed.
+            *prod*|*production*) echo "::error::Refusing to run E2E against production."; exit 1 ;;
+          esac
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Cheap, and it fails in seconds if a selector was renamed — no point building a
+      # native binary to discover the flows no longer match the app.
+      - name: Selector wiring
+        run: npx jest e2eSelectors
+
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Build the app for the simulator
+        run: npx expo run:ios --configuration Release --no-bundler
+
+      # 40-signup-needs-a-human.yaml is EXCLUDED here, not forgotten: it needs an email code
+      # that no test can read (§12.6 keeps it out of the logs on purpose). e2e/README.md has
+      # the whole reasoning and what would make it autonomous.
+      - name: Run the money-path flows
+        run: maestro test e2e/flows/00-signin.yaml e2e/flows/10-report-a-stray.yaml e2e/flows/20-browse-and-inquire.yaml e2e/flows/30-volunteer-signup.yaml
+
+      # Maestro writes a screenshot and a view hierarchy per failed step. Without these a
+      # red run tells you which step failed and nothing about why.
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-debug
+          path: ~/.maestro/tests/
+          retention-days: 14

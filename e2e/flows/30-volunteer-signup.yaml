@@ -1,0 +1,30 @@
+# MONEY PATH 3 · volunteer shift signup → waiver consent → requested.
+#
+# ⚠️ The Volunteer TAB does not open `screen.volunteer` — that route is a placeholder that
+# stays registered but unreachable. OwnerTabs sends the tab to the Kawang-Gawa hub instead
+# (see the comment in OwnerTabs.tsx). Asserting `screen.kawanggawa` here is correct, and if
+# someone ever "fixes" the tab to match its name, this is what will say so.
+appId: ph.kupkop.app
+---
+- runFlow: 00-signin.yaml
+- tapOn:
+    id: "tab.volunteer"
+- assertVisible:
+    id: "screen.kawanggawa"
+- tapOn:
+    id: "card.kawanggawa.0"
+- assertVisible:
+    id: "screen.kawanggawaDetail"
+# Both consents are required before Request becomes live. Tapping only one and expecting
+# success is the mistake this flow is shaped to catch — the waiver is a legal gate (D-S5-1),
+# not a formality, and it must not be possible to request a shift without it.
+- tapOn:
+    id: "chk.kawanggawaDetail.waiver"
+- tapOn:
+    id: "chk.kawanggawaDetail.contact"
+- tapOn:
+    id: "btn.kawanggawaDetail.request"
+    enabled: true
+- assertVisible:
+    id: "screen.kawanggawaRequested"
+    timeout: 20000

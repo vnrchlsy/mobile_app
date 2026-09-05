@@ -100,7 +100,7 @@ export function KawangGawaDetailScreen({ navigation, route }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.kawanggawaDetail">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
           accessibilityRole="button" accessibilityLabel="Go back">
@@ -137,6 +137,7 @@ export function KawangGawaDetailScreen({ navigation, route }: Props) {
           <Text style={styles.sectionLabel}>Before you request</Text>
 
           <TouchableOpacity
+            testID="chk.kawanggawaDetail.waiver"
             activeOpacity={0.85}
             style={[styles.consentRow, waiverHighlight && styles.consentRowAlert]}
             onPress={() => {
@@ -160,6 +161,7 @@ export function KawangGawaDetailScreen({ navigation, route }: Props) {
           </TouchableOpacity>
 
           <TouchableOpacity
+            testID="chk.kawanggawaDetail.contact"
             activeOpacity={0.85}
             style={styles.consentRow}
             onPress={() => setContactChecked((v) => !v)}
@@ -175,6 +177,7 @@ export function KawangGawaDetailScreen({ navigation, route }: Props) {
           {!!error && <Text style={styles.formError}>{error}</Text>}
 
           <TouchableOpacity
+            testID="btn.kawanggawaDetail.request"
             activeOpacity={0.85}
             style={[styles.submitButton, !canRequest && styles.submitButtonDisabled]}
             onPress={submit}

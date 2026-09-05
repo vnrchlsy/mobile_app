@@ -69,7 +69,7 @@ export function KawangGawaScreen({ navigation }: Props) {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.kawanggawa">
       <View style={styles.header}>
         <Text style={styles.title}>Kawang-Gawa</Text>
         <View style={styles.headerLinks}>
@@ -103,8 +103,9 @@ export function KawangGawaScreen({ navigation }: Props) {
             onRetry={load}
           />
         ) : (
-          shifts.map((s) => (
+          shifts.map((s, i) => (
             <TouchableOpacity
+              testID={`card.kawanggawa.${i}`}
               key={s.shift_id}
               style={styles.card}
               activeOpacity={0.85}

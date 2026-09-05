@@ -1,0 +1,22 @@
+# MONEY PATH 2 · browse adoptable animals → inquire about one.
+appId: ph.kupkop.app
+---
+- runFlow: 00-signin.yaml
+- tapOn:
+    id: "btn.home.adopt"
+- assertVisible:
+    id: "screen.adopt"
+# ⚠️ Requires the seed to hold at least one listing. If it does not, this fails on a missing
+# `card.adopt.0` — which is the correct outcome: an adoption flow with nothing to adopt has
+# not been tested, and a flow that skips itself when the fixture is empty is the same
+# green-but-checked-nothing failure US-G1 was written about.
+- tapOn:
+    id: "card.adopt.0"
+- assertVisible:
+    id: "screen.listingDetail"
+- tapOn:
+    id: "btn.listingDetail.inquire"
+# The button becomes "Inquiry sent" and disables itself. Asserting the copy here is
+# deliberate: it is the only signal the POST was accepted rather than merely dispatched.
+- assertVisible: "Inquiry sent"
+

@@ -14,7 +14,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "kawanggawaRequested">;
 
 export function KawangGawaRequestedScreen({ navigation }: Props) {
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.kawanggawaRequested">
       <View style={styles.content}>
         <View style={styles.iconCircle}>
           <ClockIcon color={colors.teal} size={44} />

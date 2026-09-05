@@ -1,0 +1,12 @@
+# US-X2 · Maestro configuration for the money-path E2E suite (§15.4).
+#
+# Run PRE-RELEASE, not on every PR. These flows drive a real simulator against a real
+# backend; they are minutes, not seconds, and a suite that makes every PR slow is a suite
+# people learn to skip. The unit tests are the per-PR net.
+flows:
+  - flows/*.yaml
+
+# Every flow starts from a known-clean app state rather than inheriting the last one's.
+# Without this the second flow silently depends on the first having signed in, and the
+# failure it eventually produces points at the wrong flow.
+appId: ph.kupkop.app

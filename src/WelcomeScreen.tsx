@@ -115,7 +115,7 @@ export function WelcomeScreen({
   const s = (value: number) => (ready ? value * Math.min(size.width / W, size.height / H) : value);
 
   return (
-    <View style={styles.root} onLayout={onLayout}>
+    <View style={styles.root} onLayout={onLayout} testID="screen.welcome">
       {ready && (
         <>
           <LinearGradient

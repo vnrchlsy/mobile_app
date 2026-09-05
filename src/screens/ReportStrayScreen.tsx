@@ -143,7 +143,7 @@ export function ReportStrayScreen({ navigation, route }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.reportStray">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
           accessibilityRole="button" accessibilityLabel="Go back">
@@ -176,6 +176,7 @@ export function ReportStrayScreen({ navigation, route }: Props) {
 
         <Text style={styles.label}>Notes (optional)</Text>
         <TextInput
+          testID="field.reportStray.notes"
           style={styles.notes}
           value={notes}
           onChangeText={setNotes}
@@ -227,6 +228,7 @@ export function ReportStrayScreen({ navigation, route }: Props) {
         ) : null}
 
         <TouchableOpacity
+          testID="btn.reportStray.submit"
           style={[styles.submit, !coords && styles.submitIdle]}
           onPress={submit}
           activeOpacity={0.9}

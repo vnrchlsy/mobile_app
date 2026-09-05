@@ -61,7 +61,7 @@ export function MyInquiriesScreen({ navigation }: Props) {
   useFocusEffect(load);
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.myInquiries">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
           accessibilityRole="button" accessibilityLabel="Go back">

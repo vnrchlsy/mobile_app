@@ -98,7 +98,7 @@ export function ListingDetailScreen({ navigation, route }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.listingDetail">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
           accessibilityRole="button" accessibilityLabel="Go back">
@@ -179,6 +179,7 @@ export function ListingDetailScreen({ navigation, route }: Props) {
           ) : null}
 
           <TouchableOpacity
+            testID="btn.listingDetail.inquire"
             style={[styles.inquireBtn, (inquiring || inquired) && styles.inquireBtnIdle]}
             activeOpacity={0.9}
             onPress={onInquirePressed}

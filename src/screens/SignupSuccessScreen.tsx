@@ -51,7 +51,7 @@ export function SignupSuccessScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.signupSuccess">
       <TopStatus />
 
       <View style={styles.content}>
@@ -90,7 +90,7 @@ export function SignupSuccessScreen({ navigation }: Props) {
           </View>
         </View>
 
-        <PrimaryButton label="Start exploring" onPress={onStartExploring} style={styles.startButton} />
+        <PrimaryButton testID="btn.signupSuccess.continue" label="Start exploring" onPress={onStartExploring} style={styles.startButton} />
       </View>
     </View>
   );

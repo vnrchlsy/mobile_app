@@ -113,6 +113,16 @@ type FormFieldProps = {
   keyboardType?: TextInputProps["keyboardType"];
   autoComplete?: TextInputProps["autoComplete"];
   error?: string;
+  /**
+   * US-X2 · a stable selector for the E2E suite. React Native maps `testID` to the platform
+   * accessibility identifier, which is what Maestro's `id:` matches on.
+   *
+   * ⚠️ It is deliberately NOT the visible label. Maestro can match on text, and every Maestro
+   * tutorial does — but Track R just rewrote user-facing copy across 42 screens, and a suite
+   * pinned to copy fails on every wording change until someone deletes it. The id is a
+   * contract between the app and the flows; the copy stays free to improve.
+   */
+  testID?: string;
 };
 
 export function FormField({
@@ -124,13 +134,15 @@ export function FormField({
   autoCapitalize,
   keyboardType,
   autoComplete,
-  error
+  error,
+  testID
 }: FormFieldProps) {
   return (
     <View style={styles.fieldGroup}>
       <Text style={styles.label}>{label}</Text>
       <View style={[styles.input, error && styles.inputError]}>
         <TextInput
+          testID={testID}
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={secure}
@@ -166,12 +178,23 @@ type PrimaryButtonProps = {
   disabled?: boolean;
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
+  /**
+   * US-X2 · a stable selector for the E2E suite. React Native maps `testID` to the platform
+   * accessibility identifier, which is what Maestro's `id:` matches on.
+   *
+   * ⚠️ It is deliberately NOT the visible label. Maestro can match on text, and every Maestro
+   * tutorial does — but Track R just rewrote user-facing copy across 42 screens, and a suite
+   * pinned to copy fails on every wording change until someone deletes it. The id is a
+   * contract between the app and the flows; the copy stays free to improve.
+   */
+  testID?: string;
 };
 
-export function PrimaryButton({ label, onPress, disabled, loading, style }: PrimaryButtonProps) {
+export function PrimaryButton({ label, onPress, disabled, loading, style, testID }: PrimaryButtonProps) {
   const isDisabled = disabled || loading;
   return (
     <TouchableOpacity
+      testID={testID}
       activeOpacity={0.85}
       onPress={onPress}
       disabled={isDisabled}

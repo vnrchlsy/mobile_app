@@ -1,0 +1,30 @@
+# The subroutine every account-bound flow starts with.
+#
+# ⚠️ CREDENTIALS COME FROM THE ENVIRONMENT AND ARE NEVER COMMITTED. MAESTRO_EMAIL and
+# MAESTRO_PASSWORD belong to a throwaway account on a dev/staging backend, created by the
+# developer running this. Nothing in this repository should ever contain a real one — see
+# e2e/README.md for how to set them.
+appId: ph.kupkop.app
+---
+- launchApp:
+    clearState: true          # a stale session would skip the whole point of this flow
+- assertVisible:
+    id: "screen.welcome"
+- tapOn:
+    text: "Log in"
+- assertVisible:
+    id: "screen.signin"
+- tapOn:
+    id: "field.signin.email"
+- inputText: ${MAESTRO_EMAIL}
+- tapOn:
+    id: "field.signin.password"
+- inputText: ${MAESTRO_PASSWORD}
+- hideKeyboard
+- tapOn:
+    id: "btn.signin.submit"
+# The assertion that matters: signing in lands on Home. A wrong password lands back on
+# `screen.signin` with an error, and this fails there rather than three steps later.
+- assertVisible:
+    id: "screen.home"
+    timeout: 20000

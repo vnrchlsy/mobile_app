@@ -22,7 +22,7 @@ const NEXT = [
 export function ReportSentScreen({ navigation, route }: Props) {
   const { reportId, title, city, queued } = route.params;
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.reportSent">
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <View style={styles.heroIcon}><CheckIcon color={colors.white} size={30} /></View>
@@ -56,6 +56,7 @@ export function ReportSentScreen({ navigation, route }: Props) {
 
         {reportId ? (
           <TouchableOpacity
+            testID="btn.reportSent.track"
             style={styles.primary}
             activeOpacity={0.9}
             onPress={() => navigation.replace("reportDetail", { reportId })}
@@ -66,6 +67,7 @@ export function ReportSentScreen({ navigation, route }: Props) {
           // No server id yet — My Reports is where the queued item lives and can be
           // retried or discarded.
           <TouchableOpacity
+            testID="btn.reportSent.myReports"
             style={styles.primary}
             activeOpacity={0.9}
             onPress={() => navigation.replace("myReports")}

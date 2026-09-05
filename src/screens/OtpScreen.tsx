@@ -137,7 +137,7 @@ export function OtpScreen({ navigation, route }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.otp">
       <AuthHeader
         title="Verify your email"
         activeStep={2}
@@ -163,6 +163,9 @@ export function OtpScreen({ navigation, route }: Props) {
         <View style={styles.otpRow}>
           {digits.map((digit, index) => (
             <TextInput
+              // Per-box, because the code is six separate one-character inputs — a flow has
+              // to place each digit, and there is no single field to type into.
+              testID={`field.otp.${index}`}
               key={index}
               ref={(input) => {
                 inputRefs.current[index] = input;
@@ -189,7 +192,7 @@ export function OtpScreen({ navigation, route }: Props) {
         </TouchableOpacity>
         {!!resendNotice && <Text style={styles.resendNotice}>{resendNotice}</Text>}
 
-        <PrimaryButton label="Verify" onPress={onVerify} disabled={code.length !== CODE_LENGTH} loading={submitting} style={styles.verifyButton} />
+        <PrimaryButton testID="btn.otp.verify" label="Verify" onPress={onVerify} disabled={code.length !== CODE_LENGTH} loading={submitting} style={styles.verifyButton} />
 
         <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.goBack()}>
           <Text style={styles.changeEmail}>Wrong email? Change it</Text>

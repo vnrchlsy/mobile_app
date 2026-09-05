@@ -1,0 +1,44 @@
+# MONEY PATH 1 · file a report → it appears in My Reports.
+#
+# This is the path the whole app exists for, and the one Sprint 8 found broken in the most
+# ways: the rescue map announcing "No strays reported near Marikina right now" while eight
+# sat within 10 km, and ReportDetail telling a rescuer a live case was "not found". A test
+# that only checks the POST succeeds would have passed through both.
+appId: ph.kupkop.app
+---
+- runFlow: 00-signin.yaml
+- tapOn:
+    id: "btn.home.report"
+- assertVisible:
+    id: "screen.reportStray"
+- tapOn:
+    id: "field.reportStray.notes"
+- inputText: "E2E smoke — limping brown aspin near the covered court."
+- hideKeyboard
+# The submit is gated on a GPS fix, so this waits for the button to become live rather than
+# racing it. `enabled: true` is the difference between testing the flow and testing a
+# stopwatch.
+- tapOn:
+    id: "btn.reportStray.submit"
+    enabled: true
+    timeout: 30000
+- assertVisible:
+    id: "screen.reportSent"
+    timeout: 30000
+# ⚠️ THE ASSERTION THIS FLOW EXISTS FOR. A queued (offline) report shows "Saved — we'll
+# send it" and routes to My Reports instead; a sent one offers "Track this report". If the
+# device is online and we still get the queued branch, the report did NOT reach anyone and
+# the flow must fail here, not quietly pass. US-O3 is explicit that the success screen must
+# not claim rescuers were alerted when nothing was sent.
+- assertVisible:
+    id: "btn.reportSent.track"
+- tapOn:
+    text: "Back to home"
+- assertVisible:
+    id: "screen.home"
+- tapOn:
+    id: "btn.home.myReports"
+- assertVisible:
+    id: "screen.myReports"
+# The report is actually in the list — the round trip, not just the POST's 201.
+- assertVisible: "E2E smoke — limping brown aspin near the covered court."

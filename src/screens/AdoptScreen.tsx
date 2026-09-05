@@ -49,7 +49,7 @@ export function AdoptScreen({ navigation }: Props) {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.adopt">
       <View style={styles.header}>
         <Text style={styles.title}>Adopt</Text>
         <View style={styles.headerLinks}>
@@ -84,8 +84,11 @@ export function AdoptScreen({ navigation }: Props) {
             onRetry={load}
           />
         ) : (
-          listings.map((l) => (
+          listings.map((l, i) => (
             <TouchableOpacity
+              // Indexed, so a flow can tap "the first listing" without knowing the fixture's
+              // id. `card.adopt.0` is the contract; which animal is in it is the seed's business.
+              testID={`card.adopt.${i}`}
               key={l.listing_id}
               style={styles.card}
               activeOpacity={0.9}

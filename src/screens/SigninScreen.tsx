@@ -55,7 +55,7 @@ export function SigninScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.signin">
       <SimpleHeader onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
@@ -69,6 +69,7 @@ export function SigninScreen({ navigation }: Props) {
         <Text style={styles.caption}>Log in to keep helping.</Text>
 
         <FormField
+          testID="field.signin.email"
           label="Email"
           value={email}
           onChangeText={(value) => {
@@ -80,6 +81,7 @@ export function SigninScreen({ navigation }: Props) {
           autoComplete="email"
         />
         <FormField
+          testID="field.signin.password"
           label="Password"
           value={password}
           onChangeText={(value) => {
@@ -101,7 +103,7 @@ export function SigninScreen({ navigation }: Props) {
           <Text style={styles.forgotText}>Forgot password?</Text>
         </TouchableOpacity>
 
-        <PrimaryButton label="Log in" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
+        <PrimaryButton testID="btn.signin.submit" label="Log in" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
 
         <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.navigate("accountType")}>
           <Text style={styles.linkCentered}>New to Kupkop? Create account</Text>

@@ -64,7 +64,7 @@ export function SignupScreen({ navigation, route }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.signup">
       <AuthHeader
         title="Create account"
         activeStep={1}
@@ -77,6 +77,7 @@ export function SignupScreen({ navigation, route }: Props) {
         <Text style={styles.caption}>{isShelter ? "Use your organisation's email." : "A few details and you're in."}</Text>
 
         <FormField
+          testID="field.signup.name"
           label={isShelter ? "Organization name" : "Full name"}
           value={name}
           onChangeText={setName}
@@ -84,6 +85,7 @@ export function SignupScreen({ navigation, route }: Props) {
           autoComplete={isShelter ? undefined : "name"}
         />
         <FormField
+          testID="field.signup.email"
           label="Email"
           value={email}
           onChangeText={(value) => {
@@ -96,6 +98,7 @@ export function SignupScreen({ navigation, route }: Props) {
           error={emailError}
         />
         <FormField
+          testID="field.signup.password"
           label="Password"
           value={password}
           onChangeText={(value) => {
@@ -112,7 +115,7 @@ export function SignupScreen({ navigation, route }: Props) {
 
         {!!formError && <Text style={styles.formError}>{formError}</Text>}
 
-        <PrimaryButton label="Send code" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
+        <PrimaryButton testID="btn.signup.submit" label="Send code" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
 
         <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.navigate("signin")}>
           <Text style={styles.linkCentered}>Already have an account? Log in</Text>

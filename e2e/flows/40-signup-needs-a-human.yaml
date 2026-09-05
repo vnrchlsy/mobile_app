@@ -1,0 +1,66 @@
+# MONEY PATH 4 · signup → email code → home.
+#
+# ⚠️⚠️ THIS FLOW CANNOT RUN UNATTENDED TODAY, AND THE FILENAME SAYS SO ON PURPOSE.
+#
+# It needs the 6-digit code, and there is deliberately no way for a test to read one.
+# ConsoleSender prints it to stdout and keeps it out of the logging system entirely, because
+# §12.6 requires that CloudWatch read access must not double as "sign in as any user". That
+# is a good rule and this flow is not a reason to weaken it.
+#
+# So `MAESTRO_OTP` is supplied by the person running the flow, who reads it from the dev
+# server's stdout. Everything else is automated; one value is not.
+#
+# WHAT WOULD MAKE IT AUTONOMOUS: a dev-only fixed code for a single throwaway `.invalid`
+# domain — three guards (DEBUG, both settings explicitly present, domain must end `.invalid`),
+# so a guard failure affects only addresses at a domain nobody can own and no mail can reach.
+# That is an authentication bypass in the backend and it is NOT in this repo: it needs the
+# owner's explicit sign-off, and it was deliberately not added unilaterally. Until then, the
+# three flows beside this one cover the account-bound paths via sign-in, which needs no code.
+#
+# Run: MAESTRO_SIGNUP_EMAIL=... MAESTRO_OTP=123456 maestro test e2e/flows/40-signup-needs-a-human.yaml
+appId: ph.kupkop.app
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: "screen.welcome"
+- tapOn:
+    text: "Get started"
+- assertVisible:
+    id: "screen.accountType"
+- tapOn:
+    id: "btn.accountType.personal"
+- assertVisible:
+    id: "screen.signup"
+- tapOn:
+    id: "field.signup.name"
+- inputText: "E2E Smoke"
+- tapOn:
+    id: "field.signup.email"
+# Must be a fresh address each run — signup deliberately says "this email already has an
+# account" (the one place enumeration is allowed), so a reused address fails here.
+- inputText: ${MAESTRO_SIGNUP_EMAIL}
+- tapOn:
+    id: "field.signup.password"
+- inputText: ${MAESTRO_SIGNUP_PASSWORD}
+- hideKeyboard
+- tapOn:
+    id: "btn.signup.submit"
+- assertVisible:
+    id: "screen.otp"
+    timeout: 20000
+# Six one-character boxes, so each digit is placed individually.
+- tapOn:
+    id: "field.otp.0"
+- inputText: ${MAESTRO_OTP}
+- hideKeyboard
+- tapOn:
+    id: "btn.otp.verify"
+    enabled: true
+- assertVisible:
+    id: "screen.signupSuccess"
+    timeout: 20000
+- tapOn:
+    id: "btn.signupSuccess.continue"
+- assertVisible:
+    id: "screen.home"

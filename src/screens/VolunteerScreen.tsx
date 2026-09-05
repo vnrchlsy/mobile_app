@@ -6,7 +6,7 @@ import { OwnerTabs } from "../components/OwnerTabs";
 
 export function VolunteerScreen() {
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.volunteer">
       <View style={styles.content}>
         <Text style={styles.title}>Volunteer</Text>
         <Text style={styles.body}>Kawang-Gawa volunteer shifts are coming soon.</Text>
