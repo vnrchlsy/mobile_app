@@ -104,7 +104,7 @@ export function ProfileScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.profile">
       <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]} showsVerticalScrollIndicator={false}>
         <Text style={styles.pageTitle}>Profile</Text>
 

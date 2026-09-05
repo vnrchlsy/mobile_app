@@ -96,7 +96,7 @@ export function ShelterDashboardScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.shelterDashboard">
       <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <Text style={styles.orgName}>{me?.display_name ?? "Your shelter"}</Text>

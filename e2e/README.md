@@ -1,6 +1,6 @@
 # E2E smoke on the money paths (US-X2)
 
-Maestro flows over the four paths the app exists for. **Pre-release, not per-PR** (§15.4) —
+Maestro flows over the paths the app exists for. **Pre-release, not per-PR** (§15.4) —
 these drive a real simulator against a real backend and take minutes, and a suite that makes
 every PR slow is a suite people learn to skip.
 
@@ -11,9 +11,26 @@ every PR slow is a suite people learn to skip.
 | `10-report-a-stray.yaml` | file a report → it appears in My Reports | ✅ |
 | `20-browse-and-inquire.yaml` | browse adoptable animals → inquire | ✅ |
 | `30-volunteer-signup.yaml` | shift → waiver + contact consent → requested | ✅ |
+| `15-owner-profile.yaml` | "You" tab → the owner's profile | ✅ |
+| `50-shelter-shell.yaml` | shelter sign-in → dashboard ⇄ shelter profile | ✅ |
 | `40-signup-needs-a-human.yaml` | signup → email code → home | ❌ — one value is typed by a person |
 
-`00-signin.yaml` is a subroutine the first three call, not a path of its own.
+### Why the last two exist
+
+`ProfileScreen`, `ShelterDashboardScreen` and `ShelterProfileScreen` sit behind a sign-in, so
+for three sprints they were "verified by reading the diff" and a person had to be asked to log
+in each time it mattered. Asking a human to be the test harness does not scale and does not
+repeat. These flows do the same walk from environment variables, the same way, every run —
+which is the whole argument for US-X2 in one example.
+
+`50-shelter-shell.yaml` also asserts something no one thought to check by hand: the stack's
+`initialRouteName` is always `home`, so a returning shelter account lands on the OWNER home
+screen and `HomeScreen` resets it to the shelter shell after reading `/me`. If that redirect
+breaks, a shelter admin opens the app into someone else's product.
+
+`00-signin.yaml` is a subroutine the others call, not a path of its own. `50-shelter-shell`
+calls it with **different** credentials via `runFlow.env`, which is why its landing assertion
+is `screen.home` — the one post-login state an owner and a shelter genuinely share.
 
 ## Why signup can't run unattended
 
@@ -33,7 +50,7 @@ a "give me the code" endpoint whose guard fails in production hands out the live
 register and no mail can reach. That is still an authentication bypass in the backend, it
 needs the owner's explicit sign-off, and it was not added unilaterally.
 
-The other three flows sidestep it entirely: **sign-in needs no code.**
+Every other flow sidesteps it entirely: **sign-in needs no code.**
 
 ## Setup
 
@@ -59,8 +76,15 @@ password appears in a flow file.
 backend** — never a real user's, and never a production account.
 
 ```bash
-cd mobile_app && MAESTRO_EMAIL=... MAESTRO_PASSWORD=... maestro test e2e/
+cd mobile_app && \
+  MAESTRO_EMAIL=... MAESTRO_PASSWORD=... \
+  MAESTRO_SHELTER_EMAIL=... MAESTRO_SHELTER_PASSWORD=... \
+  maestro test e2e/
 ```
+
+⚠️ **Two accounts, not one.** `MAESTRO_SHELTER_*` must be an account whose `account_type` is
+`shelter` — the shelter shell is unreachable otherwise, and the owner credentials cannot get
+there no matter what they tap.
 
 The signup flow additionally needs a fresh address each run (signup deliberately reports
 "this email already has an account" — the one place enumeration is allowed):
@@ -87,7 +111,8 @@ fails on every wording change until someone deletes it. The id is a contract bet
 and the flows; the copy stays free to improve.
 
 Naming: `screen.<route>` (matching the `Stack.Screen` name exactly), `btn.<screen>.<action>`,
-`field.<screen>.<name>`, `chk.<screen>.<name>`, `card.<list>.<index>`, `tab.<key>`.
+`field.<screen>.<name>`, `chk.<screen>.<name>`, `card.<list>.<index>`, `tab.<key>` for the
+owner shell and `tab.shelter.<key>` for the shelter one.
 
 ## What guards this between releases
 

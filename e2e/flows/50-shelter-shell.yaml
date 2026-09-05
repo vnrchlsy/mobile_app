@@ -1,0 +1,37 @@
+# MONEY PATH 5 · the shelter shell — dashboard and profile.
+#
+# ⚠️ WHY THIS FLOW EXISTS AT ALL. These two screens plus the owner profile were the last
+# things nobody could verify: they sit behind a sign-in, so an agent cannot reach them and a
+# person had to be asked each time. That request came up in three separate stories before
+# somebody said "wire it into Maestro instead", which is the right answer — a flow signs in
+# from environment variables, as the developer, on a throwaway account, and does it the same
+# way every run.
+#
+# Requires a SHELTER account: MAESTRO_SHELTER_EMAIL / MAESTRO_SHELTER_PASSWORD.
+appId: ph.kupkop.app
+---
+- runFlow:
+    file: 00-signin.yaml
+    env:
+      MAESTRO_EMAIL: ${MAESTRO_SHELTER_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_SHELTER_PASSWORD}
+
+# The redirect is automatic and is itself worth asserting: the stack's initialRouteName is
+# always "home", so a returning shelter lands there and HomeScreen resets it to the shelter
+# shell after reading /me. If that redirect ever breaks, a shelter admin gets the owner home
+# screen — which is not their app — and this is what would say so.
+- assertVisible:
+    id: "screen.shelterDashboard"
+    timeout: 30000
+
+- tapOn:
+    id: "tab.shelter.profile"
+- assertVisible:
+    id: "screen.shelterProfile"
+    timeout: 20000
+
+# ...and back, so the tab bar is exercised in both directions rather than one-way.
+- tapOn:
+    id: "tab.shelter.home"
+- assertVisible:
+    id: "screen.shelterDashboard"

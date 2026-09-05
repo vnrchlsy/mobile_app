@@ -4,6 +4,20 @@
 # MAESTRO_PASSWORD belong to a throwaway account on a dev/staging backend, created by the
 # developer running this. Nothing in this repository should ever contain a real one — see
 # e2e/README.md for how to set them.
+#
+# The shelter flow calls this with DIFFERENT credentials, because the shelter shell is only
+# reachable by a shelter account:
+#
+#     - runFlow:
+#         file: 00-signin.yaml
+#         env:
+#           MAESTRO_EMAIL: ${MAESTRO_SHELTER_EMAIL}
+#           MAESTRO_PASSWORD: ${MAESTRO_SHELTER_PASSWORD}
+#
+# which is why the landing assertion below is `screen.home` and NOT something owner-specific:
+# a shelter account passes through `home` on its way to the shelter shell (HomeScreen reads
+# /me and resets to shelterDashboard when account_type is "shelter"), so `home` is the one
+# post-login state both kinds of account genuinely share.
 appId: ph.kupkop.app
 ---
 - launchApp:

@@ -39,6 +39,10 @@ jobs:
     env:
       MAESTRO_EMAIL: ${{ secrets.MAESTRO_EMAIL }}
       MAESTRO_PASSWORD: ${{ secrets.MAESTRO_PASSWORD }}
+      # A SECOND throwaway account, because the shelter shell is only reachable by an account
+      # whose type is "shelter" — the owner credentials above cannot get there at all.
+      MAESTRO_SHELTER_EMAIL: ${{ secrets.MAESTRO_SHELTER_EMAIL }}
+      MAESTRO_SHELTER_PASSWORD: ${{ secrets.MAESTRO_SHELTER_PASSWORD }}
       EXPO_PUBLIC_API_BASE: ${{ github.event.inputs.api_base || vars.E2E_API_BASE }}
 
     steps:
@@ -51,6 +55,11 @@ jobs:
           if [ -z "$MAESTRO_EMAIL" ] || [ -z "$MAESTRO_PASSWORD" ]; then
             echo "::error::MAESTRO_EMAIL / MAESTRO_PASSWORD are not set."
             echo "Set them as repository secrets for a THROWAWAY dev account — see e2e/README.md."
+            exit 1
+          fi
+          if [ -z "$MAESTRO_SHELTER_EMAIL" ] || [ -z "$MAESTRO_SHELTER_PASSWORD" ]; then
+            echo "::error::MAESTRO_SHELTER_EMAIL / MAESTRO_SHELTER_PASSWORD are not set."
+            echo "The shelter shell needs an account whose type is 'shelter'; the owner one cannot reach it."
             exit 1
           fi
           case "$EXPO_PUBLIC_API_BASE" in
@@ -89,7 +98,14 @@ jobs:
       # that no test can read (§12.6 keeps it out of the logs on purpose). e2e/README.md has
       # the whole reasoning and what would make it autonomous.
       - name: Run the money-path flows
-        run: maestro test e2e/flows/00-signin.yaml e2e/flows/10-report-a-stray.yaml e2e/flows/20-browse-and-inquire.yaml e2e/flows/30-volunteer-signup.yaml
+        run: |
+          maestro test \
+            e2e/flows/00-signin.yaml \
+            e2e/flows/10-report-a-stray.yaml \
+            e2e/flows/15-owner-profile.yaml \
+            e2e/flows/20-browse-and-inquire.yaml \
+            e2e/flows/30-volunteer-signup.yaml \
+            e2e/flows/50-shelter-shell.yaml
 
       # Maestro writes a screenshot and a view hierarchy per failed step. Without these a
       # red run tells you which step failed and nothing about why.

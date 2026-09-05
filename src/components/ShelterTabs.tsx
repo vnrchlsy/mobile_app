@@ -33,6 +33,7 @@ export function ShelterTabs({ active, onTabPress }: ShelterTabsProps) {
         const color = isActive ? colors.teal : colors.inactive;
         return (
           <TouchableOpacity
+            testID={`tab.shelter.${tab.key}`}
             key={tab.key}
             activeOpacity={0.75}
             style={styles.tabItem}
