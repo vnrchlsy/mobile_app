@@ -135,12 +135,28 @@ export function KawangGawaScheduleScreen({ navigation }: Props) {
                   onPress={() => navigation.navigate("kawanggawaCheckin", { signupId: item.signup_id })}
                   accessibilityRole="button"
                   accessibilityLabel="Volunteer shift — open to check in"
-                  // ⚠️ KNOWN LIMITATION, for the manual VoiceOver/TalkBack walk: this card
-                  // contains a NESTED touchable (CancelLink). iOS flattens an accessible
-                  // container into a single element, which can make the nested cancel
-                  // unreachable by a screen reader. Fixing it properly means lifting the
-                  // cancel action out of the card (or using accessibilityActions), which is a
-                  // layout change — recorded rather than guessed at here.
+                  // US-W1 · resolves the limitation recorded here during US-U1.
+                  //
+                  // This card contains a NESTED touchable (CancelLink), and iOS flattens an
+                  // accessible container into a single element — so a VoiceOver user could
+                  // reach "open to check in" and had NO WAY AT ALL to reach Cancel. Not
+                  // awkward: absent. Cancelling a shift you cannot make is the whole reason
+                  // the shelter is not left a volunteer short.
+                  //
+                  // The note said the fix was "lifting the cancel out of the card (or using
+                  // accessibilityActions), which is a layout change". Half right — the second
+                  // option is not a layout change, and it is the one RN provides for exactly
+                  // this shape: the action joins the element's rotor, the visual link stays
+                  // put for sighted users, and nothing about the card moves.
+                  //
+                  // ⚠️ Still needs confirming on a device. This makes the action REACHABLE;
+                  // whether the rotor reads well in context is a person's judgement.
+                  accessibilityActions={[{ name: "cancel", label: "Cancel this shift" }]}
+                  onAccessibilityAction={(event) => {
+                    if (event.nativeEvent.actionName === "cancel") {
+                      navigation.navigate("kawanggawaCancel", { signupId: item.signup_id });
+                    }
+                  }}
                 >
                   <View style={styles.cardRow}>
                     <ShiftCardBody item={item} />

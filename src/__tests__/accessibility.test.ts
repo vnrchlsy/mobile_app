@@ -159,3 +159,105 @@ describe("coverage report (informational, never fails)", () => {
     expect(all.length).toBeGreaterThan(0);
   });
 });
+
+// ── US-W1 · an action nested inside an accessible container must be reachable ────────
+//
+// iOS FLATTENS an accessible container into a single element. So a card that carries
+// `accessibilityRole="button"` and contains a second tappable thing does not present two
+// actions to VoiceOver — it presents one, and the inner action is not merely awkward to
+// reach, it is ABSENT. On the Kawang-Gawa schedule that was the Cancel link: a volunteer
+// using a screen reader could open a shift and had no way to cancel one.
+//
+// `labelled ≠ navigable` is the whole point of US-W1, and this is the one part of it a
+// machine can check. It cannot tell you whether the reading order makes sense or whether a
+// modal traps focus — a person still has to walk it.
+//
+// ⚠️ THIS SCAN MISSED THE ONE SITE IT WAS WRITTEN FOR, TWICE, BEFORE IT WORKED.
+//   1. It matched only literal <TouchableOpacity>; the real site nests <CancelLink/>, a
+//      custom component. Fixed by looking for a nested `onPress` rather than a nested tag.
+//   2. It found the tag's closing `>` with indexOf, which stops at the `>` inside
+//      `onPress={() => nav()}` — truncating the attributes before `accessibilityLabel`, so
+//      the container read as non-accessible and the site was skipped. NEVER REGEX JSX; the
+//      tag end has to be found at brace depth 0.
+// Both times the scan reported ZERO and looked like good news.
+describe("nested actions inside an accessible container", () => {
+  const OPEN = /<(TouchableOpacity|TouchableHighlight|Pressable)\b/g;
+  const CLOSE = /<\/(TouchableOpacity|TouchableHighlight|Pressable)>/g;
+
+  /** Index of the `>` that ends this tag, ignoring any inside `{...}`. */
+  function tagEnd(src: string, i: number): number {
+    let depth = 0;
+    for (; i < src.length; i++) {
+      const c = src[i];
+      if (c === "{") depth++;
+      else if (c === "}") depth--;
+      else if (c === ">" && depth === 0) return i;
+    }
+    return -1;
+  }
+
+  function containers(src: string): Array<{ attrs: string; inner: string }> {
+    const out: Array<{ attrs: string; inner: string }> = [];
+    for (const m of src.matchAll(OPEN)) {
+      const gt = tagEnd(src, m.index! + m[0].length);
+      if (gt === -1) continue;
+      const attrs = src.slice(m.index! + m[0].length, gt);
+      if (attrs.trimEnd().endsWith("/")) continue;      // self-closing: no children
+      let depth = 1;
+      let i = gt + 1;
+      while (depth > 0 && i < src.length) {
+        OPEN.lastIndex = i; CLOSE.lastIndex = i;
+        const o = OPEN.exec(src); const c = CLOSE.exec(src);
+        if (!c) break;
+        if (o && o.index < c.index) {
+          const g2 = tagEnd(src, o.index + o[0].length);
+          if (g2 !== -1 && !src.slice(o.index + o[0].length, g2).trimEnd().endsWith("/")) depth++;
+          i = o.index + o[0].length;
+        } else {
+          depth--; i = c.index + c[0].length;
+        }
+      }
+      out.push({ attrs, inner: src.slice(gt + 1, i) });
+    }
+    return out;
+  }
+
+  /** Every .tsx under screens/ and components/, with comments stripped. */
+  const files: Array<{ name: string; src: string }> = [SCREENS, COMPONENTS].flatMap((dir) =>
+    readdirSync(dir)
+      .filter((f) => f.endsWith(".tsx"))
+      .map((f) => ({
+        name: f,
+        src: readFileSync(join(dir, f), "utf8")
+          .replace(/\/\*[\s\S]*?\*\//g, "")
+          .replace(/^\s*\/\/.*$/gm, ""),
+      })));
+
+  it("has files to scan", () => {
+    // The scan below returned zero twice while being wrong. A zero that means "found
+    // nothing to look at" must never be able to pass as "found nothing wrong".
+    expect(files.length).toBeGreaterThan(50);
+  });
+
+  it("finds accessible containers at all", () => {
+    // The second failure mode specifically: brace-blind tag parsing made every container
+    // with an inline arrow handler look non-accessible, so the whole scan silently emptied.
+    const accessible = files.flatMap(({ src }) => containers(src)).filter(
+      ({ attrs }) =>
+        attrs.includes("accessibilityLabel") || attrs.includes('accessibilityRole="button"'));
+    expect(accessible.length).toBeGreaterThan(30);
+  });
+
+  it("exposes every nested action through accessibilityActions", () => {
+    const offenders: string[] = [];
+    for (const { name: file, src } of files) {
+      for (const { attrs, inner } of containers(src)) {
+        const accessible =
+          attrs.includes("accessibilityLabel") || attrs.includes('accessibilityRole="button"');
+        if (!accessible || attrs.includes("accessibilityActions")) continue;
+        if (/\bonPress[=\s]*[={]/.test(inner)) offenders.push(file);
+      }
+    }
+    expect([...new Set(offenders)]).toEqual([]);
+  });
+});
