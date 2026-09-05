@@ -119,7 +119,7 @@ export function DeleteAccountScreen({ navigation }: Props) {
                 : <Text style={styles.dangerBtnLabel}>Delete my account</Text>}
         </TouchableOpacity>
         <TouchableOpacity
-          activeOpacity={0.85}
+ testID="btn.back"          activeOpacity={0.85}
           onPress={() => navigation.goBack()}
           style={styles.outlineBtn}
           accessibilityRole="button"

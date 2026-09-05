@@ -32,6 +32,13 @@ export function ProfileScreen({ navigation }: Props) {
   // The status bar is real now (App.tsx), so the first thing on screen has to start below
   // it. This block used to pad 20pt, which was right while the bar was hidden and
   // put the screen title under the clock once it was not.
+  /**
+   * ⚠️ `screen.profile` is on BOTH the load-state branch and the loaded one, deliberately.
+   * "Am I on the profile screen?" is true either way — a slow or failed /me does not mean the
+   * screen was never reached, and anchoring only the loaded branch made a 20-second fetch
+   * read as "never arrived" and failed the E2E flow on a working app. The branches are
+   * mutually exclusive, so exactly one is ever in the tree.
+   */
   const insets = useSafeAreaInsets();
   const api = useApi();
   const { city, signOut } = useAuth();
@@ -97,7 +104,7 @@ export function ProfileScreen({ navigation }: Props) {
   // "don't state something false" half.)
   if (!me && loadState(res).kind !== "ready" && loadState(res).kind !== "empty") {
     return (
-      <View style={styles.screen}>
+      <View style={styles.screen} testID="screen.profile">
         <LoadStateView state={loadState(res)} onRetry={load} />
       </View>
     );

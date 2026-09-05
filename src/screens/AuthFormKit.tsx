@@ -42,6 +42,7 @@ export function AuthHeader({ title, activeStep, onBack, stepCount = AUTH_STEP_CO
   return (
     <View style={styles.header}>
       <TouchableOpacity
+        testID="btn.back"
         activeOpacity={0.75}
         onPress={onBack}
         style={styles.backButton}
@@ -76,6 +77,7 @@ export function SimpleHeader({ title, onBack }: SimpleHeaderProps) {
     <View style={styles.header}>
       {!!onBack && (
         <TouchableOpacity
+          testID="btn.back"
           activeOpacity={0.75}
           onPress={onBack}
           style={styles.backButton}

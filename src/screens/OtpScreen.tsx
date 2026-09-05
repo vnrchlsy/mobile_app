@@ -194,7 +194,7 @@ export function OtpScreen({ navigation, route }: Props) {
 
         <PrimaryButton testID="btn.otp.verify" label="Verify" onPress={onVerify} disabled={code.length !== CODE_LENGTH} loading={submitting} style={styles.verifyButton} />
 
-        <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.goBack()}>
+        <TouchableOpacity testID="btn.back" hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.goBack()}>
           <Text style={styles.changeEmail}>Wrong email? Change it</Text>
         </TouchableOpacity>
       </View>

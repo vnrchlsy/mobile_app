@@ -33,9 +33,13 @@ appId: ph.kupkop.app
 # The real gate is inside `submit()`, which returns early without coordinates. So the flow
 # waits for the fix to arrive and then presses; if coordinates never come, the assertion
 # below fails, which is the correct signal rather than a false pass.
-- extendedWaitUntil:
-    visible:
+# ⚠️ SCROLL FIRST. The submit sits at the bottom of a ScrollView and is simply off-screen on
+# this device, so `assertVisible` fails on a form that is perfectly fine — Maestro asserts
+# what is on screen, not what exists in the tree.
+- scrollUntilVisible:
+    element:
       id: "btn.reportStray.submit"
+    direction: DOWN
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 5000
@@ -61,4 +65,15 @@ appId: ph.kupkop.app
 - assertVisible:
     id: "screen.myReports"
 # The report is actually in the list — the round trip, not just the POST's 201.
-- assertVisible: "E2E smoke — limping brown aspin near the covered court."
+#
+# ⚠️ BY ID, NOT BY TEXT, AND THIS ONE COST THREE ATTEMPTS. The first version asserted the
+# NOTES typed into the form, which this list never renders — a row is
+# `sagipTitle(species, condition)` plus city and time. The second asserted that title,
+# "Dog · Injured", which the screen was demonstrably displaying — and it still failed.
+#
+# The pattern across today: every text assertion that failed contained a non-alphanumeric
+# character (the `·` here, the apostrophe in "You're offline"), and every one that passed was
+# plain ASCII words. So rather than keep guessing at Maestro's text matching, the row carries
+# an id — which is what the rest of this suite already does and should have done here.
+- assertVisible:
+    id: "card.myReports.0"

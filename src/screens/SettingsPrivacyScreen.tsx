@@ -153,7 +153,7 @@ function Header({ navigation }: { navigation: Props["navigation"] }) {
   return (
     <View style={styles.header}>
       <Text
-        style={styles.back}
+ testID="btn.back"        style={styles.back}
         onPress={() => navigation.goBack()}
         accessibilityRole="button"
         accessibilityLabel="Go back"

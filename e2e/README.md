@@ -127,6 +127,23 @@ shift. If the seed is empty they fail on a missing `card.adopt.0` / `card.kawang
 **which is the correct outcome.** A flow that skips itself when its fixture is empty is the
 same green-but-checked-nothing failure US-G1 was written about.
 
+## ⚠️ Text assertions: plain ASCII only
+
+Learned across three failed attempts on one assertion. **Every text assertion that failed
+contained a non-alphanumeric character; every one that passed was plain ASCII words.**
+
+| assertion | result |
+|---|---|
+| `"Inquiry sent"`, `"Back to home"`, `"No strays reported near"` | matched |
+| `"You're offline"` (apostrophe) | **failed against a screen displaying exactly that** |
+| `"Dog · Injured"` (middle dot) | **failed against a screen displaying exactly that** |
+
+Both failures were verified by screenshot and by comparing the bytes — the app and the flow
+held the identical character. Whatever the cause, the lesson is the same one this suite is
+built on: **assert an id.** Text assertions are reserved for the one case that genuinely needs
+literal copy — the forbidden empty state in the offline walk — and even there the accompanying
+positive assertion is by id.
+
 ## Selectors, and why they aren't text
 
 Flows match on `testID`, not on visible copy. Maestro can match text and every tutorial does,

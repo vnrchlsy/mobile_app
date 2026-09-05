@@ -116,7 +116,7 @@ export function ShelterVerifyNgoScreen({ navigation, route }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.goBack()} style={styles.backButton} hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+        <TouchableOpacity testID="btn.back" activeOpacity={0.75} onPress={() => navigation.goBack()} style={styles.backButton} hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
           accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backText}>‹</Text>
         </TouchableOpacity>

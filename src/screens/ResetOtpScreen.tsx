@@ -128,7 +128,7 @@ export function ResetOtpScreen({ navigation, route }: Props) {
 
         <PrimaryButton label="Verify" onPress={onContinue} disabled={code.length !== CODE_LENGTH} style={styles.verifyButton} />
 
-        <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.goBack()}>
+        <TouchableOpacity testID="btn.back" hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.goBack()}>
           <Text style={styles.changeEmail}>Wrong email? Change it</Text>
         </TouchableOpacity>
       </View>

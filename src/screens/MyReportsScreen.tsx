@@ -137,11 +137,15 @@ export function MyReportsScreen({ navigation }: Props) {
               onRetry={load}
             />
           ) : (
-          shown.map((r) => {
+          shown.map((r, i) => {
             const chip = strayChip(r.status);
             const tone = TONE[chip.tone];
             return (
               <TouchableOpacity
+                // Indexed like the other lists, so a flow can assert "a report is here"
+                // without depending on rendered copy — see e2e/README.md on why text
+                // assertions are reserved for plain ASCII.
+                testID={`card.myReports.${i}`}
                 key={r.report_id}
                 style={styles.card}
                 activeOpacity={0.85}
