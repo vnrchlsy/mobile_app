@@ -13,8 +13,10 @@ import { useApi } from "../api/useApi";
 import { useAuth } from "../auth/AuthContext";
 import { centroidFor } from "../cityCentroids";
 import { LoadStateView } from "../components/LoadStateView";
+import { StaleBanner } from "../components/StaleBanner";
 import { RootStackParamList } from "../navigation/types";
-import { loadState } from "../net";
+import { useCachedFeed } from "../useCachedFeed";
+import { isOffline, loadState } from "../net";
 import { relTime, sagipTitle, strayChip } from "../sagip";
 
 const colors = {
@@ -38,23 +40,23 @@ export function RescueMapScreen({ navigation }: Props) {
   // US-O1 · `null` until a request has actually come back. Initialising to `[]` made "never
   // loaded" indistinguishable from "loaded, and genuinely empty", which is half of the bug
   // the 2026-09-04 device walk found on this screen.
-  const [reports, setReports] = useState<MapReport[] | null>(null);
-  // Keep the RESULT, not just the rows. The previous line was `r.ok && setReports(...)`:
-  // on a failure that evaluates to false and records NOTHING, so the screen could not tell
-  // a dead network from an empty city. It reads like ordinary defensive code, which is
-  // exactly why it survived review — and why this screen told a person "No strays reported
-  // near Marikina right now" while the server was unreachable and eight reports sat within
-  // 10 km of them. On the rescue map that is not a cosmetic slip; it is a false statement
-  // about whether an animal needs help.
-  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+  // US-X1 · cache-first, and the screen that most needs it: a rescuer opening this on the
+  // street has the worst connection of anyone using the app. `/reports/map` is coarsened to
+  // a ~500m grid, which is why it may go to disk at all — see the §12.5 header in cache.ts.
+  const { rows: reports, res, stale, load: loadFeed } =
+    useCachedFeed<MapReport>(api, (d) => d?.reports ?? []);
+  // The RESULT is kept, not just the rows — now inside the hook. The original line here was
+  // `r.ok && setReports(...)`: on a failure that evaluates to false and records NOTHING, so
+  // the screen could not tell a dead network from an empty city. It reads like ordinary
+  // defensive code, which is exactly why it survived review — and why this screen told a
+  // person "No strays reported near Marikina right now" while the server was unreachable and
+  // eight reports sat within 10 km of them. On the rescue map that is not a cosmetic slip;
+  // it is a false statement about whether an animal needs help.
 
   const load = useCallback(() => {
-    setRes(null);
-    api.get(`/reports/map?city=${encodeURIComponent(city)}&radius_km=${RADIUS_KM}`)
-      .then((r) => {
-        setRes({ ok: r.ok, status: r.status });
-        setReports(r.ok ? (r.data?.reports ?? []) : []);
-      });
+    // This used to end `setReports(r.ok ? ... : [])` — so a failed refetch on focus emptied
+    // the list of nearby strays a rescuer was reading. The rows now survive the failure.
+    loadFeed(`/reports/map?city=${encodeURIComponent(city)}&radius_km=${RADIUS_KM}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, [city]);
   useFocusEffect(load);
@@ -114,7 +116,9 @@ export function RescueMapScreen({ navigation }: Props) {
             onRetry={load}
           />
         ) : (
-          (reports ?? []).map((r) => {
+          <>
+          {stale ? <StaleBanner offline={isOffline(res)} /> : null}
+          {(reports ?? []).map((r) => {
             const chip = strayChip(r.status);
             const tone = TONE[chip.tone];
             return (
@@ -133,7 +137,8 @@ export function RescueMapScreen({ navigation }: Props) {
                 </View>
               </TouchableOpacity>
             );
-          })
+          })}
+          </>
         )}
       </ScrollView>
     </View>

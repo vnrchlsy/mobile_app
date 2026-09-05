@@ -94,9 +94,20 @@ export function loadStateCopy(
 ): { title: string; body: string; retry: boolean } {
   switch (state.kind) {
     case "offline":
+      // ⚠️ US-X1 FOUND THIS COMPONENT TELLING THE LIE IT WAS BUILT TO PREVENT.
+      //
+      // The body used to read "Showing what we have. Reconnect to see the latest." —
+      // unconditionally. But LoadStateView REPLACES the content, so on every screen without
+      // a cache it announced that it was showing what we have while showing nothing at all.
+      // Exactly the class of confident-false-statement Track R spent five stories removing,
+      // sitting inside Track R's own shared component.
+      //
+      // It is now true by construction: a screen with cached rows never reaches this branch
+      // (it renders the rows, with `StaleBanner` above them), and a screen without one says
+      // what is actually the case.
       return {
         title: "You're offline",
-        body: "Showing what we have. Reconnect to see the latest.",
+        body: "We couldn't reach the server. Reconnect to see the latest.",
         retry: true,
       };
     case "gone":

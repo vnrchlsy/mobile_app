@@ -52,8 +52,40 @@ function readCode(file: string): string {
 /** Every screen on disk. The one source of truth for scope. */
 const ALL = readdirSync(SCREENS).filter((f) => f.endsWith(".tsx"));
 
-/** Screens that talk to the API — the only ones that can have this bug. */
-const FETCHING = ALL.filter((f) => readCode(f).includes("api.get("));
+/**
+ * Modules OUTSIDE screens/ that fetch on a screen's behalf — `useCachedFeed` and anything
+ * like it. Derived by reading them, never named here.
+ *
+ * ⚠️ US-X1 IS WHY THIS EXISTS, AND IT IS THE NASTIEST UNDER-REPORT THIS GUARD HAS HAD.
+ *
+ * Moving three feeds' `api.get(` into a shared hook dropped all three out of `FETCHING`,
+ * because scope was detected by the literal string. The screens still fetched; the guard
+ * simply stopped watching them, and enforced nothing on them from then on.
+ *
+ * What makes it worse than the earlier three misses is the direction: the printed count went
+ * from 44 to 41. A number going DOWN in a cleanup sprint reads as progress, so nothing about
+ * it invites a second look. Refactoring toward a shared component — the thing every other
+ * part of this sprint asks for — was silently shrinking the guard's reach.
+ */
+const FETCH_HELPERS = (() => {
+  const dir = join(__dirname, "..");
+  const names: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isFile() || !/\.tsx?$/.test(entry.name)) continue;
+    const src = readFileSync(join(dir, entry.name), "utf8");
+    if (src.includes("api.get(")) names.push(entry.name.replace(/\.tsx?$/, ""));
+  }
+  return names;
+})();
+
+/**
+ * Screens that talk to the API — directly, or through one of those helpers. A screen counts
+ * if it imports the helper by name, which is how these are always used.
+ */
+const FETCHING = ALL.filter((f) => {
+  const src = readCode(f);
+  return src.includes("api.get(") || FETCH_HELPERS.some((h) => src.includes(`from "../${h}"`));
+});
 
 /**
  * Screens that opt OUT of conversion, by carrying `@loadStateExempt` FOLLOWED BY A REASON.
@@ -166,7 +198,12 @@ describe.each(USES_VIEW)("%s distinguishes offline from empty", (file) => {
     // recording whether the request came back.
     const nullInitList = /useState<[^>]*\[\][^>]*\|\s*null>\(null\)/.test(src);
     const tracksResult = /useState<\{\s*ok:\s*boolean;\s*status:\s*number\s*\}\s*\|\s*null>\(null\)/.test(src);
-    expect(nullInitList || tracksResult).toBe(true);
+    // A screen on the shared cache hook satisfies this through the hook, which holds both
+    // the rows (null until loaded) and the result. Accepting it here rather than forcing the
+    // state back into the screen — the point of a shared hook is that it cannot be got wrong
+    // per-screen, which is strictly better than each screen proving it separately.
+    const usesFeedHook = /useCachedFeed</.test(src);
+    expect(nullInitList || tracksResult || usesFeedHook).toBe(true);
   });
 });
 
@@ -223,7 +260,8 @@ it("no new screen acquires the discard-the-failure pattern", () => {
 it("no fetching screen collapses a failure into an empty state", () => {
   // eslint-disable-next-line no-console
   console.log(
-    `[US-O1] fetching screens: ${FETCHING.length} · converted: ${CONVERTED.length} · ` +
+    `[US-O1] fetching screens: ${FETCHING.length} ` +
+    `(via helpers: ${FETCH_HELPERS.join(", ") || "none"}) · converted: ${CONVERTED.length} · ` +
     `(view: ${USES_VIEW.length}, form-warning: ${USES_WARNING.length}) · ` +
     `exempt: ${EXEMPT.length} · REMAINING: ${REMAINING.length}`);
   // ⚠️ THIS USED TO BE INFORMATIONAL, ON PURPOSE, AND THAT REASONING HAS NOW EXPIRED.

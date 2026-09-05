@@ -7,10 +7,12 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 import { useApi } from "../api/useApi";
 import { LoadStateView } from "../components/LoadStateView";
-import { loadState } from "../net";
+import { StaleBanner } from "../components/StaleBanner";
+import { isOffline, loadState } from "../net";
 import { VolunteerIcon } from "../components/AppIcons";
 import { OwnerTabs } from "../components/OwnerTabs";
 import { RootStackParamList } from "../navigation/types";
+import { useCachedFeed } from "../useCachedFeed";
 import { BrowseShift, ShiftType, shiftTypeLabel, slotsLeftLabel } from "../volunteer";
 import { TAP_SLOP } from "../touch";
 
@@ -51,18 +53,14 @@ type Props = NativeStackScreenProps<
 
 export function KawangGawaScreen({ navigation }: Props) {
   const api = useApi();
-  const [shifts, setShifts] = useState<BrowseShift[]>([]);
-  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+  const { rows: shifts, res, stale, load: loadFeed } =
+    useCachedFeed<BrowseShift>(api, (d) => d?.results ?? []);
 
   const [type, setType] = useState<"" | ShiftType>("");
 
   const load = useCallback(() => {
     const qs = type ? `?type=${type}` : "";
-    setRes(null);
-    api.get(`/shifts${qs}`).then((r) => {
-      setRes({ ok: r.ok, status: r.status });
-      if (r.ok) setShifts(r.data?.results ?? []);
-    });
+    loadFeed(`/shifts${qs}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus + filter change
   }, [type]);
 
@@ -96,14 +94,16 @@ export function KawangGawaScreen({ navigation }: Props) {
           ))}
         </View>
 
-        {loadState(res, shifts.length).kind !== "ready" ? (
+        {loadState(res, shifts?.length).kind !== "ready" ? (
           <LoadStateView
-            state={loadState(res, shifts.length)}
+            state={loadState(res, shifts?.length)}
             emptyTitle="No open shifts right now — check back soon."
             onRetry={load}
           />
         ) : (
-          shifts.map((s, i) => (
+          <>
+          {stale ? <StaleBanner offline={isOffline(res)} /> : null}
+          {(shifts ?? []).map((s, i) => (
             <TouchableOpacity
               testID={`card.kawanggawa.${i}`}
               key={s.shift_id}
@@ -123,7 +123,8 @@ export function KawangGawaScreen({ navigation }: Props) {
                 <Text style={styles.chipText}>{slotsLeftLabel(s.slots_left, s.capacity)}</Text>
               </View>
             </TouchableOpacity>
-          ))
+          ))}
+          </>
         )}
       </ScrollView>
 

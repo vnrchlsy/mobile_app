@@ -10,9 +10,11 @@ import {
 
 import { useApi } from "../api/useApi";
 import { LoadStateView } from "../components/LoadStateView";
-import { loadState } from "../net";
+import { StaleBanner } from "../components/StaleBanner";
+import { isOffline, loadState } from "../net";
 import { storyTypeChip, StoryType } from "../community";
 import { RootStackParamList } from "../navigation/types";
+import { useCachedFeed } from "../useCachedFeed";
 import { TAP_SLOP } from "../touch";
 
 const colors = {
@@ -42,18 +44,16 @@ function initials(name: string) {
 
 export function StoriesScreen({ navigation }: Props) {
   const api = useApi();
-  const [stories, setStories] = useState<StoryCard[] | null>(null);
+  const { rows: stories, res, stale, load: loadFeed } =
+    useCachedFeed<StoryCard>(api, (d) => d?.results ?? []);
   // US-O1 · keep the RESULT, not just the rows. Collapsing a failure into `[]` told an
   // offline person "No stories yet — be the first to share one", which is untrue and makes
   // the community look dead.
-  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
 
   const load = useCallback(() => {
-    setRes(null);
-    api.get("/stories").then((r) => {
-      setRes({ ok: r.ok, status: r.status });
-      setStories(r.ok ? r.data.results : []);
-    });
+    // US-X1 · this used to be `setStories(r.ok ? r.data.results : [])`, so a failed REFETCH
+    // replaced stories the person was reading with an empty list. The hook keeps them.
+    loadFeed("/stories");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useFocusEffect(load);
@@ -79,7 +79,9 @@ export function StoriesScreen({ navigation }: Props) {
             onRetry={load}
           />
         ) : (
-          (stories ?? []).map((s) => {
+          <>
+          {stale ? <StaleBanner offline={isOffline(res)} /> : null}
+          {(stories ?? []).map((s) => {
             const chip = storyTypeChip(s.story_type);
             return (
               <TouchableOpacity key={s.story_id} style={styles.storyCard} activeOpacity={0.85}
@@ -104,7 +106,8 @@ export function StoriesScreen({ navigation }: Props) {
                 </View>
               </TouchableOpacity>
             );
-          })
+          })}
+          </>
         )}
       </ScrollView>
     </View>

@@ -1,4 +1,6 @@
 import * as SecureStore from "expo-secure-store";
+
+import { clearCache } from "../cache";
 import { createContext, useContext, useEffect, useState } from "react";
 
 type Tokens = { access: string; refresh: string } | null;
@@ -49,6 +51,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // city until they manually changed it.
       setCityState(null);
       await SecureStore.deleteItemAsync(CITY_KEY);
+      // US-X1 · the read cache goes the same way, and for the same reason. It holds the
+      // previous account's listings, stories, shifts and nearby reports; on a shared phone
+      // the next person to sign in would open the app to someone else's feeds. Hooked HERE
+      // rather than in signOut() because the silent expiry path bypasses signOut entirely.
+      await clearCache();
     }
   }
 

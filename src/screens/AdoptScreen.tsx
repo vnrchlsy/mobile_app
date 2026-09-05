@@ -8,10 +8,12 @@ import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "rea
 import { Listing } from "../api/types";
 import { useApi } from "../api/useApi";
 import { LoadStateView } from "../components/LoadStateView";
-import { loadState } from "../net";
+import { StaleBanner } from "../components/StaleBanner";
+import { isOffline, loadState } from "../net";
 import { useAuth } from "../auth/AuthContext";
 import { OwnerTabs } from "../components/OwnerTabs";
 import { RootStackParamList } from "../navigation/types";
+import { useCachedFeed } from "../useCachedFeed";
 import { TAP_SLOP } from "../touch";
 
 const colors = {
@@ -29,8 +31,12 @@ type Props = NativeStackScreenProps<RootStackParamList, "adopt">;
 export function AdoptScreen({ navigation }: Props) {
   const api = useApi();
   const { city } = useAuth();
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+  // US-X1 · cache-first. `listings` is now `Listing[] | null` — the empty-array init could
+  // not tell "not loaded" from "genuinely none", which only stayed safe because `res` was
+  // tracked alongside it. With a cache the distinction does real work: null means show the
+  // load state, [] means the city really has no pets.
+  const { rows: listings, res, stale, load: loadFeed } =
+    useCachedFeed<Listing>(api, (d) => d?.results ?? []);
 
   const [species, setSpecies] = useState("");
 
@@ -38,11 +44,7 @@ export function AdoptScreen({ navigation }: Props) {
     const params = new URLSearchParams();
     if (city) params.set("city", city);
     if (species) params.set("species", species);
-    setRes(null);
-    api.get(`/listings?${params.toString()}`).then((r) => {
-      setRes({ ok: r.ok, status: r.status });
-      if (r.ok) setListings(r.data?.results ?? []);
-    });
+    loadFeed(`/listings?${params.toString()}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus + filter change
   }, [city, species]);
 
@@ -76,15 +78,17 @@ export function AdoptScreen({ navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {loadState(res, listings.length).kind !== "ready" ? (
+        {loadState(res, listings?.length).kind !== "ready" ? (
           <LoadStateView
-            state={loadState(res, listings.length)}
+            state={loadState(res, listings?.length)}
             emptyTitle={city ? `No pets up for adoption in ${city} yet.`
               : "Set your city to see nearby pets."}
             onRetry={load}
           />
         ) : (
-          listings.map((l, i) => (
+          <>
+          {stale ? <StaleBanner offline={isOffline(res)} /> : null}
+          {(listings ?? []).map((l, i) => (
             <TouchableOpacity
               // Indexed, so a flow can tap "the first listing" without knowing the fixture's
               // id. `card.adopt.0` is the contract; which animal is in it is the seed's business.
@@ -111,7 +115,8 @@ export function AdoptScreen({ navigation }: Props) {
                 </Text>
               </View>
             </TouchableOpacity>
-          ))
+          ))}
+          </>
         )}
       </ScrollView>
 
