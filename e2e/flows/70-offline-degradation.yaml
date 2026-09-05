@@ -47,7 +47,7 @@ appId: ph.kupkop.app
 - assertVisible:
     text: ".*(You're offline|showing what we saved earlier).*"
 - tapOn:
-    text: "‹"
+    id: "btn.back"
 
 # ── adopt ──────────────────────────────────────────────────────────────────────────
 - tapOn:

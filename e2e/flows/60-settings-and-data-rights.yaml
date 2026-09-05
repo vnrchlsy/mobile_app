@@ -49,7 +49,7 @@ appId: ph.kupkop.app
 - tapOn:
     id: "toggle.privacy.marketing_emails"
 - tapOn:
-    text: "‹"
+    id: "btn.back"
 - extendedWaitUntil:
     visible:
       id: "screen.settings"
@@ -66,7 +66,7 @@ appId: ph.kupkop.app
 # flow that burns one of those on every run would make the limit a test problem instead of
 # a product decision. Reaching the screen is what was unverified.
 - tapOn:
-    text: "‹"
+    id: "btn.back"
 - extendedWaitUntil:
     visible:
       id: "screen.settings"
@@ -83,7 +83,7 @@ appId: ph.kupkop.app
       id: "screen.deleteAccount"
     timeout: 20000
 - tapOn:
-    text: "‹"
+    id: "btn.back"
 - extendedWaitUntil:
     visible:
       id: "screen.settings"

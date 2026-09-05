@@ -65,7 +65,7 @@ export function SettingsScreen({ navigation }: Props) {
   return (
     <View style={styles.screen} testID="screen.settings">
       <View style={styles.header}>
-        <TouchableOpacity
+        <TouchableOpacity testID="btn.back"
           onPress={() => navigation.goBack()}
           style={styles.back}
           hitSlop={12}

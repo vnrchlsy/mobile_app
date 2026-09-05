@@ -65,7 +65,7 @@ export function MyReportsScreen({ navigation }: Props) {
   return (
     <View style={styles.screen} testID="screen.myReports">
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
           accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>

@@ -58,7 +58,7 @@ export function VerifyResubmitScreen({ navigation, route }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity
+        <TouchableOpacity testID="btn.back"
           activeOpacity={0.75}
           onPress={() => navigation.goBack()}
           style={styles.back}
