@@ -7,6 +7,8 @@ import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "rea
 
 import { Listing } from "../api/types";
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { useAuth } from "../auth/AuthContext";
 import { OwnerTabs } from "../components/OwnerTabs";
 import { RootStackParamList } from "../navigation/types";
@@ -28,16 +30,18 @@ export function AdoptScreen({ navigation }: Props) {
   const api = useApi();
   const { city } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
   const [species, setSpecies] = useState("");
-  const [loaded, setLoaded] = useState(false);
 
   const load = useCallback(() => {
     const params = new URLSearchParams();
     if (city) params.set("city", city);
     if (species) params.set("species", species);
+    setRes(null);
     api.get(`/listings?${params.toString()}`).then((r) => {
+      setRes({ ok: r.ok, status: r.status });
       if (r.ok) setListings(r.data?.results ?? []);
-      setLoaded(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus + filter change
   }, [city, species]);
@@ -72,10 +76,13 @@ export function AdoptScreen({ navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {loaded && listings.length === 0 ? (
-          <Text style={styles.empty}>
-            {city ? `No pets up for adoption in ${city} yet.` : "Set your city to see nearby pets."}
-          </Text>
+        {loadState(res, listings.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, listings.length)}
+            emptyTitle={city ? `No pets up for adoption in ${city} yet.`
+              : "Set your city to see nearby pets."}
+            onRetry={load}
+          />
         ) : (
           listings.map((l) => (
             <TouchableOpacity

@@ -6,6 +6,8 @@ import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { VolunteerIcon } from "../components/AppIcons";
 import { OwnerTabs } from "../components/OwnerTabs";
 import { RootStackParamList } from "../navigation/types";
@@ -50,20 +52,16 @@ type Props = NativeStackScreenProps<
 export function KawangGawaScreen({ navigation }: Props) {
   const api = useApi();
   const [shifts, setShifts] = useState<BrowseShift[]>([]);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
   const [type, setType] = useState<"" | ShiftType>("");
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
 
   const load = useCallback(() => {
     const qs = type ? `?type=${type}` : "";
+    setRes(null);
     api.get(`/shifts${qs}`).then((r) => {
-      if (r.ok) {
-        setShifts(r.data?.results ?? []);
-        setError(false);
-      } else {
-        setError(true);
-      }
-      setLoaded(true);
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setShifts(r.data?.results ?? []);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus + filter change
   }, [type]);
@@ -98,10 +96,12 @@ export function KawangGawaScreen({ navigation }: Props) {
           ))}
         </View>
 
-        {loaded && error ? (
-          <Text style={styles.empty}>Couldn't load shifts. Pull to refresh or try again shortly.</Text>
-        ) : loaded && shifts.length === 0 ? (
-          <Text style={styles.empty}>No open shifts right now — check back soon.</Text>
+        {loadState(res, shifts.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, shifts.length)}
+            emptyTitle="No open shifts right now — check back soon."
+            onRetry={load}
+          />
         ) : (
           shifts.map((s) => (
             <TouchableOpacity

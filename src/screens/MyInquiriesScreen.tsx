@@ -15,6 +15,8 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 import { MyInquiry } from "../api/types";
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { inquiryProgressLabel } from "../adoption";
 import { RootStackParamList } from "../navigation/types";
 import { TAP_SLOP } from "../touch";
@@ -45,15 +47,18 @@ type Props = NativeStackScreenProps<RootStackParamList, "myInquiries">;
 export function MyInquiriesScreen({ navigation }: Props) {
   const api = useApi();
   const [inquiries, setInquiries] = useState<MyInquiry[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
 
-  useFocusEffect(useCallback(() => {
+
+  const load = useCallback(() => {
+    setRes(null);
     api.get("/me/inquiries").then((r) => {
+      setRes({ ok: r.ok, status: r.status });
       if (r.ok) setInquiries(r.data?.results ?? []);
-      setLoaded(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
-  }, []));
+  }, []);
+  useFocusEffect(load);
 
   return (
     <View style={styles.screen}>
@@ -65,8 +70,12 @@ export function MyInquiriesScreen({ navigation }: Props) {
         <Text style={styles.title}>My inquiries</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {loaded && inquiries.length === 0 ? (
-          <Text style={styles.empty}>You haven't inquired on any pets yet.</Text>
+        {loadState(res, inquiries.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, inquiries.length)}
+            emptyTitle="You haven't inquired on any pets yet."
+            onRetry={load}
+          />
         ) : (
           inquiries.map((iq) => {
             const tone = STATUS_TONE[iq.status] ?? STATUS_TONE.active;

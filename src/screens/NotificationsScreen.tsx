@@ -10,6 +10,8 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 import { MeNotification } from "../api/types";
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { AlertIcon, CheckIcon, ClockIcon, UserBadgeIcon, XIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
 import { notificationTarget } from "../notifications";
@@ -43,14 +45,16 @@ type Props = NativeStackScreenProps<RootStackParamList, "notifications">;
 export function NotificationsScreen({ navigation }: Props) {
   const api = useApi();
   const [items, setItems] = useState<MeNotification[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
   // Unread rows keep looking unread for the rest of THIS viewing, even after the
   // mark-read call fires — reopening the screen later is what actually clears them.
   const markedRef = useRef(false);
 
-  useFocusEffect(useCallback(() => {
+  const load = useCallback(() => {
     markedRef.current = false;
+    setRes(null);
     api.get("/me/notifications").then((r) => {
+      setRes({ ok: r.ok, status: r.status });
       if (r.ok) {
         const list: MeNotification[] = r.data?.notifications ?? [];
         setItems(list);
@@ -59,10 +63,10 @@ export function NotificationsScreen({ navigation }: Props) {
           api.post("/me/notifications/read");
         }
       }
-      setLoaded(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch + re-mark on focus
-  }, []));
+  }, []);
+  useFocusEffect(load);
 
   function onPress(n: MeNotification) {
     const target = notificationTarget(n);
@@ -95,8 +99,13 @@ export function NotificationsScreen({ navigation }: Props) {
         <Text style={styles.title}>Notifications</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {loaded && items.length === 0 ? (
-          <Text style={styles.empty}>Nothing yet — this is where updates on your reports and offers show up.</Text>
+        {loadState(res, items.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, items.length)}
+            emptyTitle="Nothing yet"
+            emptyBody="This is where updates on your reports and offers show up."
+            onRetry={load}
+          />
         ) : (
           items.map((n) => {
             const target = notificationTarget(n);

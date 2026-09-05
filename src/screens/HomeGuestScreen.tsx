@@ -10,6 +10,8 @@ import { useCallback, useState } from "react";
 import { Image, ImageSourcePropType, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { Listing } from "../api/types";
 import { AdoptIcon, HomeIcon, ProfileIcon, VolunteerIcon } from "../components/AppIcons";
 import { SignupWall, SignupWallAction } from "../components/SignupWall";
@@ -28,14 +30,15 @@ type WallState = { action: SignupWallAction; subject?: string } | null;
 export function HomeGuestScreen({ navigation }: Props) {
   const api = useApi();
   const [listings, setListings] = useState<Listing[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
   const [wall, setWall] = useState<WallState>(null);
 
   useFocusEffect(
     useCallback(() => {
+      setRes(null);
       api.get(`/listings?city=${GUEST_CITY}`).then((r) => {
+        setRes({ ok: r.ok, status: r.status });
         if (r.ok) setListings(r.data.results ?? []);
-        setLoaded(true);
       });
       // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch only on focus, not on every api identity change
     }, [])
@@ -116,8 +119,11 @@ export function HomeGuestScreen({ navigation }: Props) {
           <Text style={styles.sectionTitle}>Adopt near you</Text>
         </View>
 
-        {loaded && listings.length === 0 && (
-          <Text style={styles.emptyText}>No pets listed near Marikina yet — check back soon.</Text>
+        {loadState(res, listings.length).kind !== "ready" && (
+          <LoadStateView
+            state={loadState(res, listings.length)}
+            emptyTitle="No pets listed near Marikina yet — check back soon."
+          />
         )}
 
         {listings.map((listing) => (
