@@ -10,6 +10,8 @@ import MapView, { Circle, Marker } from "react-native-maps";
 
 import { ReportDetail, StrayStatus } from "../api/types";
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { RootStackParamList } from "../navigation/types";
 import { relTime, sagipTitle, strayChip } from "../sagip";
 
@@ -32,13 +34,19 @@ type Props = NativeStackScreenProps<RootStackParamList, "reportDetail">;
 export function ReportDetailScreen({ navigation, route }: Props) {
   const api = useApi();
   const [report, setReport] = useState<ReportDetail | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  // US-R4 · "{X} not found." was shown for EVERY failure, not just a missing row — so
+  // someone offline, or hitting a 500, was told the thing does not exist. R2's `gone`
+  // is what actually means "not found" (404/403); everything else keeps its own words
+  // and a retry that can work.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
   const [claiming, setClaiming] = useState(false);
 
   const load = useCallback(() => {
+    setRes(null);
     api.get(`/reports/${route.params.reportId}`).then((r) => {
+      setRes({ ok: r.ok, status: r.status });
       if (r.ok) setReport(r.data);
-      setLoaded(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, [route.params.reportId]);
@@ -111,7 +119,7 @@ export function ReportDetailScreen({ navigation, route }: Props) {
       </View>
 
       {!report ? (
-        <Text style={styles.empty}>{loaded ? "Report not found." : "Loading…"}</Text>
+        <LoadStateView state={loadState(res)} subject="report" onRetry={load} />
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {report.photos.length > 0 ? (
@@ -263,7 +271,6 @@ const styles = StyleSheet.create({
   flagLink: { marginLeft: "auto" },
   flagLinkText: { color: colors.muted, fontSize: 13, fontWeight: "700" },
   content: { paddingHorizontal: 26, paddingTop: 12, paddingBottom: 60 },
-  empty: { marginTop: 60, color: colors.muted, fontSize: 16, textAlign: "center" },
   photo: { width: "100%", height: 200, borderRadius: 22, marginBottom: 18, backgroundColor: colors.line },
   h1: { color: colors.ink, fontSize: 28, fontWeight: "800", letterSpacing: -0.5 },
   sub: { marginTop: 8, color: colors.muted, fontSize: 16 },

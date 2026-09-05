@@ -6,9 +6,11 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { VolunteerIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
 import { CardTone, MySignupItem, MySignups, shiftTypeLabel, signupStatusCard } from "../volunteer";
@@ -78,18 +80,18 @@ type Props = NativeStackScreenProps<RootStackParamList, "kawanggawaSchedule">;
 export function KawangGawaScheduleScreen({ navigation }: Props) {
   const api = useApi();
   const [data, setData] = useState<MySignups | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  // US-R4 · was three hand-rolled booleans that collapsed offline, 5xx and "deleted"
+  // into one sentence. Keeping the RESULT lets the shared view say which it was — and
+  // a 404 here is ordinary: these routes are reached from a push notification about a
+  // shift that may since have been cancelled.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
 
   const load = useCallback(() => {
+    setRes(null);
     api.get("/me/signups").then((r) => {
-      if (r.ok) {
-        setData(r.data);
-        setError(false);
-      } else {
-        setError(true);
-      }
-      setLoaded(true);
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setData(r.data);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, []);
@@ -98,7 +100,10 @@ export function KawangGawaScheduleScreen({ navigation }: Props) {
 
   const upcoming = data?.upcoming ?? [];
   const requested = data?.requested ?? [];
-  const isEmpty = loaded && !error && upcoming.length === 0 && requested.length === 0;
+  // `loaded && !error &&` used to prefix this: the guard against announcing "empty" to
+  // someone whose request never came back. That guard now lives one level up — this is
+  // only ever read inside the `data !== null` branch — so `!!data` IS the same check.
+  const isEmpty = !!data && upcoming.length === 0 && requested.length === 0;
 
   return (
     <View style={styles.screen}>
@@ -110,14 +115,9 @@ export function KawangGawaScheduleScreen({ navigation }: Props) {
         <Text style={styles.title}>My schedule</Text>
       </View>
 
-      {!loaded ? (
-        <View style={styles.centerFill}>
-          <ActivityIndicator color={colors.teal} />
-        </View>
-      ) : error ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>Couldn't load your schedule. Pull down or go back and try again.</Text>
-        </View>
+      {!data ? (
+        <LoadStateView state={loadState(res)} subject="schedule" onRetry={load}
+          onBack={() => navigation.goBack()} />
       ) : isEmpty ? (
         <View style={styles.centerFill}>
           <Text style={styles.empty}>You don't have any shifts yet. Browse open shifts to get started.</Text>

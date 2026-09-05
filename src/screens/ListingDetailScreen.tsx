@@ -10,6 +10,8 @@ import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, Touchabl
 
 import { ListingDetail } from "../api/types";
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { useAuth } from "../auth/AuthContext";
 import { SignupWall } from "../components/SignupWall";
 import { setIntent } from "../guestIntent";
@@ -29,15 +31,21 @@ export function ListingDetailScreen({ navigation, route }: Props) {
   const isGuest = tokens === null;
   const { listingId } = route.params;
   const [listing, setListing] = useState<ListingDetail | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  // US-R4 · "{X} not found." was shown for EVERY failure, not just a missing row — so
+  // someone offline, or hitting a 500, was told the thing does not exist. R2's `gone`
+  // is what actually means "not found" (404/403); everything else keeps its own words
+  // and a retry that can work.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
   const [inquiring, setInquiring] = useState(false);
   const [inquired, setInquired] = useState(false);
   const [wallOpen, setWallOpen] = useState(false);
 
   const load = useCallback(() => {
+    setRes(null);
     api.get(`/listings/${listingId}`).then((r) => {
+      setRes({ ok: r.ok, status: r.status });
       if (r.ok) setListing(r.data);
-      setLoaded(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, [listingId]);
@@ -110,7 +118,7 @@ export function ListingDetailScreen({ navigation, route }: Props) {
       </View>
 
       {!listing ? (
-        <Text style={styles.empty}>{loaded ? "Listing not found." : "Loading…"}</Text>
+        <LoadStateView state={loadState(res)} subject="listing" onRetry={load} />
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {listing.photos.length > 0 ? (
@@ -216,7 +224,6 @@ const styles = StyleSheet.create({
   flagLink: { marginLeft: "auto" },
   flagLinkText: { color: colors.muted, fontSize: 13, fontWeight: "700" },
   content: { paddingHorizontal: 26, paddingTop: 12, paddingBottom: 60 },
-  empty: { marginTop: 60, color: colors.muted, fontSize: 16, textAlign: "center" },
   photo: { width: "100%", height: 240, borderRadius: 22, marginBottom: 18, backgroundColor: colors.line },
   name: { color: colors.ink, fontSize: 30, fontWeight: "800", letterSpacing: -0.5 },
   sub: { marginTop: 8, color: colors.muted, fontSize: 16 },

@@ -8,9 +8,11 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { VolunteerIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
 import { CardTone, historyHours, MySignupItem, MySignups, shiftTypeLabel, signupStatusCard } from "../volunteer";
@@ -83,18 +85,18 @@ type Props = NativeStackScreenProps<RootStackParamList, "kawanggawaHistory">;
 export function KawangGawaHistoryScreen({ navigation }: Props) {
   const api = useApi();
   const [data, setData] = useState<MySignups | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  // US-R4 · was three hand-rolled booleans that collapsed offline, 5xx and "deleted"
+  // into one sentence. Keeping the RESULT lets the shared view say which it was — and
+  // a 404 here is ordinary: these routes are reached from a push notification about a
+  // shift that may since have been cancelled.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
 
   const load = useCallback(() => {
+    setRes(null);
     api.get("/me/signups").then((r) => {
-      if (r.ok) {
-        setData(r.data);
-        setError(false);
-      } else {
-        setError(true);
-      }
-      setLoaded(true);
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setData(r.data);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, []);
@@ -103,7 +105,10 @@ export function KawangGawaHistoryScreen({ navigation }: Props) {
 
   const history = data?.history ?? [];
   const reliability = data?.reliability;
-  const isEmpty = loaded && !error && history.length === 0;
+  // `loaded && !error &&` used to prefix this: the guard against announcing "empty" to
+  // someone whose request never came back. That guard now lives one level up — this is
+  // only ever read inside the `data !== null` branch — so `!!data` IS the same check.
+  const isEmpty = !!data && history.length === 0;
 
   return (
     <View style={styles.screen}>
@@ -115,14 +120,9 @@ export function KawangGawaHistoryScreen({ navigation }: Props) {
         <Text style={styles.title}>Volunteer history</Text>
       </View>
 
-      {!loaded ? (
-        <View style={styles.centerFill}>
-          <ActivityIndicator color={colors.teal} />
-        </View>
-      ) : error ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>Couldn't load your history. Pull down or go back and try again.</Text>
-        </View>
+      {!data ? (
+        <LoadStateView state={loadState(res)} subject="shift history" onRetry={load}
+          onBack={() => navigation.goBack()} />
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {reliability && (
@@ -163,7 +163,6 @@ const styles = StyleSheet.create({
   back: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", ...card },
   backGlyph: { color: colors.ink, fontSize: 30, fontWeight: "800", marginTop: -4 },
   title: { color: colors.ink, fontSize: 22, fontWeight: "800" },
-  centerFill: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
   empty: { color: colors.muted, fontSize: 15, textAlign: "center", lineHeight: 21 },
   content: { paddingHorizontal: 26, paddingTop: 16, paddingBottom: 60 },
   statsCard: {

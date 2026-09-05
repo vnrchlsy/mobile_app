@@ -16,12 +16,24 @@ import { TAP_SLOP } from "../touch";
 const colors = { ink: "#12213A", muted: "#5F5E5A", teal: "#1C6B6B" };
 
 export function LoadStateView({
-  state, emptyTitle, emptyBody, onRetry, subject,
+  state, emptyTitle, emptyBody, onRetry, onBack, subject,
 }: {
   state: LoadState;
   emptyTitle?: string;
   emptyBody?: string;
   onRetry?: () => void;
+  /**
+   * US-R4 · where to go when there is nothing to retry.
+   *
+   * `gone` deliberately offers no retry — the affordance would be a promise the app cannot
+   * keep. But that left the state with NOTHING to press, on exactly the screens people reach
+   * from a push notification, where "back" is not a gesture they can assume works. The
+   * hand-rolled version in ShelterVolunteerActivityScreen had already worked this out and
+   * shipped a "Go back" link; this lifts it so every detail route gets it.
+   *
+   * Rendered for `gone` only. `offline` and `error` keep the retry, which can actually help.
+   */
+  onBack?: () => void;
   /**
    * US-R2 · what this screen is about — "listing", "report", "story". A DETAIL route passes
    * it so the copy names what failed ("Couldn't load this listing") instead of the generic
@@ -59,6 +71,17 @@ export function LoadStateView({
           <Text style={styles.retryLabel}>Try again</Text>
         </TouchableOpacity>
       ) : null}
+      {state.kind === "gone" && onBack ? (
+        <TouchableOpacity hitSlop={TAP_SLOP}
+          onPress={onBack}
+          style={styles.backLink}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Text style={styles.backLinkLabel}>Go back</Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }
@@ -67,6 +90,8 @@ const styles = StyleSheet.create({
   wrap: { paddingVertical: 48, paddingHorizontal: 24, alignItems: "center" },
   title: { fontSize: 17, fontWeight: "800", color: colors.ink, textAlign: "center" },
   body: { fontSize: 14, color: colors.muted, textAlign: "center", marginTop: 6, lineHeight: 20 },
+  backLink: { marginTop: 18, paddingVertical: 10, paddingHorizontal: 22 },
+  backLinkLabel: { fontSize: 15, fontWeight: "700", color: colors.teal },
   retry: { marginTop: 18, paddingVertical: 10, paddingHorizontal: 22, borderRadius: 22, backgroundColor: colors.teal },
   retryLabel: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
 });

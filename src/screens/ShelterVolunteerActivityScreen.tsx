@@ -5,14 +5,15 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { VolunteerIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
 import { ShelterShift } from "../shelterVolunteer";
 import { shiftTypeLabel } from "../volunteer";
-import { TAP_SLOP } from "../touch";
 
 function shiftWhenLabel(startsAt: string, endsAt: string): string {
   const start = new Date(startsAt);
@@ -37,22 +38,17 @@ export function ShelterVolunteerActivityScreen({ navigation, route }: Props) {
   const { shiftId } = route.params;
 
   const [shift, setShift] = useState<ShelterShift | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [notFound, setNotFound] = useState(false);
-  const [loadError, setLoadError] = useState(false);
+  // US-R4 · this screen had ALREADY worked out the 404-is-not-a-network-error split by
+  // hand, down to offering "Go back" instead of a retry. It is where LoadStateView's
+  // `onBack` came from. Converting it keeps that behaviour and deletes three booleans.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
 
   const load = useCallback(() => {
+    setRes(null);
     api.get(`/shelter/shifts/${shiftId}`).then((r) => {
-      if (r.ok) {
-        setShift(r.data);
-        setNotFound(false);
-        setLoadError(false);
-      } else if (r.status === 404) {
-        setNotFound(true);
-      } else {
-        setLoadError(true);
-      }
-      setLoaded(true);
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setShift(r.data);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, [shiftId]);
@@ -70,21 +66,9 @@ export function ShelterVolunteerActivityScreen({ navigation, route }: Props) {
         <View style={styles.back} />
       </View>
 
-      {!loaded ? (
-        <View style={styles.centerFill}>
-          <ActivityIndicator color={colors.teal} />
-        </View>
-      ) : notFound ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>This activity no longer exists. It may have been cancelled or removed.</Text>
-          <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()} hitSlop={TAP_SLOP}>
-            <Text style={styles.backLinkText}>Go back</Text>
-          </TouchableOpacity>
-        </View>
-      ) : loadError || !shift ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>Couldn't load this activity. Pull down or go back and try again.</Text>
-        </View>
+      {!shift ? (
+        <LoadStateView state={loadState(res)} subject="activity" onRetry={load}
+          onBack={() => navigation.goBack()} />
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.heroRow}>
@@ -188,10 +172,6 @@ const styles = StyleSheet.create({
   back: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", ...card },
   backGlyph: { color: colors.ink, fontSize: 30, fontWeight: "800", marginTop: -4 },
   title: { color: colors.ink, fontSize: 20, fontWeight: "800" },
-  centerFill: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
-  empty: { color: colors.muted, fontSize: 15, textAlign: "center", lineHeight: 21 },
-  backLink: { marginTop: 18 },
-  backLinkText: { color: colors.teal, fontSize: 15, fontWeight: "800" },
   content: { paddingHorizontal: 26, paddingTop: 20, paddingBottom: 60 },
   heroRow: { flexDirection: "row", alignItems: "center", gap: 14 },
   heroIcon: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.chipBg, alignItems: "center", justifyContent: "center" },

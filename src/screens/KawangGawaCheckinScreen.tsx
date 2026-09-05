@@ -8,6 +8,8 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { CheckIcon, VolunteerIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
 import { MySignupItem, MySignups, shiftTypeLabel } from "../volunteer";
@@ -58,21 +60,21 @@ export function KawangGawaCheckinScreen({ navigation, route }: Props) {
   const { signupId } = route.params;
 
   const [data, setData] = useState<MySignups | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [loadError, setLoadError] = useState(false);
+  // US-R4 · was three hand-rolled booleans that collapsed offline, 5xx and "deleted"
+  // into one sentence. Keeping the RESULT lets the shared view say which it was — and
+  // a 404 here is ordinary: these routes are reached from a push notification about a
+  // shift that may since have been cancelled.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
 
   const load = useCallback(() => {
+    setRes(null);
     return api.get("/me/signups").then((r) => {
-      if (r.ok) {
-        setData(r.data);
-        setLoadError(false);
-      } else {
-        setLoadError(true);
-      }
-      setLoaded(true);
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setData(r.data);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, []);
@@ -127,13 +129,18 @@ export function KawangGawaCheckinScreen({ navigation, route }: Props) {
         <Text style={styles.title}>Today's shift</Text>
       </View>
 
-      {!loaded ? (
+      {!item ? (
         <View style={styles.centerFill}>
-          <ActivityIndicator color={colors.teal} />
-        </View>
-      ) : loadError || !item ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>Couldn't load this shift. Pull down or go back and try again.</Text>
+          {/* count is passed HERE and only here: "no shift today" is a real, correct answer
+              this screen must be able to give, and it is not the same as a failure. */}
+          <LoadStateView
+            state={loadState(res, item ? 1 : 0)}
+            emptyTitle="No shift today"
+            emptyBody="You don't have a shift scheduled for today."
+            subject="shift"
+            onRetry={load}
+            onBack={() => navigation.goBack()}
+          />
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -190,7 +197,6 @@ const styles = StyleSheet.create({
   backGlyph: { color: colors.ink, fontSize: 30, fontWeight: "800", marginTop: -4 },
   title: { color: colors.ink, fontSize: 22, fontWeight: "800" },
   centerFill: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
-  empty: { color: colors.muted, fontSize: 15, textAlign: "center", lineHeight: 21 },
   content: { paddingHorizontal: 26, paddingTop: 22, paddingBottom: 60 },
   shiftCard: { flexDirection: "row", alignItems: "center", gap: 12, padding: 18, borderRadius: 20, ...card },
   cardIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.chipBg,

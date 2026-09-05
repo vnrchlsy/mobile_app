@@ -5,9 +5,11 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { RootStackParamList } from "../navigation/types";
 import { ChipTone, VolunteerDetail, reliabilityChip } from "../shelterVolunteer";
 
@@ -22,18 +24,18 @@ export function ShelterVolunteerDetailScreen({ navigation, route }: Props) {
   const { signupId } = route.params;
 
   const [detail, setDetail] = useState<VolunteerDetail | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [loadError, setLoadError] = useState(false);
+  // US-R4 · was three hand-rolled booleans that collapsed offline, 5xx and "deleted"
+  // into one sentence. Keeping the RESULT lets the shared view say which it was — and
+  // a 404 here is ordinary: these routes are reached from a push notification about a
+  // shift that may since have been cancelled.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
 
   const load = useCallback(() => {
+    setRes(null);
     api.get(`/shelter/signups/${signupId}/volunteer`).then((r) => {
-      if (r.ok) {
-        setDetail(r.data);
-        setLoadError(false);
-      } else {
-        setLoadError(true);
-      }
-      setLoaded(true);
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setDetail(r.data);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, [signupId]);
@@ -53,14 +55,9 @@ export function ShelterVolunteerDetailScreen({ navigation, route }: Props) {
         <View style={styles.back} />
       </View>
 
-      {!loaded ? (
-        <View style={styles.centerFill}>
-          <ActivityIndicator color={colors.teal} />
-        </View>
-      ) : loadError || !detail ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>Couldn't load this volunteer. Pull down or go back and try again.</Text>
-        </View>
+      {!detail ? (
+        <LoadStateView state={loadState(res)} subject="volunteer" onRetry={load}
+          onBack={() => navigation.goBack()} />
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.card}>
@@ -134,8 +131,6 @@ const styles = StyleSheet.create({
   back: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", ...card },
   backGlyph: { color: colors.ink, fontSize: 30, fontWeight: "800", marginTop: -4 },
   title: { color: colors.ink, fontSize: 20, fontWeight: "800" },
-  centerFill: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
-  empty: { color: colors.muted, fontSize: 15, textAlign: "center", lineHeight: 21 },
   content: { paddingHorizontal: 22, paddingTop: 16, paddingBottom: 60 },
   card: { borderRadius: 20, padding: 18, marginBottom: 18, ...card },
   name: { color: colors.ink, fontSize: 20, fontWeight: "800" },
