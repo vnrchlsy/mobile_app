@@ -63,7 +63,7 @@ export function SettingsScreen({ navigation }: Props) {
   ];
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.settings">
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -84,6 +84,9 @@ export function SettingsScreen({ navigation }: Props) {
             <View style={styles.card}>
               {group.rows.map((row, i) => (
                 <TouchableOpacity
+                  // Slugged from the label so a flow can reach a row without depending on
+                  // its position in a list that grows — `row.settings.delete-account`.
+                  testID={`row.settings.${row.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
                   key={row.label}
                   activeOpacity={0.75}
                   onPress={row.onPress}

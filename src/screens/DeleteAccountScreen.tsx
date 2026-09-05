@@ -140,7 +140,7 @@ function Blocked({
   onBack: () => void;
 }) {
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.deleteAccount">
       <Header title="Delete account" navigation={navigation} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.warnCard} accessible accessibilityRole="alert">

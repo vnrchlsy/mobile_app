@@ -112,7 +112,7 @@ export function ExportDataScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.exportData">
       <View style={styles.header}>
         <Text style={styles.back} onPress={() => navigation.goBack()}
               accessibilityRole="button" accessibilityLabel="Go back">‹</Text>

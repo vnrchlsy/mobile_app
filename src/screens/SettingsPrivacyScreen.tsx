@@ -82,7 +82,7 @@ export function SettingsPrivacyScreen({ navigation }: Props) {
   const toggles = rows.toggles;
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.settingsPrivacy">
       <Header navigation={navigation} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
@@ -138,6 +138,7 @@ function ToggleRow({
         <Text style={styles.note}>{row.note}</Text>
       </View>
       <Switch
+        testID={`toggle.privacy.${row.key}`}
         value={row.value}
         onValueChange={onChange}
         trackColor={{ false: "#D8D6CD", true: colors.teal }}

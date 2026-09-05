@@ -1,0 +1,90 @@
+# MONEY PATH 7 · settings · privacy toggles · export · delete account.
+#
+# ⚠️ THIS IS US-W2's REMAINDER, AND WHAT IT COVERS IS DELIBERATELY NARROW.
+#
+# The BEHAVIOUR behind these screens is already proven over real HTTP — 25/25 on data rights,
+# 13/13 on the push registry, presign and the outbox's exactly-once guarantee. What was never
+# checked is that the screens RENDER and are reachable, because they sit behind a sign-in and
+# a person had to be asked each time. That gap, not the behaviour, is what this closes.
+#
+# So it asserts arrival and interaction, and deliberately does NOT re-prove the data rights
+# themselves. Duplicating a 25/25 HTTP suite in a simulator would be slower, flakier and no
+# more true.
+appId: ph.kupkop.app
+---
+- runFlow: 00-signin.yaml
+- extendedWaitUntil:
+    visible:
+      id: "screen.home"
+    timeout: 25000
+
+- tapOn:
+    id: "tab.profile"
+- extendedWaitUntil:
+    visible:
+      id: "screen.profile"
+    timeout: 20000
+- tapOn:
+    id: "btn.profile.settings"
+- extendedWaitUntil:
+    visible:
+      id: "screen.settings"
+    timeout: 20000
+
+# ── privacy toggles ────────────────────────────────────────────────────────────────
+- tapOn:
+    id: "row.settings.privacy-controls"
+- extendedWaitUntil:
+    visible:
+      id: "screen.settingsPrivacy"
+    timeout: 20000
+# Flipping one exercises the optimistic-update path: the switch moves immediately and
+# reverts if the server refuses, because on THIS screen a switch showing a state the server
+# never accepted is a broken privacy promise rather than a cosmetic glitch.
+# ⚠️ NOT `optional`. The first draft of this line guessed a key that does not exist
+# (`show_city`) and marked it optional, so it would have been skipped in silence on every
+# run — a step that passes by not happening is the same green-that-checked-nothing this
+# codebase keeps finding. The real keys are push_enabled / marketing_emails /
+# analytics_consent, and a missing one should fail loudly.
+- tapOn:
+    id: "toggle.privacy.marketing_emails"
+- tapOn:
+    text: "‹"
+- extendedWaitUntil:
+    visible:
+      id: "screen.settings"
+    timeout: 20000
+
+# ── export my data ─────────────────────────────────────────────────────────────────
+- tapOn:
+    id: "row.settings.export-my-data"
+- extendedWaitUntil:
+    visible:
+      id: "screen.exportData"
+    timeout: 20000
+# Deliberately NOT tapping "prepare": the export is throttled to 3/day on purpose, and a
+# flow that burns one of those on every run would make the limit a test problem instead of
+# a product decision. Reaching the screen is what was unverified.
+- tapOn:
+    text: "‹"
+- extendedWaitUntil:
+    visible:
+      id: "screen.settings"
+    timeout: 20000
+
+# ── delete account ─────────────────────────────────────────────────────────────────
+# ⚠️ REACHED, NEVER CONFIRMED. The flow opens the screen and goes straight back. Actually
+# deleting is irreversible and would destroy the fixture every other flow signs in with —
+# and a suite that quietly deletes an account on each run is one nobody dares to run.
+- tapOn:
+    id: "row.settings.delete-account"
+- extendedWaitUntil:
+    visible:
+      id: "screen.deleteAccount"
+    timeout: 20000
+- tapOn:
+    text: "‹"
+- extendedWaitUntil:
+    visible:
+      id: "screen.settings"
+    timeout: 20000

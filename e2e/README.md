@@ -75,6 +75,17 @@ password appears in a flow file.
 `MAESTRO_EMAIL` / `MAESTRO_PASSWORD` belong to a **throwaway account on a dev or staging
 backend** — never a real user's, and never a production account.
 
+Create or refresh both fixtures with the accounts, capabilities and shelter profile the flows
+need — the owner's Verified Member standing included, without which the inquiry is correctly
+refused:
+
+```bash
+cd backend && eval "$(DJANGO_DEBUG=1 .venv/bin/python dev/e2e_fixtures.py)"
+```
+
+It refuses to run outside `DEBUG`, refuses any address that is not `.invalid`, and generates
+new passwords every run.
+
 ```bash
 cd mobile_app && \
   MAESTRO_EMAIL=... MAESTRO_PASSWORD=... \
@@ -106,7 +117,8 @@ Learned by running them, each one a real failure first:
 | `location: inuse` permission | the report flow's submit is gated on a GPS fix; without the grant it waits forever on a dialog no assertion mentions. `allow` is rejected for location specifically |
 | a simulated location | `xcrun simctl location <udid> set 14.6507,121.1029` — permission alone gives no fix |
 | an account that can inquire | the adoption inquiry is gated on Verified Member + verified phone (US-A3/A4). A bare account is correctly refused, so the fixture needs the same standing a real adopter has |
-| ⚠️ **login is rate-limited** | running the sign-in repeatedly WILL throttle the account (HTTP 429, ~30 min). This is the backend working; space out reruns or use separate fixtures |
+| ⚠️ **never poll the login endpoint to see if the throttle cleared** | each probe is itself a login attempt against the same IP limit, so the loop keeps the lockout alive indefinitely. Wait passively |
+| ⚠️ **login is rate-limited BY IP** | running the sign-in repeatedly trips `LoginIpThrottle` (HTTP 429, ~30 min) and then **every** account from that machine is refused — a fresh fixture does not dodge it. This is the backend working; space the runs out |
 
 ## Seed requirements
 

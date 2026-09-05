@@ -205,6 +205,7 @@ export function ProfileScreen({ navigation }: Props) {
           <TouchableOpacity
             activeOpacity={0.75}
             style={[styles.accountRow, styles.accountRowDivided]}
+            testID="btn.profile.settings"
             onPress={() => navigation.navigate("settings")}
           >
             {/* US-N5 · the only route to Settings — and through it to the §12.6 data
