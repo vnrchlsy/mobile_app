@@ -25,7 +25,10 @@ export function ShelterContactScreen({ navigation, route }: Props) {
 
   // ⚠️ US-R4 · NOT a detail route — this is FORM PREFILL, and it belongs to US-R5.
   // @loadStateExempt form prefill, not a detail route — a blank editable field is the
-  // safe failure here; US-R5 owns the dangerous one (empty default saved over real data).
+  // safe failure here. US-R5 CHECKED and left it: nothing is prefilled that a blank could
+  // overwrite — the PATCH sends what the shelter typed, so there is no lost data to
+  // protect and a banner would only be noise. Contrast ListingFormScreen, where the
+  // same silence wiped a live listing.
   //
   // The distinction matters: a detail route that fails should say so and offer a retry. A
   // form that fails to prefill must NOT, because the screen is still perfectly usable — the

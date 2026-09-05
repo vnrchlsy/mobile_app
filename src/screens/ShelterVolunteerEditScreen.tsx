@@ -5,13 +5,14 @@
 // fields that changed from what was loaded.
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { RootStackParamList } from "../navigation/types";
 import { ShiftType, shiftTypeLabel } from "../volunteer";
-import { TAP_SLOP } from "../touch";
 
 const SHIFT_TYPES: ShiftType[] = ["walking", "feeding", "visitor", "event", "facility", "transport"];
 
@@ -39,26 +40,40 @@ export function ShelterVolunteerEditScreen({ navigation, route }: Props) {
   const [capacity, setCapacity] = useState("1");
   const [initial, setInitial] = useState<Initial | null>(null);
 
-  const [loaded, setLoaded] = useState(false);
-  const [loadError, setLoadError] = useState(false);
+  /**
+   * US-R5 · this screen was ALREADY immune to the overwrite bug that ListingForm had, and
+   * not by accident: `submit()` returns early on `!initial` and sends a DIFF against it, so
+   * a failed prefill can produce no patch at all. That is PrefillWarning's rules 3 and 4
+   * satisfied structurally rather than by a banner, and it is the better way to do it.
+   *
+   * ⚠️ It had a DIFFERENT bug of the same family, though, and this is the one the R5 sweep
+   * turned up: `useFocusEffect` refetches on every focus and re-prefilled the editable
+   * fields from the response. So leaving this screen and coming back — or anything else
+   * that refocuses it — silently discarded whatever the shelter had typed and replaced it
+   * with the server's values. A SUCCESSFUL request destroying typed work, where rule 4 only
+   * anticipated a failed one. `prefilled` below fixes that: the fields fill in once.
+   */
+  const prefilled = useRef(false);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
   const [error, setError] = useState<string | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(() => {
-    setLoaded(false);
-    setLoadError(false);
+    setRes(null);
     api.get(`/shelter/shifts/${shiftId}`).then((r) => {
-      if (r.ok) {
-        const d = r.data;
-        setType(d.type);
-        setStartsAt(d.starts_at);
-        setEndsAt(d.ends_at);
-        setCapacity(String(d.capacity));
-        setInitial({ type: d.type, starts_at: d.starts_at, ends_at: d.ends_at, capacity: d.capacity });
-      } else {
-        setLoadError(true);
-      }
-      setLoaded(true);
+      setRes({ ok: r.ok, status: r.status });
+      if (!r.ok) return;
+      const d = r.data;
+      // `initial` is the diff baseline and must always track the server, or a re-save would
+      // resend fields the shelter never touched.
+      setInitial({ type: d.type, starts_at: d.starts_at, ends_at: d.ends_at, capacity: d.capacity });
+      // The EDITABLE fields, however, fill in exactly once — see the note above.
+      if (prefilled.current) return;
+      prefilled.current = true;
+      setType(d.type);
+      setStartsAt(d.starts_at);
+      setEndsAt(d.ends_at);
+      setCapacity(String(d.capacity));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus, keyed by shiftId
   }, [shiftId]);
@@ -120,17 +135,12 @@ export function ShelterVolunteerEditScreen({ navigation, route }: Props) {
         <Text style={styles.title}>Edit activity</Text>
       </View>
 
-      {!loaded ? (
-        <View style={styles.centerFill}>
-          <ActivityIndicator color={colors.teal} />
-        </View>
-      ) : loadError || !initial ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>Couldn't load this activity. Pull down or go back and try again.</Text>
-          <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()} hitSlop={TAP_SLOP}>
-            <Text style={styles.backLinkText}>Go back</Text>
-          </TouchableOpacity>
-        </View>
+      {/* Gated on `!initial`, not on the request: once the form is up, a failed REFETCH must
+          not replace it — that would throw away typed work, which is the whole reason forms
+          get PrefillWarning instead of a full-screen state. Here nothing has been typed yet. */}
+      {!initial ? (
+        <LoadStateView state={loadState(res)} subject="activity" onRetry={load}
+          onBack={() => navigation.goBack()} />
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <Text style={styles.label}>Activity type</Text>
@@ -205,10 +215,6 @@ const styles = StyleSheet.create({
   back: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", ...card },
   backGlyph: { color: colors.ink, fontSize: 30, fontWeight: "800", marginTop: -4 },
   title: { color: colors.ink, fontSize: 22, fontWeight: "800" },
-  centerFill: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
-  empty: { color: colors.muted, fontSize: 15, textAlign: "center", lineHeight: 21 },
-  backLink: { marginTop: 18 },
-  backLinkText: { color: colors.teal, fontSize: 15, fontWeight: "800" },
   content: { paddingHorizontal: 26, paddingTop: 12, paddingBottom: 60 },
   label: { marginTop: 20, marginBottom: 10, color: colors.ink, fontSize: 15, fontWeight: "700" },
   input: { height: 52, borderRadius: 16, paddingHorizontal: 16, color: colors.ink, fontSize: 16, ...card },

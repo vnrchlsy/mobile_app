@@ -23,6 +23,10 @@ const CATEGORIES = ["food", "medicine", "supplies", "funds", "other"] as const;
 
 type Props = NativeStackScreenProps<RootStackParamList, "needForm">;
 
+/** Shown in the banner (rule 1) and on a blocked submit (rule 3) — one wording, one place. */
+const PREFILL_FAILED = "We couldn't load your shelter profile, so this form can't be saved yet. "
+  + "Check your connection and reopen it.";
+
 export function NeedFormScreen({ navigation, route }: Props) {
   const api = useApi();
   const editing = route.params?.need;
@@ -56,11 +60,9 @@ export function NeedFormScreen({ navigation, route }: Props) {
 
   async function submit() {
     if (busy) return;
-    if (!editing && !myId) {
-      setError("We couldn't load your shelter profile, so this can't be saved yet. "
-        + "Check your connection and reopen this form.");
-      return;
-    }
+    // Rule 3: same words as the banner, from the same constant — two hand-written variants
+    // of one message drift, and the drift always lands on the less-clear one.
+    if (!editing && !myId) { setError(PREFILL_FAILED); return; }
     if (!title.trim()) { setError("Give the need a short title."); return; }
     setBusy(true);
     setError(null);
@@ -83,15 +85,15 @@ export function NeedFormScreen({ navigation, route }: Props) {
         <Text style={styles.title}>{editing ? "Edit need" : "Add a need"}</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* US-R5 · moved ABOVE the first field. It was rendered under it, which is rule 1
+            only by half — someone scanning down starts typing before they reach the notice
+            that nothing they type can be saved. */}
+        {prefillFailed ? <PrefillWarning message={PREFILL_FAILED} /> : null}
         <View style={[styles.field, !title.trim() && error ? styles.fieldError : null]}>
           <Text style={styles.fieldLabel}>What do you need?</Text>
           <TextInput style={styles.input} value={title} onChangeText={setTitle}
             placeholder="e.g. Dog food (adult, dry)" placeholderTextColor="#9A988F" />
         </View>
-        {prefillFailed ? (
-          <PrefillWarning message={"We couldn't load your shelter profile, so this form can't be "
-            + "saved yet. Check your connection and reopen it."} />
-        ) : null}
         {!title.trim() && error ? <Text style={styles.error}>{error}</Text> : null}
 
         {!editing ? (

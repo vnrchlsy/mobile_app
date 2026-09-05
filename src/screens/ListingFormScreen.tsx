@@ -13,6 +13,7 @@ import {
 } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { PrefillWarning } from "../components/PrefillWarning";
 import { pickAndUpload } from "../media/pickAndUpload";
 import { useAuth } from "../auth/AuthContext";
 import { RootStackParamList } from "../navigation/types";
@@ -45,13 +46,31 @@ export function ListingFormScreen({ navigation, route }: Props) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [wasPublic, setWasPublic] = useState<string | null>(null); // listing.status, edit mode only
 
-  const [loading, setLoading] = useState(isEdit);
+  /**
+   * ⚠️ US-R5 · THE WORST BUG IN TRACK R, and it was invisible because nothing crashed.
+   *
+   * In edit mode every field above starts EMPTY and is filled in by the GET below. When that
+   * GET failed, `loading` still went false and the form rendered its blanks over a real
+   * listing — `name` "", `description` "", `fee` "0", `breed` "", and `city` silently reset
+   * to the EDITOR'S home city rather than the pet's. `submit()` guarded only the name.
+   *
+   * So: open Edit on a bad connection, retype the name, tap Save, and the PATCH wipes the
+   * description, clears the breed and birthdate, relocates the animal, and drops the
+   * adoption fee to ₱0 — on a live adoption listing, with no error shown at any point.
+   *
+   * PrefillWarning's rule 4 exists for exactly this. Keeping the result is what makes it
+   * detectable; the submit guard below is what makes it harmless.
+   */
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+  const loading = isEdit && res === null;
+  const prefillFailed = isEdit && res !== null && !res.ok;
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!isEdit) return;
     api.get(`/listings/${listingId}`).then((r) => {
+      setRes({ ok: r.ok, status: r.status });
       if (r.ok) {
         const d = r.data;
         setName(d.pet.name);
@@ -64,7 +83,6 @@ export function ListingFormScreen({ navigation, route }: Props) {
         setCity(d.city ?? "");
         setWasPublic(d.status);
       }
-      setLoading(false);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- load once, keyed by listingId
   }, [listingId]);
@@ -79,6 +97,13 @@ export function ListingFormScreen({ navigation, route }: Props) {
 
   async function submit() {
     if (submitting) return;
+    // Rule 3: the banner is information, not enforcement — a person can and will tap Save
+    // anyway. This is the line that stops the blanks from reaching the server.
+    if (prefillFailed) {
+      setError("We couldn't load this listing, so saving now would overwrite it with blanks. "
+        + "Check your connection and reopen this form.");
+      return;
+    }
     if (!name.trim()) { setError("Give the listing a name."); return; }
     setSubmitting(true);
     setError(undefined);
@@ -140,6 +165,13 @@ export function ListingFormScreen({ navigation, route }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Rule 1: ABOVE the fields, on load. Learning the form can't save only after
+            filling it in has already cost the person their time. */}
+        {prefillFailed ? (
+          <PrefillWarning message={"We couldn't load this listing. Saving now would overwrite "
+            + "it with blanks, so this form can't be saved yet — check your connection and "
+            + "reopen it."} />
+        ) : null}
         {isEdit && wasPublic && wasPublic !== "available" ? (
           <View style={styles.statusNote}>
             <Text style={styles.statusNoteText}>

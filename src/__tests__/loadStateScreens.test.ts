@@ -75,10 +75,23 @@ const EXEMPT = FETCHING.filter((f) => readFileSync(join(SCREENS, f), "utf8").inc
 /** ⚠️ NEVER RAISE THIS to make a build green — see MAX_DISCARDS. */
 const MAX_EXEMPT = 2;
 
+/**
+ * ⚠️ THERE ARE TWO SHARED TREATMENTS, NOT ONE, and counting only the first under-reports.
+ *
+ * US-R5 walked into this: a form converted correctly renders `PrefillWarning`, never
+ * `LoadStateView` — because a full-screen error state on a form throws away whatever the
+ * person has already typed. So both properly-fixed forms were still being counted as
+ * REMAINING, and the countdown would have bottomed out at 2 with the work actually done.
+ * Same failure as the exemptions, one story later: the guard describing the fix too
+ * narrowly, and the number quietly meaning something other than what it says.
+ */
+const USES_VIEW = FETCHING.filter((f) => readCode(f).includes("LoadStateView"));
+const USES_WARNING = FETCHING.filter(
+  (f) => readCode(f).includes("PrefillWarning") && !readCode(f).includes("LoadStateView"));
+
 /** Derived by subtraction: converting a screen moves it here with no edit to this file. */
-const CONVERTED = FETCHING.filter((f) => readCode(f).includes("LoadStateView"));
-const REMAINING = FETCHING.filter(
-  (f) => !readCode(f).includes("LoadStateView") && !EXEMPT.includes(f));
+const CONVERTED = [...USES_VIEW, ...USES_WARNING];
+const REMAINING = FETCHING.filter((f) => !CONVERTED.includes(f) && !EXEMPT.includes(f));
 
 /** `r.ok && setX(...)` — the exact shape of the rescue-map bug. */
 const DISCARDS = /\br\.ok\s*&&\s*set[A-Z]/g;
@@ -121,7 +134,7 @@ describe("the scan has a scope", () => {
 });
 
 // ── enforced: converted screens must stay converted ─────────────────────────────────
-describe.each(CONVERTED)("%s distinguishes offline from empty", (file) => {
+describe.each(USES_VIEW)("%s distinguishes offline from empty", (file) => {
   const src = readCode(file);
 
   it("renders the shared LoadStateView", () => {
@@ -157,6 +170,25 @@ describe.each(CONVERTED)("%s distinguishes offline from empty", (file) => {
   });
 });
 
+// ── enforced: forms, which are converted differently on purpose ─────────────────────
+describe.each(USES_WARNING.length ? USES_WARNING : ["(none)"])(
+  "%s warns inline instead of replacing itself", (file) => {
+    it("keeps the request RESULT, not just the rows", () => {
+      if (file === "(none)") return;
+      expect(readCode(file)).not.toMatch(DISCARDS);
+    });
+
+    it("does not also render a full-screen state over the fields", () => {
+      if (file === "(none)") return;
+      // The two treatments are alternatives, not layers. A form that renders both has a
+      // path where the full-screen view wins and the typed work is gone anyway.
+      expect(readCode(file)).not.toContain("LoadStateView");
+    });
+
+    // The rest of the form contract — rule 3, refusing to submit — is enforced in
+    // prefillGuards.test.ts, because it lives inside submit() and needs a real brace match.
+  });
+
 // ── ratcheted: the opt-out ─────────────────────────────────────────────────────────
 describe("opting out is possible, awkward, and capped", () => {
   it("stays at or under the exemption ratchet", () => {
@@ -187,15 +219,25 @@ it("no new screen acquires the discard-the-failure pattern", () => {
   expect(sites.length).toBeLessThanOrEqual(MAX_DISCARDS);
 });
 
-// ── informational: the countdown, derived ───────────────────────────────────────────
-it("reports how many fetching screens still collapse a failure into an empty state", () => {
+// ── enforced: the countdown, derived — AT ZERO SINCE US-R5 ──────────────────────────
+it("no fetching screen collapses a failure into an empty state", () => {
   // eslint-disable-next-line no-console
   console.log(
     `[US-O1] fetching screens: ${FETCHING.length} · converted: ${CONVERTED.length} · ` +
+    `(view: ${USES_VIEW.length}, form-warning: ${USES_WARNING.length}) · ` +
     `exempt: ${EXEMPT.length} · REMAINING: ${REMAINING.length}`);
-  // Deliberately not an assertion. The number is large and goes down over Sprint 8's
-  // Track R; failing the build on it today would just get the file deleted. The ratchet
-  // above is where the enforcement lives.
+  // ⚠️ THIS USED TO BE INFORMATIONAL, ON PURPOSE, AND THAT REASONING HAS NOW EXPIRED.
+  //
+  // It said: "the number is large and goes down over Sprint 8's Track R; failing the build
+  // on it today would just get the file deleted." That was right at 42. At ZERO the same
+  // argument flips — there is nothing left to grind down, so a non-zero value no longer
+  // means "work in progress", it means a NEW screen shipped with the rescue-map bug. That
+  // is the moment a countdown should become a prohibition, exactly as MAX_DISCARDS did.
+  //
+  // A screen that genuinely should not convert has a documented, capped, reasoned way to
+  // say so above. Raising this number is not it.
+  expect(REMAINING).toEqual([]);
+
   // Every fetching screen is accounted for in exactly one bucket — the arithmetic is what
   // stops a screen from quietly falling out of all three.
   expect(CONVERTED.length + REMAINING.length + EXEMPT.length).toBe(FETCHING.length);
