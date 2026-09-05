@@ -83,7 +83,6 @@ import { MyInquiriesScreen } from "../screens/MyInquiriesScreen";
 import { VerifyPhoneScreen } from "../screens/VerifyPhoneScreen";
 import { VerifyDocumentsScreen } from "../screens/VerifyDocumentsScreen";
 import { VerifyResubmitScreen } from "../screens/VerifyResubmitScreen";
-import { VolunteerScreen } from "../screens/VolunteerScreen";
 import { KawangGawaScreen } from "../screens/KawangGawaScreen";
 import { KawangGawaDetailScreen } from "../screens/KawangGawaDetailScreen";
 import { KawangGawaRequestedScreen } from "../screens/KawangGawaRequestedScreen";
@@ -124,7 +123,6 @@ export function RootNavigator() {
       <Stack.Screen name="home" component={HomeScreen} />
       <Stack.Screen name="homeGuest" component={HomeGuestScreen} />
       <Stack.Screen name="adopt" component={AdoptScreen} />
-      <Stack.Screen name="volunteer" component={VolunteerScreen} />
       <Stack.Screen name="profile" component={ProfileScreen} />
       <Stack.Screen name="locationPicker" component={LocationPickerScreen} />
       <Stack.Screen name="memberUpgrade" component={MemberUpgradeScreen} />

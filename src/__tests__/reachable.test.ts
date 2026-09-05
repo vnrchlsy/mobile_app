@@ -85,3 +85,45 @@ describe("every .tsx under src/ is reachable from the app", () => {
     expect(dead).toEqual([]);
   });
 });
+
+/**
+ * A second flavour, which the module walk above CANNOT see.
+ *
+ * `VolunteerScreen` was a placeholder — "Kawang-Gawa volunteer shifts are coming soon" —
+ * registered as a route, so RootNavigator imported it and the graph called it reachable.
+ * But nothing navigated to it: the Volunteer tab goes to the real Kawang-Gawa hub instead
+ * (see OwnerTabs). Reachable as a module, unreachable as a screen, and superseded by the
+ * feature it stood in for. One orphan among 91 routes.
+ *
+ * ⚠️ This is the check that would have caught the placeholder even if it had been imported
+ * "properly" — which it was. Module reachability and NAVIGATION reachability are different
+ * questions, and a screen only exists if a person can get to it.
+ */
+describe("every registered route can be navigated to", () => {
+  const NAV = join(SRC, "navigation", "RootNavigator.tsx");
+  const nav = readFileSync(NAV, "utf8");
+  const registered = [...nav.matchAll(/<Stack\.Screen name="(\w+)"/g)].map((m) => m[1]);
+
+  /** Every route name any screen actually navigates/replaces to, plus the initial routes. */
+  function destinations(): Set<string> {
+    const all = allScreens(SRC)
+      .concat([NAV, join(APP_ROOT, "App.tsx")])
+      .map((f) => readFileSync(f, "utf8"))
+      .join("\n");
+    const out = new Set<string>();
+    for (const re of [/navigate\(\s*["'](\w+)["']/g, /replace\(\s*["'](\w+)["']/g,
+                      /name:\s*["'](\w+)["']/g, /initialRouteName=\{?[^}]*?["'](\w+)["']/g]) {
+      for (const m of all.matchAll(re)) out.add(m[1]);
+    }
+    return out;
+  }
+
+  it("found routes to check", () => {
+    expect(registered.length).toBeGreaterThan(50);
+  });
+
+  it("has no orphan routes", () => {
+    const reached = destinations();
+    expect(registered.filter((r) => !reached.has(r)).sort()).toEqual([]);
+  });
+});

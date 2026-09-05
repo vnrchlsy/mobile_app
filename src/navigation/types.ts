@@ -49,7 +49,6 @@ export type RootStackParamList = {
   home: { justSignedUp?: boolean } | undefined;
   homeGuest: undefined;
   adopt: undefined;
-  volunteer: undefined;
   profile: undefined;
   locationPicker: undefined;
   memberUpgrade: undefined;

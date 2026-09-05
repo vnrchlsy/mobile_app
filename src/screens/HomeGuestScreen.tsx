@@ -9,6 +9,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import { Image, ImageSourcePropType, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { useApi } from "../api/useApi";
 import { LoadStateView } from "../components/LoadStateView";
 import { loadState } from "../net";
@@ -28,6 +30,10 @@ const GUEST_CITY = "Marikina";
 type WallState = { action: SignupWallAction; subject?: string } | null;
 
 export function HomeGuestScreen({ navigation }: Props) {
+  // The status bar is real now (App.tsx), so the first thing on screen has to start below
+  // it. This block used to pad 20pt, which was right while the bar was hidden and put
+  // "Welcome!" directly under the clock once it was not.
+  const insets = useSafeAreaInsets();
   const api = useApi();
   const [listings, setListings] = useState<Listing[]>([]);
   const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
@@ -61,7 +67,7 @@ export function HomeGuestScreen({ navigation }: Props) {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <View style={styles.headerCopy}>
             <Text style={styles.greeting}>Welcome!</Text>

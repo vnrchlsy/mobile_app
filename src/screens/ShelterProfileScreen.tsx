@@ -14,6 +14,8 @@ import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { Me, ShelterDashboard } from "../api/types";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { useApi } from "../api/useApi";
 import { LoadStateView } from "../components/LoadStateView";
 import { loadState } from "../net";
@@ -25,6 +27,10 @@ import { RootStackParamList } from "../navigation/types";
 type Props = NativeStackScreenProps<RootStackParamList, "shelterProfile">;
 
 export function ShelterProfileScreen({ navigation }: Props) {
+  // The status bar is real now (App.tsx), so the first thing on screen has to start below
+  // it. This block used to pad 24pt, which was right while the bar was hidden and put
+  // "Welcome!" directly under the clock once it was not.
+  const insets = useSafeAreaInsets();
   const api = useApi();
   const { signOut } = useAuth();
   const [me, setMe] = useState<Me | null>(null);
@@ -84,7 +90,7 @@ export function ShelterProfileScreen({ navigation }: Props) {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]} showsVerticalScrollIndicator={false}>
         <Text style={styles.pageTitle}>Profile</Text>
 
         <View style={styles.identityCard}>
