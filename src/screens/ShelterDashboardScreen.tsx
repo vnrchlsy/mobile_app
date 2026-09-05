@@ -38,8 +38,8 @@ const BANNER: Record<"pending" | "incomplete", { title: string; l1: string; l2: 
 
 export function ShelterDashboardScreen({ navigation }: Props) {
   // The status bar is real now (App.tsx), so the first thing on screen has to start below
-  // it. This block used to pad 24pt, which was right while the bar was hidden and put
-  // "Welcome!" directly under the clock once it was not.
+  // it. This block used to pad 24pt, which was right while the bar was hidden and
+  // put the dashboard heading under the clock once it was not.
   const insets = useSafeAreaInsets();
   const api = useApi();
   const [dash, setDash] = useState<ShelterDashboard | null>(null);

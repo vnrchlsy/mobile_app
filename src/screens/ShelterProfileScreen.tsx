@@ -28,8 +28,8 @@ type Props = NativeStackScreenProps<RootStackParamList, "shelterProfile">;
 
 export function ShelterProfileScreen({ navigation }: Props) {
   // The status bar is real now (App.tsx), so the first thing on screen has to start below
-  // it. This block used to pad 24pt, which was right while the bar was hidden and put
-  // "Welcome!" directly under the clock once it was not.
+  // it. This block used to pad 24pt, which was right while the bar was hidden and
+  // put the profile heading under the clock once it was not.
   const insets = useSafeAreaInsets();
   const api = useApi();
   const { signOut } = useAuth();

@@ -44,8 +44,8 @@ type MapReport = { report_id: string; species: string; condition: string; city: 
 
 export function HomeScreen({ navigation, route }: Props) {
   // The status bar is real now (App.tsx), so the first thing on screen has to start below
-  // it. This block used to pad 20pt, which was right while the bar was hidden and put
-  // "Welcome!" directly under the clock once it was not.
+  // it. This block used to pad 20pt, which was right while the bar was hidden and
+  // put the greeting under the clock once it was not.
   const insets = useSafeAreaInsets();
   const api = useApi();
   const { city } = useAuth();
