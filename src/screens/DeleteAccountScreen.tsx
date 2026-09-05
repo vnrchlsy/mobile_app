@@ -74,7 +74,7 @@ export function DeleteAccountScreen({ navigation }: Props) {
   if (blockers) return <Blocked blockers={blockers} navigation={navigation} onBack={() => setBlockers(null)} />;
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.deleteAccount">
       <Header title="Delete account" navigation={navigation} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.h1} accessibilityRole="header">This can't be undone</Text>
@@ -132,6 +132,12 @@ export function DeleteAccountScreen({ navigation }: Props) {
   );
 }
 
+// Its own testID, and deliberately `state.` rather than `screen.` — the e2eSelectors guard
+// enforces that every `screen.X` matches a registered route, which is what makes a failing
+// flow point at the right screen. "Blocked from deleting" is a STATE of the deleteAccount
+// route, not a route of its own, so it is named as one. US-W2 names this state explicitly,
+// and sharing the screen's id would let a flow assert it reached the delete screen while it
+// was actually looking at the refusal.
 function Blocked({
   blockers, navigation, onBack,
 }: {
@@ -140,7 +146,7 @@ function Blocked({
   onBack: () => void;
 }) {
   return (
-    <View style={styles.screen} testID="screen.deleteAccount">
+      <View style={styles.screen} testID="state.deleteAccount.blocked">
       <Header title="Delete account" navigation={navigation} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.warnCard} accessible accessibilityRole="alert">

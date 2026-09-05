@@ -1,0 +1,87 @@
+# THE TRACK R EXIT CRITERION, AS A FLOW.
+#
+# Sprint 8's exit criteria asked for "a device walk with the backend STOPPED: every converted
+# screen must say it is offline, and NONE may render a confident empty state." That was the
+# one criterion nobody could tick, because it needed a person with a device and the patience
+# to visit every screen twice.
+#
+# It is the check that matters most, because it re-runs the bug the whole track came from: on
+# 2026-09-04 the rescue map told a person "No strays reported near Marikina right now" while
+# the backend was unreachable and eight reports sat within 10 km of them. Nothing crashed.
+# The screen simply lied, confidently, about whether an animal needed help.
+#
+# ⚠️ HOW TO RUN IT — the backend must be STOPPED, and this flow does not sign in.
+#
+#   1. with the backend UP:   maestro test e2e/flows/00-signin.yaml
+#   2. stop the backend
+#   3. maestro test e2e/flows/70-offline-degradation.yaml
+#
+# It deliberately reuses the session from step 1 — no `clearState`, no `clearKeychain` — for
+# two reasons. Signing in requires the backend, so a self-contained version is impossible; and
+# a returning user with a valid session is exactly who hits this, which is the case worth
+# testing anyway.
+#
+# ⚠️ TWO OUTCOMES ARE BOTH CORRECT, and the assertions are written to accept either:
+#   · nothing cached  → the whole-screen offline state ("You're offline")
+#   · rows cached     → those rows, with StaleBanner above them ("showing what we saved
+#                       earlier"), which is what US-X1 built the cache for
+# What is NEVER correct is the empty copy. That is the only thing asserted absolutely.
+appId: ph.kupkop.app
+---
+- launchApp          # NO clearState/clearKeychain — the session from step 1 is the point
+- extendedWaitUntil:
+    visible:
+      id: "screen.home"
+    timeout: 30000
+
+# ── the rescue map · the screen the entire track came from ─────────────────────────
+- tapOn:
+    id: "btn.home.rescueMap"
+- extendedWaitUntil:
+    visible:
+      id: "screen.rescueMap"
+    timeout: 20000
+# ⚠️ THE ASSERTION THIS WHOLE SPRINT EXISTS FOR. If this line ever fails, the app is telling
+# someone there are no strays near them because it could not reach the server.
+- assertNotVisible: "No strays reported near"
+- assertVisible:
+    text: ".*(You're offline|showing what we saved earlier).*"
+- tapOn:
+    text: "‹"
+
+# ── adopt ──────────────────────────────────────────────────────────────────────────
+- tapOn:
+    id: "tab.adopt"
+- extendedWaitUntil:
+    visible:
+      id: "screen.adopt"
+    timeout: 20000
+- assertNotVisible: "No pets up for adoption"
+- assertVisible:
+    text: ".*(You're offline|showing what we saved earlier).*"
+
+# ── volunteer shifts ───────────────────────────────────────────────────────────────
+- tapOn:
+    id: "tab.volunteer"
+- extendedWaitUntil:
+    visible:
+      id: "screen.kawanggawa"
+    timeout: 20000
+- assertNotVisible: "No open shifts right now"
+- assertVisible:
+    text: ".*(You're offline|showing what we saved earlier).*"
+
+# ── my reports · a list with no cache, so this is the pure offline state ────────────
+- tapOn:
+    id: "tab.home"
+- extendedWaitUntil:
+    visible:
+      id: "screen.home"
+    timeout: 20000
+- tapOn:
+    id: "btn.home.myReports"
+- extendedWaitUntil:
+    visible:
+      id: "screen.myReports"
+    timeout: 20000
+- assertVisible: "You're offline"

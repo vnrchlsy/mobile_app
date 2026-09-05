@@ -205,7 +205,7 @@ export function HomeScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.sagipLinks}>
-          <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.7} onPress={() => navigation.navigate("rescueMap")}>
+          <TouchableOpacity testID="btn.home.rescueMap" hitSlop={TAP_SLOP} activeOpacity={0.7} onPress={() => navigation.navigate("rescueMap")}>
             <Text style={styles.sagipLink}>See nearby strays ›</Text>
           </TouchableOpacity>
           <TouchableOpacity testID="btn.home.myReports" hitSlop={TAP_SLOP} activeOpacity={0.7} onPress={() => navigation.navigate("myReports")}>
