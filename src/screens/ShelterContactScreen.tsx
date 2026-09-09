@@ -23,6 +23,18 @@ export function ShelterContactScreen({ navigation, route }: Props) {
   const [error, setError] = useState<string | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
 
+  // ⚠️ US-R4 · NOT a detail route — this is FORM PREFILL, and it belongs to US-R5.
+  // @loadStateExempt form prefill, not a detail route — a blank editable field is the
+  // safe failure here. US-R5 CHECKED and left it: nothing is prefilled that a blank could
+  // overwrite — the PATCH sends what the shelter typed, so there is no lost data to
+  // protect and a banner would only be noise. Contrast ListingFormScreen, where the
+  // same silence wiped a live listing.
+  //
+  // The distinction matters: a detail route that fails should say so and offer a retry. A
+  // form that fails to prefill must NOT, because the screen is still perfectly usable — the
+  // field just stays blank and editable, which is the safe direction. What R5 has to check
+  // is the opposite failure, an empty default rendered OVER real data and then saved.
+  //
   // Prefilled from the signup name — without this the shelter is asked for a name it just
   // gave, which reads as the form having lost it. Editable, because the public contact isn't
   // always the admin who created the account.
@@ -40,11 +52,22 @@ export function ShelterContactScreen({ navigation, route }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
-  const canSubmit = name.trim().length > 0 && phone.trim().length > 0 && !submitting;
+  const [nameError, setNameError] = useState<string | undefined>(undefined);
+  const [phoneError, setPhoneError] = useState<string | undefined>(undefined);
 
+  /**
+   * Design-system rule: NEVER disable a submit button because of validation. A greyed button
+   * gives a person nothing to press and no explanation. `submitting` still blocks — a request
+   * in flight is not a validation error.
+   */
   async function onSubmit() {
-    if (!canSubmit) return;
+    if (submitting) return;
     setError(undefined);
+    const missingName = name.trim().length === 0 ? "Enter a contact name." : undefined;
+    const missingPhone = phone.trim().length === 0 ? "Enter a mobile number." : undefined;
+    setNameError(missingName);
+    setPhoneError(missingPhone);
+    if (missingName || missingPhone) return;
     setSubmitting(true);
     try {
       const patch = await api.patch("/shelter/profile", {
@@ -86,12 +109,14 @@ export function ShelterContactScreen({ navigation, route }: Props) {
           autoCapitalize="words"
         />
         <FormField label="Role (optional)" value={role} onChangeText={setRole} autoCapitalize="words" />
-        <FormField label="Mobile number" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+        <FormField label="Mobile number" value={phone} error={phoneError}
+          onChangeText={(v) => { setPhone(v); if (phoneError) setPhoneError(undefined); }}
+          keyboardType="phone-pad" />
         <FormField label="Website / Facebook (optional)" value={website} onChangeText={setWebsite} autoCapitalize="none" keyboardType="url" />
 
         {!!error && <Text style={styles.formError}>{error}</Text>}
 
-        <PrimaryButton label="Send code" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submit} />
+        <PrimaryButton label="Send code" onPress={onSubmit} loading={submitting} style={styles.submit} />
       </ScrollView>
     </View>
   );

@@ -7,12 +7,18 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import { Image, ImageSourcePropType, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { Me } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import { OwnerTabs } from "../components/OwnerTabs";
 import { LocationPinIcon, UserBadgeIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
+import { ScreenBackdrop } from "../components/ScreenBackground";
 
 type Props = NativeStackScreenProps<RootStackParamList, "profile">;
 
@@ -24,20 +30,39 @@ function initialsOf(name: string): string {
 }
 
 export function ProfileScreen({ navigation }: Props) {
+  // The status bar is real now (App.tsx), so the first thing on screen has to start below
+  // it. This block used to pad 20pt, which was right while the bar was hidden and
+  // put the screen title under the clock once it was not.
+  /**
+   * ⚠️ `screen.profile` is on BOTH the load-state branch and the loaded one, deliberately.
+   * "Am I on the profile screen?" is true either way — a slow or failed /me does not mean the
+   * screen was never reached, and anchoring only the loaded branch made a 20-second fetch
+   * read as "never arrived" and failed the E2E flow on a working app. The branches are
+   * mutually exclusive, so exactly one is ever in the tree.
+   */
+  const insets = useSafeAreaInsets();
   const api = useApi();
   const { city, signOut } = useAuth();
   const [me, setMe] = useState<Me | null>(null);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | undefined>(undefined);
 
-  useFocusEffect(
-    useCallback(() => {
-      api.get("/me").then((r) => r.ok && setMe(r.data));
+  // US-R1 · named so the same function serves the focus refetch AND the retry button.
+  const load = useCallback(() => {
+      // US-R1 · keep the RESULT. Discarding it left `me` null, and `approvedMember` below is
+      // `me?.capabilities.some(...) ?? false` — so a failed /me showed a Verified Member
+      // their own account as unverified, with a blank name and no photo. The account was
+      // fine; only the request had failed.
+      api.get("/me").then((r) => {
+        setRes({ ok: r.ok, status: r.status });
+        if (r.ok) setMe(r.data);
+      });
       // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch only on focus, not on every api identity change
-    }, [])
-  );
+    }, []);
+  useFocusEffect(load);
 
   const pendingMember = me?.capabilities.some((c) => c.capability === "rescuer" && c.status === "pending") ?? false;
   const approvedMember = me?.capabilities.some((c) => c.capability === "rescuer" && c.status === "approved") ?? false;
@@ -73,9 +98,24 @@ export function ProfileScreen({ navigation }: Props) {
     navigation.reset({ index: 0, routes: [{ name: "welcome" }] });
   }
 
+  // US-R1 · when the load FAILED and we have nothing, say so instead of rendering the
+  // `?? ` fallbacks below as fact. Those fallbacks are correct defaults for a shelter that
+  // genuinely has no listings yet; they are a lie for one whose request didn't arrive.
+  // (Full per-panel treatment for partial failure is US-R5's decision — this is only the
+  // "don't state something false" half.)
+  if (!me && loadState(res).kind !== "ready" && loadState(res).kind !== "empty") {
+    return (
+      <View style={styles.screen} testID="screen.profile">
+      <ScreenBackdrop />
+        <LoadStateView state={loadState(res)} onRetry={load} />
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={styles.screen} testID="screen.profile">
+      <ScreenBackdrop />
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]} showsVerticalScrollIndicator={false}>
         <Text style={styles.pageTitle}>Profile</Text>
 
         <View style={styles.card}>
@@ -98,10 +138,10 @@ export function ProfileScreen({ navigation }: Props) {
               />
               {!!saveError && <Text style={styles.saveError}>{saveError}</Text>}
               <View style={styles.editActions}>
-                <TouchableOpacity activeOpacity={0.75} onPress={() => setEditing(false)} disabled={saving}>
+                <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => setEditing(false)} disabled={saving}>
                   <Text style={styles.editCancel}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity activeOpacity={0.85} onPress={saveEdit} disabled={saving}>
+                <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.85} onPress={saveEdit} disabled={saving}>
                   <Text style={styles.editSave}>{saving ? "Saving…" : "Save"}</Text>
                 </TouchableOpacity>
               </View>
@@ -110,7 +150,7 @@ export function ProfileScreen({ navigation }: Props) {
             <>
               <Text style={styles.name}>{me?.display_name ?? ""}</Text>
               <Text style={styles.email}>{me?.email ?? ""}</Text>
-              <TouchableOpacity activeOpacity={0.75} onPress={startEdit} style={styles.editLinkWrap}>
+              <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={startEdit} style={styles.editLinkWrap}>
                 <Text style={styles.editLink}>Edit profile</Text>
               </TouchableOpacity>
             </>
@@ -172,6 +212,17 @@ export function ProfileScreen({ navigation }: Props) {
             <Text style={styles.accountRowLabel}>My impact</Text>
             <Text style={styles.accountRowChevron}>›</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.75}
+            style={[styles.accountRow, styles.accountRowDivided]}
+            testID="btn.profile.settings"
+            onPress={() => navigation.navigate("settings")}
+          >
+            {/* US-N5 · the only route to Settings — and through it to the §12.6 data
+                rights. Before Sprint 7 the designed screen had no entry point at all. */}
+            <Text style={styles.accountRowLabel}>Settings</Text>
+            <Text style={styles.accountRowChevron}>›</Text>
+          </TouchableOpacity>
           <TouchableOpacity activeOpacity={0.75} style={styles.accountRow} onPress={handleLogout}>
             <Text style={styles.accountRowLabel}>Log out</Text>
             <Text style={styles.accountRowChevron}>›</Text>
@@ -198,7 +249,7 @@ const colors = {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.page
+    backgroundColor: "transparent"
   },
   content: {
     paddingHorizontal: 26,

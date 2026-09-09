@@ -7,6 +7,7 @@ import { useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { pickAndUpload } from "../media/pickAndUpload";
 import { RootStackParamList } from "../navigation/types";
 
 const colors = {
@@ -31,10 +32,9 @@ export function DonationQrScreen({ navigation }: Props) {
   async function addQrImage() {
     if (uploading) return;
     setUploading(true);
-    // Same dev-stub presign flow as everywhere else in the app (S3 is still a dev seam).
-    const res = await api.post("/media/presign", { purpose: "donation_qr", content_type: "image/jpeg" });
+    const res = await pickAndUpload(api, "donation_qr");
     setUploading(false);
-    if (res.ok) setQrUrl(res.data.file_url);
+    if (res?.ok) setQrUrl(res.fileUrl);
   }
 
   async function submit() {
@@ -59,7 +59,8 @@ export function DonationQrScreen({ navigation }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Donation QR</Text>

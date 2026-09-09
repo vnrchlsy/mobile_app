@@ -9,6 +9,9 @@ import MapView, { Marker } from "react-native-maps";
 
 import { ReportDetail, StrayStatus } from "../api/types";
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
+import { pickAndUpload } from "../media/pickAndUpload";
 import { RootStackParamList } from "../navigation/types";
 import { advanceableStatuses, sagipTitle, strayChip } from "../sagip";
 
@@ -32,7 +35,14 @@ export function RescueUpdateScreen({ navigation, route }: Props) {
   const api = useApi();
   const { caseId, reportId } = route.params;
   const [report, setReport] = useState<ReportDetail | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  // US-R5 · "Case not found." was shown for every failure — to a RESCUER HOLDING AN ACTIVE
+  // CLAIM on a stray, on the one screen that exists to advance that case. Offline read as
+  // the case having vanished.
+  //
+  // The gate stays `!report`, which is also what protects typed work: this screen refetches
+  // on focus and after each successful update, and `setReport` only runs on success, so a
+  // failed refetch leaves the form (and the note being typed into it) exactly where it was.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
   const [target, setTarget] = useState<StrayStatus | null>(null);
   const [note, setNote] = useState("");
   const [outcomeNotes, setOutcomeNotes] = useState("");
@@ -42,9 +52,10 @@ export function RescueUpdateScreen({ navigation, route }: Props) {
   const [error, setError] = useState<string | undefined>(undefined);
 
   const load = useCallback(() => {
+    setRes(null);
     api.get(`/reports/${reportId}`).then((r) => {
+      setRes({ ok: r.ok, status: r.status });
       if (r.ok) setReport(r.data);
-      setLoaded(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, [reportId]);
@@ -56,11 +67,10 @@ export function RescueUpdateScreen({ navigation, route }: Props) {
   async function addOutcomePhoto() {
     if (uploadingPhoto) return;
     setUploadingPhoto(true);
-    // Same dev-stub presign flow as ReportStrayScreen's addPhoto — no real bucket yet
     // (S3 is still a dev seam), but the client-side wiring is real.
-    const res = await api.post("/media/presign", { purpose: "rescue_outcome_photo", content_type: "image/jpeg" });
+    const res = await pickAndUpload(api, "rescue_outcome_photo");
     setUploadingPhoto(false);
-    if (res.ok) setOutcomePhotoUrl(res.data.file_url);
+    if (res?.ok) setOutcomePhotoUrl(res.fileUrl);
   }
 
   async function submit() {
@@ -93,14 +103,16 @@ export function RescueUpdateScreen({ navigation, route }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Update case</Text>
       </View>
 
       {!report ? (
-        <Text style={styles.empty}>{loaded ? "Case not found." : "Loading…"}</Text>
+        <LoadStateView state={loadState(res)} subject="case" onRetry={load}
+          onBack={() => navigation.goBack()} />
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <Text style={styles.h1}>{sagipTitle(report.species, report.condition)}</Text>
@@ -236,7 +248,6 @@ const styles = StyleSheet.create({
   backGlyph: { color: colors.ink, fontSize: 30, fontWeight: "800", marginTop: -4 },
   title: { color: colors.ink, fontSize: 22, fontWeight: "800" },
   content: { paddingHorizontal: 26, paddingTop: 12, paddingBottom: 60 },
-  empty: { marginTop: 60, color: colors.muted, fontSize: 16, textAlign: "center" },
   h1: { color: colors.ink, fontSize: 27, fontWeight: "800", letterSpacing: -0.5 },
   sub: { marginTop: 6, color: colors.muted, fontSize: 16 },
   currentChip: { marginTop: 14, alignSelf: "flex-start", paddingHorizontal: 14, height: 30, borderRadius: 15, justifyContent: "center" },

@@ -11,11 +11,14 @@ import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { AlertIcon } from "../components/AppIcons";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { RootStackParamList } from "../navigation/types";
 import { ChipTone, ListingCard, PendingRequest, ShelterShift, reliabilityChip } from "../shelterVolunteer";
 import { Reliability, shiftTypeLabel } from "../volunteer";
+import { TAP_SLOP } from "../touch";
 
 // The endpoint also returns `requested_at` per-row (backend ShiftRequestsView) even though
 // Task 4's PendingRequest type doesn't declare it — extend locally rather than widen the
@@ -70,8 +73,10 @@ export function ShelterVolunteerRequestsScreen({ navigation, route }: Props) {
   // there is no way to attach one after the fact.
   const [shiftLoaded, setShiftLoaded] = useState(false);
   const [requests, setRequests] = useState<RequestRow[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [loadError, setLoadError] = useState(false);
+  // US-R2 · PRIMARY. Three GETs on this screen: requests is what it is FOR, while the shift
+  // header and the listings picker are SECONDARY and already degrade on their own ("You can
+  // still skip"). Only a failed requests load takes the whole screen.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
   const [busySignupId, setBusySignupId] = useState<string | null>(null);
 
@@ -93,14 +98,10 @@ export function ShelterVolunteerRequestsScreen({ navigation, route }: Props) {
   }, [shiftId]);
 
   const loadRequests = useCallback(() => {
+    setRes(null);
     api.get(`/shelter/shifts/${shiftId}/requests`).then((r) => {
-      if (r.ok) {
-        setRequests(r.data?.results ?? []);
-        setLoadError(false);
-      } else {
-        setLoadError(true);
-      }
-      setLoaded(true);
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setRequests(r.data?.results ?? []);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, [shiftId]);
@@ -195,7 +196,8 @@ export function ShelterVolunteerRequestsScreen({ navigation, route }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
@@ -215,13 +217,9 @@ export function ShelterVolunteerRequestsScreen({ navigation, route }: Props) {
         </View>
       )}
 
-      {!loaded ? (
+      {loadState(res).kind !== "ready" ? (
         <View style={styles.centerFill}>
-          <ActivityIndicator color={colors.teal} />
-        </View>
-      ) : loadError ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>Couldn't load requests. Pull down or go back and try again.</Text>
+          <LoadStateView state={loadState(res)} subject="shift" onRetry={loadRequests} />
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -303,7 +301,7 @@ export function ShelterVolunteerRequestsScreen({ navigation, route }: Props) {
           <View style={styles.pickerSheet}>
             <View style={styles.pickerHeader}>
               <Text style={styles.pickerTitle}>Assign an animal</Text>
-              <TouchableOpacity onPress={() => setPickerSignupId(null)} hitSlop={10}>
+              <TouchableOpacity onPress={() => setPickerSignupId(null)} hitSlop={TAP_SLOP}>
                 <Text style={styles.pickerClose}>Close</Text>
               </TouchableOpacity>
             </View>

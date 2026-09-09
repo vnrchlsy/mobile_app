@@ -7,8 +7,11 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { needProgressLabel } from "../community";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -28,13 +31,20 @@ export function DonateScreen({ navigation, route }: Props) {
   const api = useApi();
   const { accountId, orgName } = route.params;
   const [qrs, setQrs] = useState<DonationQr[] | null>(null);
+  // US-R2 · PRIMARY: this screen exists to show the QR. `needs` below is SECONDARY and
+  // degrades on its own rather than taking the screen.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
   const [needs, setNeeds] = useState<Need[] | null>(null);
-  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    setRes(null);
+    // ⚠️ was `setQrs(r.ok ? ... : [])` — so a failed request rendered "Donations aren't
+    // available for this org yet.", a false statement about a shelter that could cost it a
+    // donation.
     api.get(`/shelters/${accountId}/donation-qr`).then((r) => {
-      setQrs(r.ok ? r.data.donation_qrs : []);
-      setLoaded(true);
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setQrs(r.data.donation_qrs);
     });
     // US-W2 · the shelter's open wishlist, shown beside the QR block (both live on Donate).
     api.get(`/shelters/${accountId}/needs?status=open`).then((r) => {
@@ -46,7 +56,8 @@ export function DonateScreen({ navigation, route }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Donate</Text>
@@ -58,8 +69,11 @@ export function DonateScreen({ navigation, route }: Props) {
           Donations happen in your payment app — Kupkop never touches the money.
         </Text>
 
-        {!loaded ? (
-          <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal} />
+        {loadState(res, qrs?.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, qrs?.length)}
+            emptyTitle="Donations aren't available for this org yet."
+          />
         ) : qrs && qrs.length > 0 ? (
           qrs.map((qr) => (
             <View key={qr.provider} style={styles.qrCard}>
@@ -68,9 +82,7 @@ export function DonateScreen({ navigation, route }: Props) {
               <Text style={styles.accountName}>{qr.account_name}</Text>
             </View>
           ))
-        ) : (
-          <Text style={styles.empty}>Donations aren't available for this org yet.</Text>
-        )}
+        ) : null}
 
         {needs && needs.length > 0 ? (
           <View style={styles.wishlist}>
@@ -84,7 +96,7 @@ export function DonateScreen({ navigation, route }: Props) {
                 <Text style={styles.needMeta}>
                   {need.category} · {needProgressLabel(need.quantity_received, need.quantity_needed)}
                 </Text>
-                <TouchableOpacity style={styles.pledgeBtn}
+                <TouchableOpacity hitSlop={TAP_SLOP} style={styles.pledgeBtn}
                   onPress={() => navigation.navigate("donatePledge", {
                     needId: need.need_id, needTitle: need.title, shelterName: orgName
                   })}>
@@ -95,7 +107,7 @@ export function DonateScreen({ navigation, route }: Props) {
           </View>
         ) : null}
 
-        <TouchableOpacity style={styles.myDonationsRow}
+        <TouchableOpacity hitSlop={TAP_SLOP} style={styles.myDonationsRow}
           onPress={() => navigation.navigate("myDonations")}>
           <Text style={styles.myDonationsLabel}>My donations ›</Text>
         </TouchableOpacity>

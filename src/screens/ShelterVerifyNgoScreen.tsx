@@ -7,6 +7,7 @@ import { useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { pickAndUpload } from "../media/pickAndUpload";
 import { CheckIcon, DocumentIcon } from "../components/AppIcons";
 import { DOC_CONSENT_VERSION } from "../consent";
 import { RootStackParamList, ShelterDoc } from "../navigation/types";
@@ -32,11 +33,13 @@ export function ShelterVerifyNgoScreen({ navigation, route }: Props) {
   const prcValid = PRC_RE.test(prc.trim());
   // BAI is required unless the shelter is submitting SEC now and BAI later.
   const docsReady = !!sec && (baiPending || !!bai);
+  // Kept for the button's APPEARANCE only — a form that cannot yet be sent may look
+  // secondary, but it must still be pressable and must say why. See onSubmit.
   const canSubmit = docsReady && vetName.trim().length > 0 && prcValid && !submitting;
 
   async function presign(): Promise<string | null> {
-    const res = await api.post("/media/presign", { purpose: "verification_doc", content_type: "image/jpeg" });
-    return res.ok ? res.data.file_url : null;
+    const res = await pickAndUpload(api, "verification_doc");
+    return res?.ok ? res.fileUrl : null;
   }
 
   async function uploadInto(slot: string, set: (url: string) => void) {
@@ -52,8 +55,25 @@ export function ShelterVerifyNgoScreen({ navigation, route }: Props) {
     }
   }
 
+  /**
+   * Design-system rule: NEVER disable a submit button because of validation. A greyed button
+   * gives a person nothing to press and no explanation. `submitting` still blocks — a request
+   * in flight is not a validation error.
+   */
   async function onSubmit() {
-    if (!canSubmit) return;
+    if (submitting) return;
+    if (!docsReady) {
+      setError("Upload the required documents first.");
+      return;
+    }
+    if (vetName.trim().length === 0) {
+      setError("Enter the vet's name.");
+      return;
+    }
+    if (!prcValid) {
+      setError("Enter a valid PRC number (6\u20138 digits).");
+      return;
+    }
     setSubmitting(true);
     setError(undefined);
     try {
@@ -96,7 +116,8 @@ export function ShelterVerifyNgoScreen({ navigation, route }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.goBack()} style={styles.backButton} hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}>
+        <TouchableOpacity testID="btn.back" activeOpacity={0.75} onPress={() => navigation.goBack()} style={styles.backButton} hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backText}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>NGO papers</Text>
@@ -133,7 +154,7 @@ export function ShelterVerifyNgoScreen({ navigation, route }: Props) {
 
         {!!error && <Text style={styles.formError}>{error}</Text>}
 
-        <TouchableOpacity activeOpacity={0.85} style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]} onPress={onSubmit} disabled={!canSubmit}>
+        <TouchableOpacity activeOpacity={0.85} style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]} onPress={onSubmit}>
           {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitText}>Submit for review</Text>}
         </TouchableOpacity>
       </ScrollView>

@@ -6,10 +6,13 @@ import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { VolunteerIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
 import { ShelterShift } from "../shelterVolunteer";
 import { shiftTypeLabel } from "../volunteer";
+import { TAP_SLOP } from "../touch";
 
 function shiftWhenLabel(startsAt: string, endsAt: string): string {
   const start = new Date(startsAt);
@@ -39,19 +42,18 @@ type Props = NativeStackScreenProps<RootStackParamList, "shelterVolunteer">;
 export function ShelterVolunteerScreen({ navigation }: Props) {
   const api = useApi();
   const [shifts, setShifts] = useState<ShelterShift[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  // US-R3 · consolidation, not a bug fix — this screen already split loading/error/empty
+  // by hand and got it right. LoadStateView adds the one distinction its own boolean
+  // could not make: offline versus the server refusing.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
 
   useFocusEffect(
     useCallback(() => {
+      setRes(null);
       api.get("/shelter/shifts").then((r) => {
-        if (r.ok) {
-          setShifts(r.data?.results ?? []);
-          setError(false);
-        } else {
-          setError(true);
-        }
-        setLoaded(true);
+        setRes({ ok: r.ok, status: r.status });
+        if (r.ok) setShifts(r.data?.results ?? []);
       });
       // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus only
     }, [])
@@ -60,11 +62,12 @@ export function ShelterVolunteerScreen({ navigation }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Kawang-Gawa</Text>
-        <TouchableOpacity
+        <TouchableOpacity hitSlop={TAP_SLOP}
           style={styles.newBtn}
           activeOpacity={0.85}
           onPress={() => navigation.navigate("shelterVolunteerCreate")}
@@ -79,17 +82,17 @@ export function ShelterVolunteerScreen({ navigation }: Props) {
             <Text style={styles.sectionTitle}>Your volunteer activities</Text>
             <Text style={styles.sectionSub}>Posted shifts and their sign-ups.</Text>
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate("shelterVolunteerCalendar")} hitSlop={10}>
+          <TouchableOpacity onPress={() => navigation.navigate("shelterVolunteerCalendar")} hitSlop={TAP_SLOP}>
             <Text style={styles.calendarLink}>Calendar ›</Text>
           </TouchableOpacity>
         </View>
 
-        {!loaded ? (
-          <Text style={styles.empty}>Loading…</Text>
-        ) : error ? (
-          <Text style={styles.empty}>Couldn't load your activities. Pull to refresh or try again shortly.</Text>
-        ) : shifts.length === 0 ? (
-          <Text style={styles.empty}>No volunteer activities posted yet — tap "+ Post an activity" to start.</Text>
+        {loadState(res, shifts.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, shifts.length)}
+            emptyTitle="No volunteer activities posted yet"
+            emptyBody={'Tap "+ Post an activity" to start.'}
+          />
         ) : (
           shifts.map((s) => {
             const chip = STATUS_CHIP[s.status];

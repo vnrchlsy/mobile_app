@@ -1,0 +1,19 @@
+# US-K3 · §12.4 dependency hygiene.
+#
+# ⚠️ Expect most advisories here to be UNACTIONABLE: the dependency tree is pinned by the
+# Expo SDK, so a Dependabot PR bumping a transitive of @expo/metro-runtime will usually
+# conflict with the SDK's own pin. The real remedy for those is an Expo SDK upgrade. This is
+# still worth having for the handful of direct dependencies we actually control.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: [dependencies, security]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

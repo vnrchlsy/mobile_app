@@ -1,6 +1,5 @@
 // US-B4 (tier 1) / US-C1 step 1 (tier 2) — shelter documents.
 // Reference: screens/user/screen-shelter-verify-tier1.png, screen-shelter-verify-tier1-ngo.png
-// Uploads are a DEV STUB (POST /media/presign returns a placeholder file_url — no real picker).
 // tier 1 (community_rescue): submit POST /verifications now, or defer -> shelter-dashboard-incomplete.
 // tier 2 (registered_ngo): NEVER "Submit for review" here — gather the base set and Continue to the
 //   NGO papers (step 2), which submits base + SEC/BAI in one request (server enforces tier1 -> tier2).
@@ -9,10 +8,12 @@ import { useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { pickAndUpload } from "../media/pickAndUpload";
 import { CheckIcon, DocumentIcon } from "../components/AppIcons";
 import { DOC_CONSENT_VERSION } from "../consent";
 import { RootStackParamList, ShelterDoc } from "../navigation/types";
 import { authColors } from "./AuthFormKit";
+import { TAP_SLOP } from "../touch";
 
 const MIN_PHOTOS = 3;
 
@@ -34,8 +35,10 @@ export function ShelterVerifyScreen({ navigation, route }: Props) {
   const baseComplete = !!govId && !!billing && photos.length >= MIN_PHOTOS && social.trim().length > 0 && consent;
 
   async function presign(): Promise<string | null> {
-    const res = await api.post("/media/presign", { purpose: "verification_doc", content_type: "image/jpeg" });
-    return res.ok ? res.data.file_url : null;
+    // null = the person cancelled or declined the permission — an ordinary outcome, not an
+    // error, and the caller renders nothing for it.
+    const res = await pickAndUpload(api, "verification_doc");
+    return res?.ok ? res.fileUrl : null;
   }
 
   async function uploadInto(slot: string, set: (url: string) => void) {
@@ -97,7 +100,8 @@ export function ShelterVerifyScreen({ navigation, route }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.goBack()} style={styles.backButton} hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}>
+        <TouchableOpacity testID="btn.back" activeOpacity={0.75} onPress={() => navigation.goBack()} style={styles.backButton} hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backText}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Get verified</Text>
@@ -143,7 +147,7 @@ export function ShelterVerifyScreen({ navigation, route }: Props) {
           {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitText}>{isNgo ? "Continue to NGO papers" : "Submit for review"}</Text>}
         </TouchableOpacity>
 
-        <TouchableOpacity activeOpacity={0.75} onPress={onDefer}>
+        <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={onDefer}>
           <Text style={styles.deferLink}>I'll upload these later</Text>
         </TouchableOpacity>
       </ScrollView>

@@ -15,8 +15,12 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 import { MyInquiry } from "../api/types";
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { inquiryProgressLabel } from "../adoption";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
+import { ScreenBackdrop } from "../components/ScreenBackground";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -44,27 +48,36 @@ type Props = NativeStackScreenProps<RootStackParamList, "myInquiries">;
 export function MyInquiriesScreen({ navigation }: Props) {
   const api = useApi();
   const [inquiries, setInquiries] = useState<MyInquiry[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
 
-  useFocusEffect(useCallback(() => {
+
+  const load = useCallback(() => {
+    setRes(null);
     api.get("/me/inquiries").then((r) => {
+      setRes({ ok: r.ok, status: r.status });
       if (r.ok) setInquiries(r.data?.results ?? []);
-      setLoaded(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
-  }, []));
+  }, []);
+  useFocusEffect(load);
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.myInquiries">
+      <ScreenBackdrop />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>My inquiries</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {loaded && inquiries.length === 0 ? (
-          <Text style={styles.empty}>You haven't inquired on any pets yet.</Text>
+        {loadState(res, inquiries.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, inquiries.length)}
+            emptyTitle="You haven't inquired on any pets yet."
+            onRetry={load}
+          />
         ) : (
           inquiries.map((iq) => {
             const tone = STATUS_TONE[iq.status] ?? STATUS_TONE.active;
@@ -100,7 +113,7 @@ export function MyInquiriesScreen({ navigation }: Props) {
                 {/* US-T2 · the "Share your adoption story" CTA goes live on an adopted inquiry
                     (was a dead control), opening compose prefilled with this listing. */}
                 {iq.status === "adopted" ? (
-                  <TouchableOpacity
+                  <TouchableOpacity hitSlop={TAP_SLOP}
                     style={styles.shareStory}
                     activeOpacity={0.8}
                     onPress={() => navigation.navigate("storyCompose",
@@ -128,7 +141,7 @@ const card = {
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.page },
+  screen: { flex: 1, backgroundColor: "transparent" },
   header: { paddingTop: 58, paddingHorizontal: 26, paddingBottom: 6, flexDirection: "row", alignItems: "center", gap: 16 },
   back: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", ...card },
   backGlyph: { color: colors.ink, fontSize: 30, fontWeight: "800", marginTop: -4 },

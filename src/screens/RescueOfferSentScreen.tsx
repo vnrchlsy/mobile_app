@@ -6,6 +6,7 @@ import { OfferType } from "../api/types";
 import { CheckIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
 import { OFFER_TYPE_LABEL } from "../sagip";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF"
@@ -34,7 +35,7 @@ export function RescueOfferSentScreen({ navigation, route }: Props) {
         >
           <Text style={styles.primaryText}>Back to the report</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("myOffers")} activeOpacity={0.7}>
+        <TouchableOpacity hitSlop={TAP_SLOP} onPress={() => navigation.navigate("myOffers")} activeOpacity={0.7}>
           <Text style={styles.secondary}>See my offers</Text>
         </TouchableOpacity>
       </View>

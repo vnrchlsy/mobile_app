@@ -9,12 +9,17 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import { Image, ImageSourcePropType, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { Listing } from "../api/types";
-import { AdoptIcon, HomeIcon, ProfileIcon, VolunteerIcon } from "../components/AppIcons";
+import { AdoptIcon, HomeIcon, LocationPinIcon, ProfileIcon, VolunteerIcon } from "../components/AppIcons";
 import { SignupWall, SignupWallAction } from "../components/SignupWall";
 import { setIntent } from "../guestIntent";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const paw = require("../../assets/paw-white.png") as ImageSourcePropType;
 
@@ -25,16 +30,21 @@ const GUEST_CITY = "Marikina";
 type WallState = { action: SignupWallAction; subject?: string } | null;
 
 export function HomeGuestScreen({ navigation }: Props) {
+  // The status bar is real now (App.tsx), so the first thing on screen has to start below
+  // it. This block used to pad 20pt, which was right while the bar was hidden and put
+  // "Welcome!" directly under the clock once it was not.
+  const insets = useSafeAreaInsets();
   const api = useApi();
   const [listings, setListings] = useState<Listing[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
   const [wall, setWall] = useState<WallState>(null);
 
   useFocusEffect(
     useCallback(() => {
+      setRes(null);
       api.get(`/listings?city=${GUEST_CITY}`).then((r) => {
+        setRes({ ok: r.ok, status: r.status });
         if (r.ok) setListings(r.data.results ?? []);
-        setLoaded(true);
       });
       // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch only on focus, not on every api identity change
     }, [])
@@ -57,7 +67,7 @@ export function HomeGuestScreen({ navigation }: Props) {
 
   return (
     <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <View style={styles.headerCopy}>
             <Text style={styles.greeting}>Welcome!</Text>
@@ -66,7 +76,7 @@ export function HomeGuestScreen({ navigation }: Props) {
               <Text style={styles.cityChange}>Change ›</Text>
             </View>
           </View>
-          <TouchableOpacity
+          <TouchableOpacity hitSlop={TAP_SLOP}
             activeOpacity={0.85}
             style={styles.loginPill}
             onPress={() => navigation.navigate("signin")}
@@ -83,7 +93,7 @@ export function HomeGuestScreen({ navigation }: Props) {
             <Text style={styles.guestTitle}>You're browsing as a guest</Text>
             <Text style={styles.guestBody}>Sign up to adopt, save pets & help strays.</Text>
           </View>
-          <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate("accountType")}>
+          <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.navigate("accountType")}>
             <Text style={styles.guestLink}>Sign up ›</Text>
           </TouchableOpacity>
         </View>
@@ -92,7 +102,7 @@ export function HomeGuestScreen({ navigation }: Props) {
           <View>
             <Text style={styles.reportTitle}>Saw a stray?</Text>
             <Text style={styles.reportText}>Report it in seconds — help is near.</Text>
-            <TouchableOpacity activeOpacity={0.85} style={styles.reportButton} onPress={() => openWall("report")}>
+            <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.85} style={styles.reportButton} onPress={() => openWall("report")}>
               <Text style={styles.reportButtonText}>Report now</Text>
             </TouchableOpacity>
           </View>
@@ -103,20 +113,31 @@ export function HomeGuestScreen({ navigation }: Props) {
             since US-S4). This navigates DIRECTLY, not through the SignupWall like the gated actions
             above: browsing the map needs no account. Mirrors the owner Home's "See nearby strays"
             link. Closes Sprint 1's last remaining US-A1b Partial (guest home never pointed at it). */}
-        <TouchableOpacity
-          activeOpacity={0.7}
-          style={styles.mapLinkRow}
+        <TouchableOpacity hitSlop={TAP_SLOP}
+          activeOpacity={0.85}
+          style={styles.mapCard}
+          accessibilityRole="button"
           onPress={() => navigation.navigate("rescueMap")}
         >
-          <Text style={styles.mapLink}>See nearby strays ›</Text>
+          <View style={styles.mapIconTile}>
+            <LocationPinIcon color={colors.teal} size={20} />
+          </View>
+          <View style={styles.mapCopy}>
+            <Text style={styles.mapTitle}>See nearby strays</Text>
+            <Text style={styles.mapSub}>Live map of reports around you</Text>
+          </View>
+          <Text style={styles.mapChevron}>›</Text>
         </TouchableOpacity>
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Adopt near you</Text>
         </View>
 
-        {loaded && listings.length === 0 && (
-          <Text style={styles.emptyText}>No pets listed near Marikina yet — check back soon.</Text>
+        {loadState(res, listings.length).kind !== "ready" && (
+          <LoadStateView
+            state={loadState(res, listings.length)}
+            emptyTitle="No pets listed near Marikina yet — check back soon."
+          />
         )}
 
         {listings.map((listing) => (
@@ -202,6 +223,18 @@ function GuestTabs({ onGated }: { onGated: (action: SignupWallAction) => void })
   );
 }
 
+/** The guest shell draws its own tab bar (see GuestTabs below), so it carries its own copy of
+ *  these values. Exported so the shared contrast guard covers it — three tab bars with three
+ *  private palettes is how the inactive icon stayed at 1.6:1 in two of them. */
+export const GUEST_TAB_COLORS = {
+  bar: "#FFFFFF",
+  teal: "#1C6B6B",
+  soft: "#E7F0EE",
+  // Was #C9CEC7 — 1.60:1. This is the bar a signed-out visitor actually lands on.
+  inactive: "#5F5E5A",
+  muted: "#5F5E5A"
+};
+
 const colors = {
   ink: "#12213A",
   teal: "#1C6B6B",
@@ -210,7 +243,9 @@ const colors = {
   border: "#E3E1D9",
   muted: "#5F5E5A",
   soft: "#E7F0EE",
-  inactive: "#C9CEC7",
+  // Single source: GUEST_TAB_COLORS is what the contrast guard measures, so the bar must draw
+  // from it rather than keep a parallel copy that can quietly diverge.
+  inactive: GUEST_TAB_COLORS.inactive,
   paleTeal: "#E7F0EE"
 };
 
@@ -314,14 +349,14 @@ const styles = StyleSheet.create({
     fontWeight: "800"
   },
   reportCard: {
-    height: 136,
-    marginTop: 16,
+    height: 140,
+    marginTop: 14,
     borderRadius: 18,
     flexDirection: "row",
     justifyContent: "space-between",
     paddingLeft: 20,
     paddingRight: 16,
-    paddingTop: 26,
+    paddingTop: 15,
     backgroundColor: colors.teal
   },
   reportTitle: {
@@ -354,13 +389,53 @@ const styles = StyleSheet.create({
     height: 72,
     marginTop: 4
   },
-  mapLinkRow: {
-    marginTop: 14
+  // Was a bare teal "See nearby strays ›" text link — the one V1 element left between two V2
+  // cards, and the smallest target on the screen. Rebuilt as a V2 raised row: white fill with
+  // the `v2soft` shadow and NO stroke, since in this language the shadow is what says
+  // "tappable" and a border reads as V1. The squircle icon tile matches the guest banner above
+  // it, so the two rows now belong to the same system.
+  mapCard: {
+    marginTop: 14,
+    minHeight: 72,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 18,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#1F3A5F",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 7,
+    elevation: 2
   },
-  mapLink: {
-    color: colors.teal,
-    fontSize: 14,
+  mapIconTile: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.soft
+  },
+  mapCopy: {
+    flex: 1,
+    marginLeft: 14
+  },
+  mapTitle: {
+    color: colors.ink,
+    fontSize: 15,
     fontWeight: "800"
+  },
+  mapSub: {
+    marginTop: 2,
+    color: colors.muted,
+    fontSize: 13
+  },
+  mapChevron: {
+    marginLeft: 8,
+    color: colors.teal,
+    fontSize: 22,
+    fontWeight: "700"
   },
   sectionHeader: {
     marginTop: 22,

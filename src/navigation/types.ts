@@ -42,14 +42,16 @@ export type RootStackParamList = {
   signupSuccess: undefined;
   signin: undefined;
   forgotPassword: undefined;
-  resetOtp: { email: string };
+  // `codeError` carries a late code failure back from resetPassword — see the backstop
+  // in ResetPasswordScreen for why the message belongs on the code step, not under the
+  // password field.
+  resetOtp: { email: string; codeError?: string };
   resetPassword: { email: string; code: string };
   passwordChanged: undefined;
   support: undefined;
   home: { justSignedUp?: boolean } | undefined;
   homeGuest: undefined;
   adopt: undefined;
-  volunteer: undefined;
   profile: undefined;
   locationPicker: undefined;
   memberUpgrade: undefined;
@@ -74,7 +76,9 @@ export type RootStackParamList = {
   reportStray: { adjustedLat?: number; adjustedLng?: number } | undefined;
   // US-S2 · refine the report's precise pin on a map. Seeded with the current GPS coords.
   adjustPin: { lat: number; lng: number };
-  reportSent: { reportId: string; title: string; city: string | null };
+  // US-O3 · `reportId` is null and `queued` true when the report went to the offline
+  // outbox instead of the server — the success screen says so rather than pretending.
+  reportSent: { reportId: string | null; title: string; city: string | null; queued?: boolean };
   myReports: undefined;
   rescueMap: undefined;
   reportDetail: { reportId: string };
@@ -125,6 +129,11 @@ export type RootStackParamList = {
   shelterNeeds: undefined;
   needForm: { need?: ShelterNeedShape } | undefined;
   needPledges: { need: ShelterNeedShape };
+  // US-N5 · settings + the two RA 10173 data rights (§12.6/§12.7).
+  settings: undefined;
+  settingsPrivacy: undefined;
+  deleteAccount: undefined;
+  exportData: undefined;
   // US-B2 · My impact: the badge grid + a single badge's detail.
   impact: undefined;
   badgeComparison: { badge: BadgeShape };

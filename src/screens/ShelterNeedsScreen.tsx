@@ -6,6 +6,8 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { ChipTone, needProgressLabel, needStatusChip, NeedStatus } from "../community";
 import { RootStackParamList } from "../navigation/types";
 
@@ -33,6 +35,8 @@ type Props = NativeStackScreenProps<RootStackParamList, "shelterNeeds">;
 export function ShelterNeedsScreen({ navigation }: Props) {
   const api = useApi();
   const [needs, setNeeds] = useState<Need[] | null>(null);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
 
   const load = useCallback(() => {
     let alive = true;
@@ -49,7 +53,8 @@ export function ShelterNeedsScreen({ navigation }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Wishlist</Text>
@@ -63,12 +68,14 @@ export function ShelterNeedsScreen({ navigation }: Props) {
           <Text style={styles.addLabel}>+ Add a need</Text>
         </TouchableOpacity>
 
-        {needs === null ? (
-          <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal} />
-        ) : needs.length === 0 ? (
-          <Text style={styles.empty}>No needs posted yet.</Text>
+        {loadState(res, needs?.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, needs?.length)}
+            emptyTitle="No needs posted yet."
+            onRetry={load}
+          />
         ) : (
-          needs.map((need) => {
+          (needs ?? []).map((need) => {
             const chip = needStatusChip(need.status);
             return (
               <TouchableOpacity key={need.need_id} style={styles.needCard} activeOpacity={0.8}

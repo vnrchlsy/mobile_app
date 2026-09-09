@@ -41,21 +41,18 @@ type AuthHeaderProps = {
 export function AuthHeader({ title, activeStep, onBack, stepCount = AUTH_STEP_COUNT }: AuthHeaderProps) {
   return (
     <View style={styles.header}>
-      <Text style={styles.statusTime}>9:41</Text>
-      <View style={styles.statusBattery}>
-        <View style={styles.statusBatteryDot} />
-        <View style={styles.statusBatteryDot} />
-      </View>
-
       <TouchableOpacity
+        testID="btn.back"
         activeOpacity={0.75}
         onPress={onBack}
         style={styles.backButton}
         hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
       >
         <Text style={styles.backText}>‹</Text>
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>{title}</Text>
+      <Text style={styles.headerTitle} accessibilityRole="header">{title}</Text>
 
       <View style={styles.steps}>
         {Array.from({ length: stepCount }).map((_, step) => (
@@ -78,18 +75,15 @@ type SimpleHeaderProps = {
 export function SimpleHeader({ title, onBack }: SimpleHeaderProps) {
   return (
     <View style={styles.header}>
-      <Text style={styles.statusTime}>9:41</Text>
-      <View style={styles.statusBattery}>
-        <View style={styles.statusBatteryDot} />
-        <View style={styles.statusBatteryDot} />
-      </View>
-
       {!!onBack && (
         <TouchableOpacity
+          testID="btn.back"
           activeOpacity={0.75}
           onPress={onBack}
           style={styles.backButton}
           hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
         >
           <Text style={styles.backText}>‹</Text>
         </TouchableOpacity>
@@ -109,6 +103,23 @@ type FormFieldProps = {
   keyboardType?: TextInputProps["keyboardType"];
   autoComplete?: TextInputProps["autoComplete"];
   error?: string;
+  /**
+   * Submit-on-return. A person who has just typed their password expects the return key to
+   * log them in rather than hunting for a button — it is the standard behaviour of every
+   * login form, and its absence here is a small papercut on the most-used screen in the app.
+   */
+  returnKeyType?: TextInputProps["returnKeyType"];
+  onSubmitEditing?: () => void;
+  /**
+   * US-X2 · a stable selector for the E2E suite. React Native maps `testID` to the platform
+   * accessibility identifier, which is what Maestro's `id:` matches on.
+   *
+   * ⚠️ It is deliberately NOT the visible label. Maestro can match on text, and every Maestro
+   * tutorial does — but Track R just rewrote user-facing copy across 42 screens, and a suite
+   * pinned to copy fails on every wording change until someone deletes it. The id is a
+   * contract between the app and the flows; the copy stays free to improve.
+   */
+  testID?: string;
 };
 
 export function FormField({
@@ -120,23 +131,37 @@ export function FormField({
   autoCapitalize,
   keyboardType,
   autoComplete,
-  error
+  error,
+  testID,
+  returnKeyType,
+  onSubmitEditing
 }: FormFieldProps) {
   return (
     <View style={styles.fieldGroup}>
       <Text style={styles.label}>{label}</Text>
       <View style={[styles.input, error && styles.inputError]}>
         <TextInput
+          testID={testID}
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={secure}
           autoCapitalize={autoCapitalize}
           keyboardType={keyboardType}
           autoComplete={autoComplete}
+          returnKeyType={returnKeyType}
+          onSubmitEditing={onSubmitEditing}
           style={[styles.inputText, styles.textInput]}
         />
         {onToggleSecure && (
-          <TouchableOpacity activeOpacity={0.7} onPress={onToggleSecure} style={styles.eyeButton}>
+          <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={onToggleSecure}
+          style={styles.eyeButton}
+          accessibilityRole="button"
+          // The label has to track the state: announcing "show password" while the
+          // password is already visible tells a blind user the opposite of the truth.
+          accessibilityLabel={secure ? "Show password" : "Hide password"}
+        >
             <View style={styles.eyeIcon}>
               <View style={styles.eyePupil} />
             </View>
@@ -154,12 +179,23 @@ type PrimaryButtonProps = {
   disabled?: boolean;
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
+  /**
+   * US-X2 · a stable selector for the E2E suite. React Native maps `testID` to the platform
+   * accessibility identifier, which is what Maestro's `id:` matches on.
+   *
+   * ⚠️ It is deliberately NOT the visible label. Maestro can match on text, and every Maestro
+   * tutorial does — but Track R just rewrote user-facing copy across 42 screens, and a suite
+   * pinned to copy fails on every wording change until someone deletes it. The id is a
+   * contract between the app and the flows; the copy stays free to improve.
+   */
+  testID?: string;
 };
 
-export function PrimaryButton({ label, onPress, disabled, loading, style }: PrimaryButtonProps) {
+export function PrimaryButton({ label, onPress, disabled, loading, style, testID }: PrimaryButtonProps) {
   const isDisabled = disabled || loading;
   return (
     <TouchableOpacity
+      testID={testID}
       activeOpacity={0.85}
       onPress={onPress}
       disabled={isDisabled}
@@ -174,36 +210,11 @@ export function PrimaryButton({ label, onPress, disabled, loading, style }: Prim
 
 const styles = StyleSheet.create({
   header: {
+    // Unchanged at 132. This height always reserved a strip for the status bar; it used to
+    // be filled with a drawn one, and is now simply left for the real one to draw into. That
+    // is why removing the fake bar shifts nothing on the 15 screens using these headers.
     height: 132,
     paddingHorizontal: 28
-  },
-  statusTime: {
-    position: "absolute",
-    left: 30,
-    top: 16,
-    color: authColors.ink,
-    fontSize: 14,
-    fontWeight: "800"
-  },
-  statusBattery: {
-    position: "absolute",
-    right: 22,
-    top: 17,
-    width: 28,
-    height: 14,
-    borderWidth: 2,
-    borderColor: authColors.ink,
-    borderRadius: 4,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 4
-  },
-  statusBatteryDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: authColors.ink
   },
   backButton: {
     position: "absolute",

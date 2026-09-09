@@ -8,8 +8,11 @@ import {
 } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { ChipTone, pledgeIsCancellable, pledgeStatusChip, PledgeStatus } from "../community";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -37,10 +40,18 @@ type Props = NativeStackScreenProps<RootStackParamList, "myDonations">;
 export function MyDonationsScreen({ navigation }: Props) {
   const api = useApi();
   const [pledges, setPledges] = useState<Pledge[] | null>(null);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    api.get("/me/pledges").then((r) => setPledges(r.ok ? r.data.results : []));
+    setRes(null);
+    // ⚠️ was `setPledges(r.ok ? r.data.results : [])` — a failure became an empty list, and
+    // the render below turned that into "You haven't pledged anything yet."
+    api.get("/me/pledges").then((r) => {
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setPledges(r.data.results);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(load, [load]);
@@ -65,19 +76,22 @@ export function MyDonationsScreen({ navigation }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>My donations</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {pledges === null ? (
-          <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal} />
-        ) : pledges.length === 0 ? (
-          <Text style={styles.empty}>You haven't pledged anything yet. A shelter's wishlist is a
-            great place to start.</Text>
+        {loadState(res, pledges?.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, pledges?.length)}
+            emptyTitle="You haven't pledged anything yet."
+            emptyBody="A shelter's wishlist is a great place to start."
+            onRetry={load}
+          />
         ) : (
-          pledges.map((p) => {
+          (pledges ?? []).map((p) => {
             const chip = pledgeStatusChip(p.status);
             return (
               <View key={p.pledge_id} style={styles.pledgeCard}>
@@ -89,7 +103,7 @@ export function MyDonationsScreen({ navigation }: Props) {
                 </View>
                 <Text style={styles.meta}>{p.need.shelter_name} · pledged {p.quantity}</Text>
                 {pledgeIsCancellable(p.status) ? (
-                  <TouchableOpacity style={styles.cancelBtn} onPress={() => confirmCancel(p)}
+                  <TouchableOpacity hitSlop={TAP_SLOP} style={styles.cancelBtn} onPress={() => confirmCancel(p)}
                     disabled={busyId === p.pledge_id}>
                     <Text style={styles.cancelLabel}>
                       {busyId === p.pledge_id ? "Cancelling…" : "Cancel pledge"}

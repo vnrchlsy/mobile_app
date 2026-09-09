@@ -7,7 +7,9 @@ import {
 } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { PrefillWarning } from "../components/PrefillWarning";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -21,6 +23,10 @@ const CATEGORIES = ["food", "medicine", "supplies", "funds", "other"] as const;
 
 type Props = NativeStackScreenProps<RootStackParamList, "needForm">;
 
+/** Shown in the banner (rule 1) and on a blocked submit (rule 3) — one wording, one place. */
+const PREFILL_FAILED = "We couldn't load your shelter profile, so this form can't be saved yet. "
+  + "Check your connection and reopen it.";
+
 export function NeedFormScreen({ navigation, route }: Props) {
   const api = useApi();
   const editing = route.params?.need;
@@ -31,14 +37,32 @@ export function NeedFormScreen({ navigation, route }: Props) {
   const [myId, setMyId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // ⚠️ A form is the one place a full-screen error state is WRONG (US-R2's rule): it
+  // would throw away whatever the shelter has already typed. Warn inline and refuse
+  // to submit instead — an empty editable form over real data invites overwriting it
+  // with blanks.
+  const [prefillFailed, setPrefillFailed] = useState(false);
 
   useEffect(() => {
-    if (!editing) api.get("/me").then((r) => r.ok && setMyId(r.data.account_id));
+    // US-R1 · keep the RESULT. The previous line was `r.ok && setMyId(...)`, which discarded
+    // the failure — leaving `myId` null and the submit below POSTing to
+    // `/shelters/null/needs`. The server 404s, and the catch-all error told the shelter
+    // "Couldn't save. Please try again." — blaming their network for a prefill we never
+    // loaded, and inviting them to retry a request that can never succeed.
+    if (!editing) {
+      api.get("/me").then((r) => {
+        if (r.ok) setMyId(r.data.account_id);
+        else setPrefillFailed(true);
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function submit() {
     if (busy) return;
+    // Rule 3: same words as the banner, from the same constant — two hand-written variants
+    // of one message drift, and the drift always lands on the less-clear one.
+    if (!editing && !myId) { setError(PREFILL_FAILED); return; }
     if (!title.trim()) { setError("Give the need a short title."); return; }
     setBusy(true);
     setError(null);
@@ -54,12 +78,17 @@ export function NeedFormScreen({ navigation, route }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>{editing ? "Edit need" : "Add a need"}</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* US-R5 · moved ABOVE the first field. It was rendered under it, which is rule 1
+            only by half — someone scanning down starts typing before they reach the notice
+            that nothing they type can be saved. */}
+        {prefillFailed ? <PrefillWarning message={PREFILL_FAILED} /> : null}
         <View style={[styles.field, !title.trim() && error ? styles.fieldError : null]}>
           <Text style={styles.fieldLabel}>What do you need?</Text>
           <TextInput style={styles.input} value={title} onChangeText={setTitle}
@@ -72,7 +101,10 @@ export function NeedFormScreen({ navigation, route }: Props) {
             <Text style={styles.groupLabel}>Category</Text>
             <View style={styles.segments}>
               {CATEGORIES.map((c) => (
-                <TouchableOpacity key={c} onPress={() => setCategory(c)}
+                <TouchableOpacity hitSlop={TAP_SLOP} key={c} onPress={() => setCategory(c)}
+                  accessibilityRole="button"
+                  accessibilityLabel={c}
+                  accessibilityState={{ selected: category === c }}
                   style={[styles.segment, category === c ? styles.segmentOn : null]}>
                   <Text style={[styles.segmentText, category === c ? styles.segmentTextOn : null]}>
                     {c}
@@ -85,11 +117,13 @@ export function NeedFormScreen({ navigation, route }: Props) {
 
         <Text style={styles.groupLabel}>How many needed?</Text>
         <View style={styles.stepper}>
-          <TouchableOpacity style={styles.stepBtn} onPress={() => setQty((q) => Math.max(1, q - 1))}
-            hitSlop={10}><Text style={styles.stepGlyph}>–</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.stepBtn} onPress={() => setQty((q) => Math.max(1, q - 1))} hitSlop={TAP_SLOP}
+            accessibilityRole="button" accessibilityLabel="Decrease quantity needed"
+            accessibilityValue={{ now: qty }}><Text style={styles.stepGlyph}>–</Text></TouchableOpacity>
           <Text style={styles.qty}>{qty}</Text>
-          <TouchableOpacity style={styles.stepBtn} onPress={() => setQty((q) => q + 1)}
-            hitSlop={10}><Text style={styles.stepGlyph}>+</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.stepBtn} onPress={() => setQty((q) => q + 1)} hitSlop={TAP_SLOP}
+            accessibilityRole="button" accessibilityLabel="Increase quantity needed"
+            accessibilityValue={{ now: qty }}><Text style={styles.stepGlyph}>+</Text></TouchableOpacity>
         </View>
 
         <View style={styles.field}>

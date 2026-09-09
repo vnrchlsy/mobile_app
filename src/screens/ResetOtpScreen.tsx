@@ -1,7 +1,9 @@
 // US-A6 — reference: screens/user/screen-reset-otp.png
-// Collects the 6-digit reset code only — no API call here. The code isn't checked until
-// ResetPasswordScreen submits it alongside the new password to POST /auth/password/reset;
-// checking it early here would need its own endpoint, which doesn't exist. "Resend" re-triggers
+// Checks the 6-digit reset code against POST /auth/password/code/check before advancing, so a
+// wrong or expired code is reported HERE, on the step that collected it. It used to advance
+// unconditionally and let ResetPasswordScreen discover the problem after the user had already
+// chosen and typed a new password — the error then appeared under the password field, which
+// was not the thing that was wrong. "Resend" re-triggers
 // POST /auth/password/forgot (the same call that sends the first code) rather than a dedicated
 // resend endpoint — there isn't one for password reset.
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -17,8 +19,10 @@ import {
 } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { codeCheckOutcome } from "../passwordReset";
 import { RootStackParamList } from "../navigation/types";
 import { PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";
+import { TAP_SLOP } from "../touch";
 
 const CODE_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -27,10 +31,14 @@ type Props = NativeStackScreenProps<RootStackParamList, "resetOtp">;
 
 export function ResetOtpScreen({ navigation, route }: Props) {
   const api = useApi();
-  const { email } = route.params;
+  const { email, codeError } = route.params;
 
   const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(""));
   const [resending, setResending] = useState(false);
+  const [checking, setChecking] = useState(false);
+  // Seeded from the route so a late failure handed back by ResetPasswordScreen is already on
+  // screen when the user arrives, rather than appearing after another submit.
+  const [error, setError] = useState<string | undefined>(codeError);
   const [resendNotice, setResendNotice] = useState<string | undefined>(undefined);
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_SECONDS);
   const inputRefs = useRef<Array<TextInput | null>>([]);
@@ -62,10 +70,31 @@ export function ResetOtpScreen({ navigation, route }: Props) {
     }
   }
 
-  function onContinue() {
-    if (code.length !== CODE_LENGTH || advancedRef.current) return;
+  async function onContinue() {
+    if (code.length !== CODE_LENGTH || advancedRef.current || checking) return;
     advancedRef.current = true;
-    navigation.navigate("resetPassword", { email, code });
+    setChecking(true);
+    setError(undefined);
+    try {
+      const outcome = codeCheckOutcome(
+        await api.post("/auth/password/code/check", { email, code }),
+      );
+      if (outcome.ok) {
+        navigation.navigate("resetPassword", { email, code });
+        return;
+      }
+      setError(outcome.message);
+      if (outcome.canRetry) {
+        // Clear and refocus so the next attempt is one tap away. When the code is locked or
+        // expired the digits stay put — retyping them is not the way out, Resend is.
+        setDigits(Array(CODE_LENGTH).fill(""));
+        inputRefs.current[0]?.focus();
+      }
+    } finally {
+      setChecking(false);
+      // Released whatever happened, so a corrected code can be submitted without remounting.
+      advancedRef.current = false;
+    }
   }
 
   useEffect(() => {
@@ -117,6 +146,8 @@ export function ResetOtpScreen({ navigation, route }: Props) {
           ))}
         </View>
 
+        {!!error && <Text style={styles.codeError}>{error}</Text>}
+
         <Text style={styles.resendHint}>Didn't get a code?</Text>
         <TouchableOpacity activeOpacity={0.75} onPress={onResend} disabled={cooldown > 0 || resending}>
           <Text style={[styles.resendAction, cooldown > 0 && styles.resendMuted]}>
@@ -125,9 +156,14 @@ export function ResetOtpScreen({ navigation, route }: Props) {
         </TouchableOpacity>
         {!!resendNotice && <Text style={styles.resendNotice}>{resendNotice}</Text>}
 
-        <PrimaryButton label="Verify" onPress={onContinue} disabled={code.length !== CODE_LENGTH} style={styles.verifyButton} />
+        <PrimaryButton
+          label={checking ? "Checking…" : "Verify"}
+          onPress={onContinue}
+          disabled={code.length !== CODE_LENGTH || checking}
+          style={styles.verifyButton}
+        />
 
-        <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.goBack()}>
+        <TouchableOpacity testID="btn.back" hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.goBack()}>
           <Text style={styles.changeEmail}>Wrong email? Change it</Text>
         </TouchableOpacity>
       </View>
@@ -180,6 +216,13 @@ const styles = StyleSheet.create({
     color: authColors.ink,
     fontSize: 22,
     fontWeight: "800"
+  },
+  codeError: {
+    marginTop: 14,
+    color: "#B23B3B",
+    fontSize: 13,
+    fontWeight: "700",
+    textAlign: "center"
   },
   resendHint: {
     marginTop: 26,

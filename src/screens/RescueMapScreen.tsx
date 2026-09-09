@@ -4,7 +4,7 @@
 // geom (§12.5 / decision 11), so the strays live in the colour-coded list, not as map markers.
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapView, { Circle } from "react-native-maps";
 
@@ -12,7 +12,11 @@ import { MapReport } from "../api/types";
 import { useApi } from "../api/useApi";
 import { useAuth } from "../auth/AuthContext";
 import { centroidFor } from "../cityCentroids";
+import { LoadStateView } from "../components/LoadStateView";
+import { StaleBanner } from "../components/StaleBanner";
 import { RootStackParamList } from "../navigation/types";
+import { useCachedFeed } from "../useCachedFeed";
+import { isOffline, loadState } from "../net";
 import { relTime, sagipTitle, strayChip } from "../sagip";
 
 const colors = {
@@ -33,18 +37,37 @@ export function RescueMapScreen({ navigation }: Props) {
   const { city: savedCity } = useAuth();
   const city = savedCity ?? "Marikina";
   const center = centroidFor(city);
-  const [reports, setReports] = useState<MapReport[]>([]);
+  // US-O1 · `null` until a request has actually come back. Initialising to `[]` made "never
+  // loaded" indistinguishable from "loaded, and genuinely empty", which is half of the bug
+  // the 2026-09-04 device walk found on this screen.
+  // US-X1 · cache-first, and the screen that most needs it: a rescuer opening this on the
+  // street has the worst connection of anyone using the app. `/reports/map` is coarsened to
+  // a ~500m grid, which is why it may go to disk at all — see the §12.5 header in cache.ts.
+  const { rows: reports, res, stale, load: loadFeed } =
+    useCachedFeed<MapReport>(api, (d) => d?.reports ?? []);
+  // The RESULT is kept, not just the rows — now inside the hook. The original line here was
+  // `r.ok && setReports(...)`: on a failure that evaluates to false and records NOTHING, so
+  // the screen could not tell a dead network from an empty city. It reads like ordinary
+  // defensive code, which is exactly why it survived review — and why this screen told a
+  // person "No strays reported near Marikina right now" while the server was unreachable and
+  // eight reports sat within 10 km of them. On the rescue map that is not a cosmetic slip;
+  // it is a false statement about whether an animal needs help.
 
-  useFocusEffect(useCallback(() => {
-    api.get(`/reports/map?city=${encodeURIComponent(city)}&radius_km=${RADIUS_KM}`)
-      .then((r) => r.ok && setReports(r.data?.reports ?? []));
+  const load = useCallback(() => {
+    // This used to end `setReports(r.ok ? ... : [])` — so a failed refetch on focus emptied
+    // the list of nearby strays a rescuer was reading. The rows now survive the failure.
+    loadFeed(`/reports/map?city=${encodeURIComponent(city)}&radius_km=${RADIUS_KM}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
-  }, [city]));
+  }, [city]);
+  useFocusEffect(load);
+
+  const state = loadState(res, reports?.length);
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.rescueMap">
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Nearby strays</Text>
@@ -67,7 +90,14 @@ export function RescueMapScreen({ navigation }: Props) {
             />
           </MapView>
           <View style={styles.mapBadge} pointerEvents="none">
-            <Text style={styles.mapBadgeText}>{reports.length} nearby · within {RADIUS_KM} km of {city}</Text>
+            {/* The count is a claim about the world, so it is only made once a request has
+                actually succeeded. "0 nearby" over a failed fetch is the same lie as the
+                empty copy below, just in fewer words. */}
+            <Text style={styles.mapBadgeText}>
+              {state.kind === "ready" || state.kind === "empty"
+                ? `${reports?.length ?? 0} nearby · within ${RADIUS_KM} km of ${city}`
+                : `Within ${RADIUS_KM} km of ${city}`}
+            </Text>
           </View>
         </View>
         <Text style={styles.mapNote}>Shown by city — a report's exact spot goes only to rescuers.</Text>
@@ -78,10 +108,17 @@ export function RescueMapScreen({ navigation }: Props) {
           <Legend color={colors.green} label="Safe" />
         </View>
 
-        {reports.length === 0 ? (
-          <Text style={styles.empty}>No strays reported near {city} right now.</Text>
+        {state.kind !== "ready" ? (
+          <LoadStateView
+            state={state}
+            emptyTitle={`No strays reported near ${city} right now.`}
+            emptyBody="That's good news — check back later."
+            onRetry={load}
+          />
         ) : (
-          reports.map((r) => {
+          <>
+          {stale ? <StaleBanner offline={isOffline(res)} /> : null}
+          {(reports ?? []).map((r) => {
             const chip = strayChip(r.status);
             const tone = TONE[chip.tone];
             return (
@@ -100,7 +137,8 @@ export function RescueMapScreen({ navigation }: Props) {
                 </View>
               </TouchableOpacity>
             );
-          })
+          })}
+          </>
         )}
       </ScrollView>
     </View>

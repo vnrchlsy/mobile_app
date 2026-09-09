@@ -1,0 +1,19 @@
+# MONEY PATH 6 · the owner's own profile.
+#
+# The third screen that was unverifiable without a person signed in. Short on purpose: what
+# it proves is that the "You" tab reaches Profile and the screen renders at all, which is
+# exactly what nobody could confirm by hand.
+appId: ph.kupkop.app
+---
+- runFlow: 00-signin.yaml
+# The subroutine only proves we left sign-in; the destination is each caller's to assert.
+- extendedWaitUntil:
+    visible:
+      id: "screen.home"
+    timeout: 25000
+- tapOn:
+    id: "tab.profile"
+- extendedWaitUntil:
+    visible:
+      id: "screen.profile"
+    timeout: 20000

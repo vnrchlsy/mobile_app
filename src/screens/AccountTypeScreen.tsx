@@ -54,7 +54,7 @@ export function AccountTypeScreen({ navigation, route }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.accountType">
       <AuthHeader title="Choose account type" activeStep={0} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
@@ -73,7 +73,7 @@ export function AccountTypeScreen({ navigation, route }: Props) {
           </View>
         )}
 
-        <TouchableOpacity activeOpacity={0.85} onPress={onPetOwner} disabled={busy} style={styles.card}>
+        <TouchableOpacity testID="btn.accountType.personal" activeOpacity={0.85} onPress={onPetOwner} disabled={busy} style={styles.card}>
           <View style={styles.iconCircle}>
             <Image source={paw} resizeMode="contain" style={styles.pawIcon} />
           </View>
@@ -84,7 +84,7 @@ export function AccountTypeScreen({ navigation, route }: Props) {
           {busy ? <ActivityIndicator color={authColors.teal} /> : <Text style={styles.chevron}>›</Text>}
         </TouchableOpacity>
 
-        <TouchableOpacity activeOpacity={0.85} onPress={onShelter} disabled={busy} style={[styles.card, styles.secondCard]}>
+        <TouchableOpacity testID="btn.accountType.shelter" activeOpacity={0.85} onPress={onShelter} disabled={busy} style={[styles.card, styles.secondCard]}>
           <View style={[styles.iconCircle, styles.orgIconCircle]}>
             <Text style={styles.orgGlyph}>▦</Text>
           </View>

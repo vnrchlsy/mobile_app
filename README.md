@@ -2,6 +2,18 @@
 
 Kupkop PH is an Expo React Native prototype for a pet care and adoption onboarding flow.
 
+## Icon-cruft hook (opt-in, one line)
+
+Google Drive's Mirror sync periodically re-creates zero-byte macOS Finder `Icon\r` files inside `.git/`, and git then fails `fetch`/`pull` with `bad object refs/Icon?`. The repo carries `.githooks/purge-icon-cruft` and a `pre-commit` that calls it — the `-size 0` guard makes it safe. Enable it in your clone with:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Silent on the happy path; one line when it actually purges something.
+
+---
+
 ## Requirements
 
 - Node.js 20 or newer
@@ -54,6 +66,6 @@ pnpm typecheck
 ```text
 App.tsx                  App entry and screen routing
 src/WelcomeScreen.tsx    Welcome screen UI
-src/OnboardingScreens.tsx Account setup, OTP, and account type screens
+src/screens/            Wired-up screens (React Navigation)
 assets/                  Logo and paw image assets
 ```

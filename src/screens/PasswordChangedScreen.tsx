@@ -6,6 +6,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { RootStackParamList } from "../navigation/types";
 import { PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";
+import { TAP_SLOP } from "../touch";
 
 type Props = NativeStackScreenProps<RootStackParamList, "passwordChanged">;
 
@@ -40,7 +41,7 @@ export function PasswordChangedScreen({ navigation }: Props) {
 
         <PrimaryButton label="Log in" onPress={onDone} style={styles.doneButton} />
 
-        <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate("support")}>
+        <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.navigate("support")}>
           <Text style={styles.linkCentered}>Need help? Contact support</Text>
         </TouchableOpacity>
       </View>

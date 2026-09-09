@@ -7,8 +7,11 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "rea
 
 import { MyOffer } from "../api/types";
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { RootStackParamList } from "../navigation/types";
 import { OFFER_TYPE_LABEL, offerStatusChip, sagipTitle } from "../sagip";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -29,12 +32,17 @@ type Props = NativeStackScreenProps<RootStackParamList, "myOffers">;
 export function MyOffersScreen({ navigation }: Props) {
   const api = useApi();
   const [offers, setOffers] = useState<MyOffer[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  // US-R3 · `loaded` tracked that a response ARRIVED, never that it succeeded — so
+  // `loaded && length === 0` was true both for a genuine empty list and for a failed
+  // request, and rendered the same sentence for both.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
 
   const load = useCallback(() => {
+    setRes(null);
     api.get("/me/offers").then((r) => {
+      setRes({ ok: r.ok, status: r.status });
       if (r.ok) setOffers(r.data?.offers ?? []);
-      setLoaded(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, []);
@@ -63,14 +71,19 @@ export function MyOffersScreen({ navigation }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>My offers</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {loaded && offers.length === 0 ? (
-          <Text style={styles.empty}>You haven't offered to help on anything yet.</Text>
+        {loadState(res, offers.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, offers.length)}
+            emptyTitle="You haven't offered to help on anything yet."
+            onRetry={load}
+          />
         ) : (
           GROUPS.map((group) => {
             const rows = offers.filter((o) => o.status === group.key);
@@ -100,8 +113,7 @@ export function MyOffersScreen({ navigation }: Props) {
                         </View>
                         {o.status === "open" ? (
                           <TouchableOpacity
-                            onPress={(e) => { e.stopPropagation(); withdraw(o); }}
-                            hitSlop={10}
+                            onPress={(e) => { e.stopPropagation(); withdraw(o); }} hitSlop={TAP_SLOP}
                             style={styles.withdrawBtn}
                           >
                             <Text style={styles.withdrawText}>Withdraw</Text>

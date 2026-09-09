@@ -9,8 +9,12 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { useOutbox } from "../outbox/OutboxProvider";
+import { randomKey } from "../outbox/key";
+import { pickAndUpload } from "../media/pickAndUpload";
 import { RootStackParamList } from "../navigation/types";
 import { sagipTitle } from "../sagip";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", tealDark: "#14504F", page: "#F4F5F2", muted: "#5F5E5A",
@@ -25,6 +29,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "reportStray">;
 
 export function ReportStrayScreen({ navigation, route }: Props) {
   const api = useApi();
+  const { enqueue } = useOutbox();
   const [species, setSpecies] = useState<string>("dog");
   const [condition, setCondition] = useState<string>("injured");
   const [notes, setNotes] = useState("");
@@ -90,47 +95,75 @@ export function ReportStrayScreen({ navigation, route }: Props) {
   async function addPhoto() {
     if (uploading) return;
     setUploading(true);
-    // Uploads are the same dev stub as the shelter docs (no real picker in Expo Go).
-    const res = await api.post("/media/presign", { purpose: "stray_photo", content_type: "image/jpeg" });
+    const res = await pickAndUpload(api, "stray_photo");
     setUploading(false);
-    if (res.ok) setPhotoUrl(res.data.file_url);
+    if (res?.ok) setPhotoUrl(res.fileUrl);
   }
 
   async function submit() {
     if (!coords || submitting) return;
     setSubmitting(true);
     setError(undefined);
-    const res = await api.post("/reports", {
+
+    // US-O3 · the key is generated HERE, at compose time, not at send time — every retry of
+    // this report must carry the same value or the server cannot tell a replay from a second
+    // animal, and one animal gets two rescuers.
+    const idempotencyKey = randomKey();
+    const body = {
       species, condition, notes: notes.trim() || undefined, is_anonymous: anonymous,
       lat: coords.lat, lng: coords.lng, location_text: locationText || undefined,
       city: city || undefined,
-      photos: photoUrl ? [{ file_url: photoUrl }] : []
-    });
+      photos: photoUrl ? [{ file_url: photoUrl }] : [],
+      idempotency_key: idempotencyKey,
+    };
+
+    const res = await api.post("/reports", body);
     setSubmitting(false);
+
     if (res.ok) {
       navigation.replace("reportSent", {
         reportId: res.data.report_id, title: sagipTitle(species, condition),
         city: locationText || null
       });
-    } else {
-      setError(res.data?.error?.message ?? "Couldn't send the report. Try again.");
+      return;
     }
+
+    // §13.3 · "never silently lose a user's report". A connectivity failure is not a dead
+    // end: the report is queued and sent when the network returns, and the person is told
+    // so rather than being asked to remember and re-file it.
+    if (res.status === 0) {
+      await enqueue(body, idempotencyKey);
+      navigation.replace("reportSent", {
+        reportId: null, title: sagipTitle(species, condition),
+        city: locationText || null, queued: true
+      });
+      return;
+    }
+    setError(res.data?.error?.message ?? "Couldn't send the report. Try again.");
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.reportStray">
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Report a stray</Text>
+        <Text style={styles.title} accessibilityRole="header">Report a stray</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.h1}>What did you see?</Text>
         <Text style={styles.sub}>A photo helps — but don't wait for one.</Text>
 
-        <TouchableOpacity style={styles.photoBtn} onPress={addPhoto} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={styles.photoBtn}
+          onPress={addPhoto}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={photoUrl ? "Photo added. Tap to replace it." : "Add a photo, optional"}
+          accessibilityState={{ busy: uploading }}
+        >
           {uploading ? <ActivityIndicator color={colors.teal} />
             : <Text style={styles.photoText}>{photoUrl ? "✓ Photo added" : "Add a photo · optional"}</Text>}
         </TouchableOpacity>
@@ -143,6 +176,7 @@ export function ReportStrayScreen({ navigation, route }: Props) {
 
         <Text style={styles.label}>Notes (optional)</Text>
         <TextInput
+          testID="field.reportStray.notes"
           style={styles.notes}
           value={notes}
           onChangeText={setNotes}
@@ -163,8 +197,9 @@ export function ReportStrayScreen({ navigation, route }: Props) {
                 <Text style={styles.locFrom}>From your GPS</Text>
                 {coords ? (
                   <TouchableOpacity
-                    onPress={() => navigation.navigate("adjustPin", { lat: coords.lat, lng: coords.lng })}
-                    hitSlop={10}
+                    onPress={() => navigation.navigate("adjustPin", { lat: coords.lat, lng: coords.lng })} hitSlop={TAP_SLOP}
+                    accessibilityRole="button"
+                    accessibilityLabel="Adjust the exact location of this report"
                   >
                     <Text style={styles.adjust}>Adjust exact location ›</Text>
                   </TouchableOpacity>
@@ -177,15 +212,30 @@ export function ReportStrayScreen({ navigation, route }: Props) {
 
         <View style={styles.anonRow}>
           <Text style={styles.anonLabel}>Report anonymously</Text>
-          <Switch value={anonymous} onValueChange={setAnonymous} trackColor={{ true: colors.teal }} />
+          <Switch
+            value={anonymous}
+            onValueChange={setAnonymous}
+            trackColor={{ true: colors.teal }}
+            accessibilityLabel="Report anonymously"
+            accessibilityHint="Hides your name from other users. The report is still linked to your account."
+          />
         </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? (
+          <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="polite">
+            {error}
+          </Text>
+        ) : null}
 
         <TouchableOpacity
+          testID="btn.reportStray.submit"
           style={[styles.submit, !coords && styles.submitIdle]}
           onPress={submit}
           activeOpacity={0.9}
+          accessibilityRole="button"
+          accessibilityLabel="Send report"
+          accessibilityHint={coords ? undefined : "Waiting for your location"}
+          accessibilityState={{ busy: submitting }}
         >
           {submitting ? <ActivityIndicator color={colors.white} />
             : <Text style={styles.submitText}>Send report</Text>}

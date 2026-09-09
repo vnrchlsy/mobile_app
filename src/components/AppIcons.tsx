@@ -8,17 +8,36 @@ type IconProps = {
 };
 
 export function HomeIcon({ color, size = 28 }: IconProps) {
+  // Roof + body as ONE mass: the roof's base overlaps the body's top by 2% of the box, so the
+  // two read as a house rather than a triangle hovering over a brick.
+  //
+  // Every dimension is a fraction of `size`. The previous version hardcoded an 11px triangle
+  // against a body that DID scale, so at the 24px used in the tab bar the roof overhung a body
+  // half its width — the "blobby" look was that mismatch, not the idea of the glyph.
   return (
-    <View style={[styles.iconBox, { width: size, height: size }]}> 
-      <View style={[styles.homeRoof, { borderBottomColor: color, left: size * 0.12, top: size * 0.12 }]} />
+    <View style={[styles.iconBox, { width: size, height: size }]}>
+      <View
+        style={[
+          styles.homeRoof,
+          {
+            borderLeftWidth: size * 0.42,
+            borderRightWidth: size * 0.42,
+            borderBottomWidth: size * 0.34,
+            borderBottomColor: color,
+            left: size * 0.08,
+            top: size * 0.18
+          }
+        ]}
+      />
       <View
         style={[
           styles.homeBody,
           {
-            width: size * 0.56,
-            height: size * 0.44,
-            left: size * 0.22,
-            top: size * 0.42,
+            width: size * 0.52,
+            height: size * 0.32,
+            left: size * 0.24,
+            top: size * 0.50,
+            borderRadius: size * 0.06,
             backgroundColor: color
           }
         ]}
@@ -40,12 +59,46 @@ export function AdoptIcon({ color, size = 28 }: IconProps) {
 }
 
 export function VolunteerIcon({ color, size = 28 }: IconProps) {
+  // A heart, for the Kawang-Gawa (volunteering) tab.
+  //
+  // ⚠️ THIS REPLACES A RAISED HAND, deliberately. The hand was a bordered palm under three
+  // separate finger bars — four elements, two of them 5px wide with a hardcoded 8px offset
+  // that did not scale. At the 24px the tab bar renders, those bars merged into one smudge and
+  // the glyph read as an unidentifiable shield. A heart survives 24px because it is one
+  // silhouette, and it is already the brand's own second mark (the paw's pad is a heart).
+  //
+  // Standard construction: a square rotated 45° with a circle centred on each of its two upper
+  // edges, so the lobes meet the square's sides exactly and no seam shows.
+  const square = size * 0.5;
+  const lobe = size * 0.5;
   return (
-    <View style={[styles.iconBox, { width: size, height: size }]}> 
-      <View style={[styles.handPalm, { borderColor: color, width: size * 0.46, height: size * 0.34, top: size * 0.48 }]} />
-      <View style={[styles.handFinger, { backgroundColor: color, left: size * 0.22, height: size * 0.48 }]} />
-      <View style={[styles.handFinger, { backgroundColor: color, left: size * 0.38, height: size * 0.55 }]} />
-      <View style={[styles.handFinger, { backgroundColor: color, left: size * 0.54, height: size * 0.47 }]} />
+    <View style={[styles.iconBox, { width: size, height: size }]}>
+      <View
+        style={{
+          position: "absolute",
+          width: square,
+          height: square,
+          left: size * 0.25,
+          top: size * 0.29,
+          backgroundColor: color,
+          borderBottomLeftRadius: size * 0.06,
+          transform: [{ rotate: "45deg" }]
+        }}
+      />
+      {[0.073, 0.427].map((left) => (
+        <View
+          key={left}
+          style={{
+            position: "absolute",
+            width: lobe,
+            height: lobe,
+            left: size * left,
+            top: size * 0.113,
+            borderRadius: lobe / 2,
+            backgroundColor: color
+          }}
+        />
+      ))}
     </View>
   );
 }
@@ -82,14 +135,6 @@ export function ProfileIcon({ color, size = 28 }: IconProps) {
   );
 }
 
-export function BatteryIcon({ color }: { color: string }) {
-  return (
-    <View style={[styles.battery, { borderColor: color }]}> 
-      <View style={[styles.batteryDot, { backgroundColor: color }]} />
-      <View style={[styles.batteryDot, { backgroundColor: color }]} />
-    </View>
-  );
-}
 
 export function BellIcon({ color }: { color: string }) {
   return (
@@ -264,12 +309,10 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   homeRoof: {
+    // Border widths are supplied by the caller so the roof scales with `size` — see HomeIcon.
     position: "absolute",
     width: 0,
     height: 0,
-    borderLeftWidth: 11,
-    borderRightWidth: 11,
-    borderBottomWidth: 11,
     borderLeftColor: "transparent",
     borderRightColor: "transparent"
   },
@@ -277,39 +320,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     borderRadius: 4
   },
-  handPalm: {
-    position: "absolute",
-    borderWidth: 3,
-    borderTopWidth: 0,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12
-  },
-  handFinger: {
-    position: "absolute",
-    bottom: 8,
-    width: 5,
-    borderRadius: 3
-  },
   profileHead: {
     position: "absolute"
   },
   profileBody: {
     position: "absolute"
-  },
-  battery: {
-    width: 29,
-    height: 14,
-    borderWidth: 2,
-    borderRadius: 4,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 4
-  },
-  batteryDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3
   },
   bellWrap: {
     width: 26,

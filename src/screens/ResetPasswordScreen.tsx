@@ -7,7 +7,9 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useApi } from "../api/useApi";
 import { RootStackParamList } from "../navigation/types";
 import { PASSWORD_RULE, passwordError } from "../passwordRules";
+import { codeCheckOutcome } from "../passwordReset";
 import { FormField, PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";
+import { TAP_SLOP } from "../touch";
 
 type Props = NativeStackScreenProps<RootStackParamList, "resetPassword">;
 
@@ -27,31 +29,54 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
   const hasLength = password.length >= 8;
   const hasNumber = /\d/.test(password);
   const meetsRules = !passwordError(password);
-  const canSubmit = meetsRules && confirm.length > 0 && !submitting;
-
+  const [confirmError, setConfirmError] = useState<string | undefined>(undefined);
+  /**
+   * Design-system rule: NEVER disable a submit button because of validation. A greyed
+   * button gives a person nothing to press and no explanation; an enabled one answers the
+   * question the moment they press it, and is the affordance a screen reader can reach.
+   * `submitting` still blocks — a request in flight is not a validation error, and
+   * PrimaryButton derives `isDisabled` from `loading` on its own.
+   */
   async function onSubmit() {
-    if (!canSubmit) return;
-    if (password !== confirm) {
-      setError("Those passwords don't match.");
+    if (submitting) return;
+    // The rules are already listed live under the field (RuleRow), so an unmet rule needs
+    // no new wording — only a button that can be pressed and will say what is missing.
+    if (!meetsRules) {
+      setError(PASSWORD_RULE);
       return;
     }
+    if (confirm.length === 0) {
+      setConfirmError("Re-enter your new password.");
+      return;
+    }
+    if (password !== confirm) {
+      setConfirmError("Those passwords don't match.");
+      return;
+    }
+    setConfirmError(undefined);
     setError(undefined);
     setSubmitting(true);
     try {
       const res = await api.post("/auth/password/reset", { email, code, new_password: password });
-      if (res.status === 400) {
-        setError(res.data?.error?.field === "new_password" ? PASSWORD_RULE : "That code is invalid.");
-        return;
-      }
-      if (res.status === 410) {
-        setError("That code expired.");
-        return;
-      }
       if (res.ok) {
         navigation.navigate("passwordChanged");
         return;
       }
-      setError("Something went wrong. Please try again.");
+      // A rejected PASSWORD belongs here, under the field that is wrong.
+      if (res.status === 400 && res.data?.error?.field === "new_password") {
+        setError(PASSWORD_RULE);
+        return;
+      }
+      // BACKSTOP. The code is checked on the previous screen now, so reaching here means it
+      // went bad in between — almost always expiry while the user was choosing a password.
+      // Send them back to the step that owns the code with the reason attached, rather than
+      // reporting a code problem underneath a password field.
+      const outcome = codeCheckOutcome(res);
+      if (!outcome.ok && res.status !== 0) {
+        navigation.navigate("resetOtp", { email, codeError: outcome.message });
+        return;
+      }
+      setError(outcome.ok ? "Something went wrong. Please try again." : outcome.message);
     } finally {
       setSubmitting(false);
     }
@@ -82,10 +107,12 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
           onChangeText={(value) => {
             setConfirm(value);
             if (error) setError(undefined);
+            if (confirmError) setConfirmError(undefined);
           }}
           secure={!confirmVisible}
           onToggleSecure={() => setConfirmVisible((visible) => !visible)}
           autoComplete="password-new"
+          error={confirmError}
         />
 
         <View style={styles.rulesGroup}>
@@ -98,12 +125,11 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
         <PrimaryButton
           label="Save new password"
           onPress={onSubmit}
-          disabled={!canSubmit}
           loading={submitting}
           style={styles.submitButton}
         />
 
-        <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate("signin")}>
+        <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.navigate("signin")}>
           <Text style={styles.linkCentered}>Back to log in</Text>
         </TouchableOpacity>
       </View>

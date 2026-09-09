@@ -10,8 +10,11 @@ import {
 } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { ChipTone, needProgressLabel, pledgeStatusChip, PledgeStatus } from "../community";
 import { RootStackParamList } from "../navigation/types";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -35,10 +38,16 @@ export function NeedPledgesScreen({ navigation, route }: Props) {
   const api = useApi();
   const { need } = route.params;
   const [pledges, setPledges] = useState<Pledge[] | null>(null);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    api.get(`/needs/${need.need_id}/pledges`).then((r) => setPledges(r.ok ? r.data.results : []));
+    setRes(null);
+    api.get(`/needs/${need.need_id}/pledges`).then((r) => {
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setPledges(r.data.results);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [need.need_id]);
   useFocusEffect(load);
@@ -76,7 +85,8 @@ export function NeedPledgesScreen({ navigation, route }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title} numberOfLines={1}>{need.title}</Text>
@@ -86,24 +96,26 @@ export function NeedPledgesScreen({ navigation, route }: Props) {
           {needProgressLabel(need.quantity_received, need.quantity_needed)}
         </Text>
         <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.secondaryBtn}
+          <TouchableOpacity hitSlop={TAP_SLOP} style={styles.secondaryBtn}
             onPress={() => navigation.navigate("needForm", { need })}>
             <Text style={styles.secondaryLabel}>Edit</Text>
           </TouchableOpacity>
           {need.status === "open" ? (
-            <TouchableOpacity style={styles.secondaryBtn} onPress={confirmClose}>
+            <TouchableOpacity hitSlop={TAP_SLOP} style={styles.secondaryBtn} onPress={confirmClose}>
               <Text style={[styles.secondaryLabel, { color: colors.danger }]}>Close need</Text>
             </TouchableOpacity>
           ) : null}
         </View>
 
         <Text style={styles.sectionTitle}>Pledges</Text>
-        {pledges === null ? (
-          <ActivityIndicator style={{ marginTop: 30 }} color={colors.teal} />
-        ) : pledges.length === 0 ? (
-          <Text style={styles.empty}>No pledges yet.</Text>
+        {loadState(res, pledges?.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, pledges?.length)}
+            emptyTitle="No pledges yet."
+            onRetry={load}
+          />
         ) : (
-          pledges.map((p) => {
+          (pledges ?? []).map((p) => {
             const chip = pledgeStatusChip(p.status);
             return (
               <View key={p.pledge_id} style={styles.pledgeCard}>
@@ -115,7 +127,7 @@ export function NeedPledgesScreen({ navigation, route }: Props) {
                 </View>
                 <Text style={styles.meta}>Pledged {p.quantity}</Text>
                 {p.status === "pledged" ? (
-                  <TouchableOpacity style={styles.receiveBtn} onPress={() => confirmReceived(p)}
+                  <TouchableOpacity hitSlop={TAP_SLOP} style={styles.receiveBtn} onPress={() => confirmReceived(p)}
                     disabled={busyId === p.pledge_id}>
                     <Text style={styles.receiveLabel}>
                       {busyId === p.pledge_id ? "Confirming…" : "Mark received"}

@@ -3,14 +3,19 @@
 // count. Compose from the header; tap a card for its detail.
 import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import {
   ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View
 } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { StaleBanner } from "../components/StaleBanner";
+import { isOffline, loadState } from "../net";
 import { storyTypeChip, StoryType } from "../community";
 import { RootStackParamList } from "../navigation/types";
+import { useCachedFeed } from "../useCachedFeed";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -39,10 +44,16 @@ function initials(name: string) {
 
 export function StoriesScreen({ navigation }: Props) {
   const api = useApi();
-  const [stories, setStories] = useState<StoryCard[] | null>(null);
+  const { rows: stories, res, stale, load: loadFeed } =
+    useCachedFeed<StoryCard>(api, (d) => d?.results ?? []);
+  // US-O1 · keep the RESULT, not just the rows. Collapsing a failure into `[]` told an
+  // offline person "No stories yet — be the first to share one", which is untrue and makes
+  // the community look dead.
 
   const load = useCallback(() => {
-    api.get("/stories").then((r) => setStories(r.ok ? r.data.results : []));
+    // US-X1 · this used to be `setStories(r.ok ? r.data.results : [])`, so a failed REFETCH
+    // replaced stories the person was reading with an empty list. The hook keeps them.
+    loadFeed("/stories");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useFocusEffect(load);
@@ -50,21 +61,27 @@ export function StoriesScreen({ navigation }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Stories</Text>
-        <TouchableOpacity style={styles.share} onPress={() => navigation.navigate("storyCompose", {})}>
+        <TouchableOpacity hitSlop={TAP_SLOP} style={styles.share} onPress={() => navigation.navigate("storyCompose", {})}>
           <Text style={styles.shareLabel}>+ Share</Text>
         </TouchableOpacity>
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {stories === null ? (
-          <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal} />
-        ) : stories.length === 0 ? (
-          <Text style={styles.empty}>No stories yet — be the first to share one.</Text>
+        {loadState(res, stories?.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, stories?.length)}
+            emptyTitle="No stories yet"
+            emptyBody="Be the first to share one."
+            onRetry={load}
+          />
         ) : (
-          stories.map((s) => {
+          <>
+          {stale ? <StaleBanner offline={isOffline(res)} /> : null}
+          {(stories ?? []).map((s) => {
             const chip = storyTypeChip(s.story_type);
             return (
               <TouchableOpacity key={s.story_id} style={styles.storyCard} activeOpacity={0.85}
@@ -89,7 +106,8 @@ export function StoriesScreen({ navigation }: Props) {
                 </View>
               </TouchableOpacity>
             );
-          })
+          })}
+          </>
         )}
       </ScrollView>
     </View>

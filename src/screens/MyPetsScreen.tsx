@@ -7,6 +7,8 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacit
 
 import { MyPet } from "../api/types";
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { RootStackParamList } from "../navigation/types";
 
 const colors = {
@@ -22,18 +24,14 @@ type Props = NativeStackScreenProps<RootStackParamList, "myPets">;
 export function MyPetsScreen({ navigation }: Props) {
   const api = useApi();
   const [pets, setPets] = useState<MyPet[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
 
   const load = useCallback(() => {
+    setRes(null);
     api.get("/me/pets").then((r) => {
-      if (r.ok) {
-        setPets(r.data?.results ?? []);
-        setError(false);
-      } else {
-        setError(true);
-      }
-      setLoaded(true);
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setPets(r.data?.results ?? []);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, []);
@@ -43,23 +41,23 @@ export function MyPetsScreen({ navigation }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>My pets</Text>
       </View>
 
-      {!loaded ? (
+      {/* US-R3 · this screen already split loading / error / empty by hand, and got it right.
+          Consolidating onto LoadStateView keeps that and adds the one distinction its own
+          `error` boolean could not make: offline vs the server refusing. */}
+      {loadState(res, pets.length).kind !== "ready" ? (
         <View style={styles.centerFill}>
-          <ActivityIndicator color={colors.teal} />
-        </View>
-      ) : error ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>Couldn't load your pets. Pull down or go back and try again.</Text>
-        </View>
-      ) : pets.length === 0 ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>Pets you adopt will appear here.</Text>
+          <LoadStateView
+            state={loadState(res, pets.length)}
+            emptyTitle="Pets you adopt will appear here."
+            onRetry={load}
+          />
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>

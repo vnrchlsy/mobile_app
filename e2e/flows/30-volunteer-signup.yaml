@@ -1,0 +1,46 @@
+# MONEY PATH 3 · volunteer shift signup → waiver consent → requested.
+#
+# ⚠️ The Volunteer TAB does not open `screen.volunteer` — that route is a placeholder that
+# stays registered but unreachable. OwnerTabs sends the tab to the Kawang-Gawa hub instead
+# (see the comment in OwnerTabs.tsx). Asserting `screen.kawanggawa` here is correct, and if
+# someone ever "fixes" the tab to match its name, this is what will say so.
+appId: ph.kupkop.app
+---
+- runFlow: 00-signin.yaml
+- tapOn:
+    id: "tab.volunteer"
+- assertVisible:
+    id: "screen.kawanggawa"
+- tapOn:
+    id: "card.kawanggawa.0"
+- assertVisible:
+    id: "screen.kawanggawaDetail"
+# Both consents are required before a shift can be requested — the waiver is a legal gate
+# (D-S5-1), not a formality.
+#
+# ⚠️ THIS USED TO WAIT FOR `btn.kawanggawaDetail.request` TO BECOME `enabled: true`, which
+# stopped proving anything on 2026-09-09: the button is deliberately always enabled now (the
+# design system forbids disabling a submit control for an incomplete form — a greyed button
+# states no reason and cannot be interrogated). Left as it was, that wait would have passed
+# instantly, on a screen where the gate could have been removed entirely, and said nothing.
+# So the gate is now proved the way a person actually meets it: press Request with nothing
+# agreed to, and be told which consent is missing.
+- tapOn:
+    id: "btn.kawanggawaDetail.request"
+- assertVisible:
+    id: "err.kawanggawaDetail.waiver"
+- assertVisible:
+    id: "err.kawanggawaDetail.contact"
+# THE ASSERTION THE BLOCK EXISTS FOR: pressing Request without the waiver must not sign anyone up.
+- assertNotVisible:
+    id: "screen.kawanggawaRequested"
+- tapOn:
+    id: "chk.kawanggawaDetail.waiver"
+- tapOn:
+    id: "chk.kawanggawaDetail.contact"
+- tapOn:
+    id: "btn.kawanggawaDetail.request"
+- extendedWaitUntil:
+    visible:
+      id: "screen.kawanggawaRequested"
+    timeout: 20000

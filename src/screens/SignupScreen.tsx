@@ -9,6 +9,7 @@ import { TERMS_VERSION } from "../consent";
 import { passwordError } from "../passwordRules";
 import { RootStackParamList } from "../navigation/types";
 import { AuthHeader, FormField, PrimaryButton, SHELTER_STEP_COUNT, authColors } from "./AuthFormKit";
+import { TAP_SLOP } from "../touch";
 
 type Props = NativeStackScreenProps<RootStackParamList, "signup">;
 
@@ -26,14 +27,30 @@ export function SignupScreen({ navigation, route }: Props) {
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
 
-  const canSubmit = name.trim().length > 0 && email.trim().length > 0 && password.length > 0 && !submitting;
+  const [nameError, setNameError] = useState<string | undefined>(undefined);
 
+  /**
+   * Design-system rule: NEVER disable a submit button because of validation. A greyed
+   * button gives a person nothing to press and no explanation; an enabled one answers the
+   * question the moment they press it, and is the affordance a screen reader can reach.
+   * `submitting` still blocks — a request in flight is not a validation error, and
+   * PrimaryButton derives `isDisabled` from `loading` on its own.
+   */
   async function onSubmit() {
-    if (!canSubmit) return;
-    setEmailError(undefined);
+    if (submitting) return;
     setFormError(undefined);
-    // Client-side strength check (server enforces the same rule as a backstop). The button
-    // stays enabled per the app's interaction rule — the error appears under the field.
+    // ⚠️ The comment here used to claim "the button stays enabled per the app's interaction
+    // rule" while the button carried `disabled={!canSubmit}`. The claim is now true.
+    const missingName = name.trim().length === 0 ? "Enter your name." : undefined;
+    const missingEmail = email.trim().length === 0 ? "Enter your email." : undefined;
+    setNameError(missingName);
+    setEmailError(missingEmail);
+    if (password.length === 0) {
+      setPasswordFieldError("Enter a password.");
+      return;
+    }
+    if (missingName || missingEmail) return;
+    // Client-side strength check (server enforces the same rule as a backstop).
     const pwError = passwordError(password);
     setPasswordFieldError(pwError);
     if (pwError) return;
@@ -63,7 +80,7 @@ export function SignupScreen({ navigation, route }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.signup">
       <AuthHeader
         title="Create account"
         activeStep={1}
@@ -76,13 +93,19 @@ export function SignupScreen({ navigation, route }: Props) {
         <Text style={styles.caption}>{isShelter ? "Use your organisation's email." : "A few details and you're in."}</Text>
 
         <FormField
+          testID="field.signup.name"
           label={isShelter ? "Organization name" : "Full name"}
           value={name}
-          onChangeText={setName}
+          error={nameError}
+          onChangeText={(value) => {
+            setName(value);
+            if (nameError) setNameError(undefined);
+          }}
           autoCapitalize="words"
           autoComplete={isShelter ? undefined : "name"}
         />
         <FormField
+          testID="field.signup.email"
           label="Email"
           value={email}
           onChangeText={(value) => {
@@ -95,6 +118,7 @@ export function SignupScreen({ navigation, route }: Props) {
           error={emailError}
         />
         <FormField
+          testID="field.signup.password"
           label="Password"
           value={password}
           onChangeText={(value) => {
@@ -111,9 +135,9 @@ export function SignupScreen({ navigation, route }: Props) {
 
         {!!formError && <Text style={styles.formError}>{formError}</Text>}
 
-        <PrimaryButton label="Send code" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
+        <PrimaryButton testID="btn.signup.submit" label="Send code" onPress={onSubmit} loading={submitting} style={styles.submitButton} />
 
-        <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate("signin")}>
+        <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.navigate("signin")}>
           <Text style={styles.linkCentered}>Already have an account? Log in</Text>
         </TouchableOpacity>
 

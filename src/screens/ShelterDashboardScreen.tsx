@@ -8,11 +8,16 @@ import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { Me, ShelterDashboard, ShelterTier } from "../api/types";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { AlertIcon, CheckIcon, ClockIcon } from "../components/AppIcons";
 import { ShelterTabs } from "../components/ShelterTabs";
 import { RootStackParamList } from "../navigation/types";
 import { ShelterBannerState, shelterBannerState } from "../shelterDashboard";
+import { TAP_SLOP } from "../touch";
 
 type Props = NativeStackScreenProps<RootStackParamList, "shelterDashboard">;
 
@@ -32,17 +37,33 @@ const BANNER: Record<"pending" | "incomplete", { title: string; l1: string; l2: 
 };
 
 export function ShelterDashboardScreen({ navigation }: Props) {
+  // The status bar is real now (App.tsx), so the first thing on screen has to start below
+  // it. This block used to pad 24pt, which was right while the bar was hidden and
+  // put the dashboard heading under the clock once it was not.
+  const insets = useSafeAreaInsets();
   const api = useApi();
   const [dash, setDash] = useState<ShelterDashboard | null>(null);
   const [me, setMe] = useState<Me | null>(null);
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      api.get("/shelter/dashboard").then((r) => r.ok && setDash(r.data));
-      api.get("/me").then((r) => r.ok && setMe(r.data));
+  // US-R1 · named so the same function serves the focus refetch AND the retry button.
+  const load = useCallback(() => {
+      // US-R2 · PRIMARY. This screen is about the counts, so a failed /shelter/dashboard
+      // takes the whole screen. /me below is SECONDARY (name and tier, not substance) and
+      // is allowed to fail quietly rather than blank a dashboard that otherwise loaded.
+      // US-R1 · keep the RESULT of both. Discarding them left `dash` and `me` null, and the
+      // `?? ` fallbacks below then rendered "0 listings, 0 adopted, 0 donations" and a
+      // community_rescue tier as FACT — a verified shelter shown its own work as zero.
+      // Same class as the rescue map's "No strays reported": a failed request rendered as
+      // a confident statement about the world.
+      api.get("/shelter/dashboard").then((r) => {
+        setRes({ ok: r.ok, status: r.status });
+        if (r.ok) setDash(r.data);
+      });
+      api.get("/me").then((r) => { if (r.ok) setMe(r.data); });
       // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus only
-    }, [])
-  );
+    }, []);
+  useFocusEffect(load);
 
   const state: ShelterBannerState = dash ? shelterBannerState(dash) : "incomplete";
   const verified = state === "verified";
@@ -61,9 +82,22 @@ export function ShelterDashboardScreen({ navigation }: Props) {
     else if (state === "pending") navigation.navigate("verifyDocuments");
   }
 
+  // US-R1 · when the load FAILED and we have nothing, say so instead of rendering the
+  // `?? ` fallbacks below as fact. Those fallbacks are correct defaults for a shelter that
+  // genuinely has no listings yet; they are a lie for one whose request didn't arrive.
+  // (Full per-panel treatment for partial failure is US-R5's decision — this is only the
+  // "don't state something false" half.)
+  if (!dash && loadState(res).kind !== "ready" && loadState(res).kind !== "empty") {
+    return (
+      <View style={styles.screen}>
+        <LoadStateView state={loadState(res)} onRetry={load} />
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={styles.screen} testID="screen.shelterDashboard">
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <Text style={styles.orgName}>{me?.display_name ?? "Your shelter"}</Text>
           {verified ? (
@@ -135,7 +169,7 @@ export function ShelterDashboardScreen({ navigation }: Props) {
                 {state === "pending" ? "They go live the moment you're approved." : "Upload your documents to get approved."}
               </Text>
             </View>
-            <TouchableOpacity activeOpacity={0.8} onPress={onBannerPress}>
+            <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.8} onPress={onBannerPress}>
               <Text style={styles.footCta}>{state === "pending" ? "Start ›" : "Continue ›"}</Text>
             </TouchableOpacity>
           </View>

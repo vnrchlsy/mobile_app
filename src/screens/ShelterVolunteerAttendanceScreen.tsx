@@ -9,6 +9,8 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { RootStackParamList } from "../navigation/types";
 import { ChipTone } from "../shelterVolunteer";
 
@@ -33,20 +35,19 @@ export function ShelterVolunteerAttendanceScreen({ navigation, route }: Props) {
   const { shiftId } = route.params;
 
   const [roster, setRoster] = useState<RosterRow[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [loadError, setLoadError] = useState(false);
+  // US-R3 · consolidation, not a bug fix — this screen already split loading/error/empty
+  // by hand and got it right. LoadStateView adds the one distinction its own boolean
+  // could not make: offline versus the server refusing.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
   const [banner, setBanner] = useState<string | null>(null);
   const [busySignupId, setBusySignupId] = useState<string | null>(null);
 
   const loadRoster = useCallback(() => {
+    setRes(null);
     api.get(`/shelter/shifts/${shiftId}/roster`).then((r) => {
-      if (r.ok) {
-        setRoster(r.data?.results ?? []);
-        setLoadError(false);
-      } else {
-        setLoadError(true);
-      }
-      setLoaded(true);
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setRoster(r.data?.results ?? []);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, [shiftId]);
@@ -73,7 +74,8 @@ export function ShelterVolunteerAttendanceScreen({ navigation, route }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Attendance</Text>
@@ -86,17 +88,13 @@ export function ShelterVolunteerAttendanceScreen({ navigation, route }: Props) {
         </View>
       )}
 
-      {!loaded ? (
+      {loadState(res, roster.length).kind !== "ready" ? (
         <View style={styles.centerFill}>
-          <ActivityIndicator color={colors.teal} />
-        </View>
-      ) : loadError ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>Couldn't load the roster. Pull down or go back and try again.</Text>
-        </View>
-      ) : roster.length === 0 ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>No approved volunteers yet</Text>
+          <LoadStateView
+            state={loadState(res, roster.length)}
+            emptyTitle="No approved volunteers yet"
+            onRetry={loadRoster}
+          />
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>

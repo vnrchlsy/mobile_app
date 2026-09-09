@@ -9,6 +9,8 @@ import { useApi } from "../api/useApi";
 import { useAuth } from "../auth/AuthContext";
 import { RootStackParamList } from "../navigation/types";
 import { FormField, PrimaryButton, SimpleHeader, authColors } from "./AuthFormKit";
+import { TAP_SLOP } from "../touch";
+import { ScreenBackdrop } from "../components/ScreenBackground";
 
 const paw = require("../../assets/paw-white.png") as ImageSourcePropType;
 
@@ -22,12 +24,30 @@ export function SigninScreen({ navigation }: Props) {
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [emailError, setEmailError] = useState<string | undefined>(undefined);
+  const [passwordError, setPasswordError] = useState<string | undefined>(undefined);
   const [submitting, setSubmitting] = useState(false);
 
-  const canSubmit = email.trim().length > 0 && password.length > 0 && !submitting;
-
+  /**
+   * Design-system rule: NEVER disable a submit button because of validation.
+   *
+   * This screen used `disabled={!canSubmit}`, so with an empty field the only control on
+   * the screen was greyed out and said nothing about why. A person who cannot see what is
+   * missing has nothing to act on — they can only guess, or leave. An enabled button that
+   * answers the question the moment they press it is strictly more usable, and it is the
+   * one affordance a screen reader can also reach and announce.
+   *
+   * `submitting` is a different thing and still blocks: that is a request in flight, not a
+   * validation error, and double-submitting a login is a real bug. `PrimaryButton` derives
+   * `isDisabled` from `loading` on its own, so passing `loading={submitting}` is enough.
+   */
   async function onSubmit() {
-    if (!canSubmit) return;
+    if (submitting) return;
+    const missingEmail = email.trim().length === 0 ? "Enter your email." : undefined;
+    const missingPassword = password.length === 0 ? "Enter your password." : undefined;
+    setEmailError(missingEmail);
+    setPasswordError(missingPassword);
+    if (missingEmail || missingPassword) return;
     setError(undefined);
     setSubmitting(true);
     try {
@@ -35,6 +55,18 @@ export function SigninScreen({ navigation }: Props) {
       if (res.status === 401) {
         // Deliberately generic — never confirm whether the email itself is registered.
         setError("Email or password is incorrect.");
+        return;
+      }
+      if (res.status === 429) {
+        // ⚠️ A THROTTLE IS NOT "something went wrong". Found by an E2E run tripping the login
+        // rate limit: the catch-all below told the person to try again, which is precisely
+        // what the throttle exists to stop — so they retry, extend the lockout, and the app
+        // never explains why. ExportDataScreen already gets this right for its 3/day limit.
+        const wait = Number(res.data?.error?.details?.retry_after);
+        const mins = Number.isFinite(wait) ? Math.max(1, Math.ceil(wait / 60)) : null;
+        setError(mins
+          ? `Too many sign-in attempts. Try again in about ${mins} minute${mins === 1 ? "" : "s"}.`
+          : "Too many sign-in attempts. Please wait a few minutes and try again.");
         return;
       }
       if (res.status === 403) {
@@ -54,7 +86,8 @@ export function SigninScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.signin">
+      <ScreenBackdrop />
       <SimpleHeader onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
@@ -68,31 +101,39 @@ export function SigninScreen({ navigation }: Props) {
         <Text style={styles.caption}>Log in to keep helping.</Text>
 
         <FormField
+          testID="field.signin.email"
           label="Email"
           value={email}
           onChangeText={(value) => {
             setEmail(value);
             if (error) setError(undefined);
+            if (emailError) setEmailError(undefined);
           }}
           autoCapitalize="none"
           keyboardType="email-address"
           autoComplete="email"
+          error={emailError}
         />
         <FormField
+          testID="field.signin.password"
           label="Password"
           value={password}
           onChangeText={(value) => {
             setPassword(value);
             if (error) setError(undefined);
+            if (passwordError) setPasswordError(undefined);
           }}
           secure={!passwordVisible}
           onToggleSecure={() => setPasswordVisible((visible) => !visible)}
           autoComplete="password"
+          error={passwordError}
+          returnKeyType="go"
+          onSubmitEditing={onSubmit}
         />
 
         {!!error && <Text style={styles.formError}>{error}</Text>}
 
-        <TouchableOpacity
+        <TouchableOpacity hitSlop={TAP_SLOP}
           activeOpacity={0.75}
           onPress={() => navigation.navigate("forgotPassword")}
           style={styles.forgotWrap}
@@ -100,9 +141,9 @@ export function SigninScreen({ navigation }: Props) {
           <Text style={styles.forgotText}>Forgot password?</Text>
         </TouchableOpacity>
 
-        <PrimaryButton label="Log in" onPress={onSubmit} disabled={!canSubmit} loading={submitting} style={styles.submitButton} />
+        <PrimaryButton testID="btn.signin.submit" label="Log in" onPress={onSubmit} loading={submitting} style={styles.submitButton} />
 
-        <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate("accountType")}>
+        <TouchableOpacity hitSlop={TAP_SLOP} activeOpacity={0.75} onPress={() => navigation.navigate("accountType")}>
           <Text style={styles.linkCentered}>New to Kupkop? Create account</Text>
         </TouchableOpacity>
       </View>
@@ -113,7 +154,7 @@ export function SigninScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: authColors.page
+    backgroundColor: "transparent"
   },
   content: {
     flex: 1,

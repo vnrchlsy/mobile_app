@@ -1,4 +1,15 @@
-const BASE = process.env.EXPO_PUBLIC_API_BASE ?? "http://localhost:8000/api/v1";
+import Constants from "expo-constants";
+
+// US-E1 · the API base comes from the resolved Expo config (app.config.ts), which REFUSES to
+// build a preview or production binary without one. Reading it here rather than from
+// process.env means the value the build validated is the value the app uses.
+//
+// The localhost fallback survives only for `expo start` against a bare checkout; it can no
+// longer reach a store build, because app.config.ts throws before such a build is produced.
+const BASE: string =
+  (Constants.expoConfig?.extra?.apiBase as string | undefined) ??
+  process.env.EXPO_PUBLIC_API_BASE ??
+  "http://localhost:8000/api/v1";
 
 type Tokens = { access: string; refresh: string } | null;
 export type ApiResult<T = any> = { ok: boolean; status: number; data: T };

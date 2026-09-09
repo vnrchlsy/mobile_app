@@ -6,12 +6,15 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { loadState } from "../net";
 import { VolunteerIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
 import { CardTone, MySignupItem, MySignups, shiftTypeLabel, signupStatusCard } from "../volunteer";
+import { TAP_SLOP } from "../touch";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -66,7 +69,7 @@ function ShiftCardBody({ item }: { item: MySignupItem }) {
 // innermost Touchable claim the gesture, so tapping "Cancel" never also fires the card tap.
 function CancelLink({ label = "Cancel", onPress }: { label?: string; onPress: () => void }) {
   return (
-    <TouchableOpacity activeOpacity={0.6} onPress={onPress} hitSlop={8} style={styles.cancelLink}>
+    <TouchableOpacity activeOpacity={0.6} onPress={onPress} hitSlop={TAP_SLOP} style={styles.cancelLink}>
       <Text style={styles.cancelLinkText}>{label}</Text>
     </TouchableOpacity>
   );
@@ -77,18 +80,18 @@ type Props = NativeStackScreenProps<RootStackParamList, "kawanggawaSchedule">;
 export function KawangGawaScheduleScreen({ navigation }: Props) {
   const api = useApi();
   const [data, setData] = useState<MySignups | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  // US-R4 · was three hand-rolled booleans that collapsed offline, 5xx and "deleted"
+  // into one sentence. Keeping the RESULT lets the shared view say which it was — and
+  // a 404 here is ordinary: these routes are reached from a push notification about a
+  // shift that may since have been cancelled.
+  const [res, setRes] = useState<{ ok: boolean; status: number } | null>(null);
+
 
   const load = useCallback(() => {
+    setRes(null);
     api.get("/me/signups").then((r) => {
-      if (r.ok) {
-        setData(r.data);
-        setError(false);
-      } else {
-        setError(true);
-      }
-      setLoaded(true);
+      setRes({ ok: r.ok, status: r.status });
+      if (r.ok) setData(r.data);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus
   }, []);
@@ -97,25 +100,24 @@ export function KawangGawaScheduleScreen({ navigation }: Props) {
 
   const upcoming = data?.upcoming ?? [];
   const requested = data?.requested ?? [];
-  const isEmpty = loaded && !error && upcoming.length === 0 && requested.length === 0;
+  // `loaded && !error &&` used to prefix this: the guard against announcing "empty" to
+  // someone whose request never came back. That guard now lives one level up — this is
+  // only ever read inside the `data !== null` branch — so `!!data` IS the same check.
+  const isEmpty = !!data && upcoming.length === 0 && requested.length === 0;
 
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}>
+        <TouchableOpacity testID="btn.back" onPress={() => navigation.goBack()} style={styles.back} hitSlop={12}
+          accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.title}>My schedule</Text>
       </View>
 
-      {!loaded ? (
-        <View style={styles.centerFill}>
-          <ActivityIndicator color={colors.teal} />
-        </View>
-      ) : error ? (
-        <View style={styles.centerFill}>
-          <Text style={styles.empty}>Couldn't load your schedule. Pull down or go back and try again.</Text>
-        </View>
+      {!data ? (
+        <LoadStateView state={loadState(res)} subject="schedule" onRetry={load}
+          onBack={() => navigation.goBack()} />
       ) : isEmpty ? (
         <View style={styles.centerFill}>
           <Text style={styles.empty}>You don't have any shifts yet. Browse open shifts to get started.</Text>
@@ -131,6 +133,30 @@ export function KawangGawaScheduleScreen({ navigation }: Props) {
                   style={[styles.card, styles.cardColumn]}
                   activeOpacity={0.85}
                   onPress={() => navigation.navigate("kawanggawaCheckin", { signupId: item.signup_id })}
+                  accessibilityRole="button"
+                  accessibilityLabel="Volunteer shift — open to check in"
+                  // US-W1 · resolves the limitation recorded here during US-U1.
+                  //
+                  // This card contains a NESTED touchable (CancelLink), and iOS flattens an
+                  // accessible container into a single element — so a VoiceOver user could
+                  // reach "open to check in" and had NO WAY AT ALL to reach Cancel. Not
+                  // awkward: absent. Cancelling a shift you cannot make is the whole reason
+                  // the shelter is not left a volunteer short.
+                  //
+                  // The note said the fix was "lifting the cancel out of the card (or using
+                  // accessibilityActions), which is a layout change". Half right — the second
+                  // option is not a layout change, and it is the one RN provides for exactly
+                  // this shape: the action joins the element's rotor, the visual link stays
+                  // put for sighted users, and nothing about the card moves.
+                  //
+                  // ⚠️ Still needs confirming on a device. This makes the action REACHABLE;
+                  // whether the rotor reads well in context is a person's judgement.
+                  accessibilityActions={[{ name: "cancel", label: "Cancel this shift" }]}
+                  onAccessibilityAction={(event) => {
+                    if (event.nativeEvent.actionName === "cancel") {
+                      navigation.navigate("kawanggawaCancel", { signupId: item.signup_id });
+                    }
+                  }}
                 >
                   <View style={styles.cardRow}>
                     <ShiftCardBody item={item} />

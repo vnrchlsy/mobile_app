@@ -7,9 +7,15 @@ import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "rea
 
 import { Listing } from "../api/types";
 import { useApi } from "../api/useApi";
+import { LoadStateView } from "../components/LoadStateView";
+import { StaleBanner } from "../components/StaleBanner";
+import { isOffline, loadState } from "../net";
 import { useAuth } from "../auth/AuthContext";
 import { OwnerTabs } from "../components/OwnerTabs";
 import { RootStackParamList } from "../navigation/types";
+import { useCachedFeed } from "../useCachedFeed";
+import { TAP_SLOP } from "../touch";
+import { ScreenBackdrop } from "../components/ScreenBackground";
 
 const colors = {
   ink: "#12213A", teal: "#1C6B6B", page: "#F4F5F2", muted: "#5F5E5A", white: "#FFFFFF",
@@ -26,32 +32,35 @@ type Props = NativeStackScreenProps<RootStackParamList, "adopt">;
 export function AdoptScreen({ navigation }: Props) {
   const api = useApi();
   const { city } = useAuth();
-  const [listings, setListings] = useState<Listing[]>([]);
+  // US-X1 · cache-first. `listings` is now `Listing[] | null` — the empty-array init could
+  // not tell "not loaded" from "genuinely none", which only stayed safe because `res` was
+  // tracked alongside it. With a cache the distinction does real work: null means show the
+  // load state, [] means the city really has no pets.
+  const { rows: listings, res, stale, load: loadFeed } =
+    useCachedFeed<Listing>(api, (d) => d?.results ?? []);
+
   const [species, setSpecies] = useState("");
-  const [loaded, setLoaded] = useState(false);
 
   const load = useCallback(() => {
     const params = new URLSearchParams();
     if (city) params.set("city", city);
     if (species) params.set("species", species);
-    api.get(`/listings?${params.toString()}`).then((r) => {
-      if (r.ok) setListings(r.data?.results ?? []);
-      setLoaded(true);
-    });
+    loadFeed(`/listings?${params.toString()}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus + filter change
   }, [city, species]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="screen.adopt">
+      <ScreenBackdrop />
       <View style={styles.header}>
         <Text style={styles.title}>Adopt</Text>
         <View style={styles.headerLinks}>
-          <TouchableOpacity onPress={() => navigation.navigate("listingForm", undefined)} hitSlop={10}>
+          <TouchableOpacity onPress={() => navigation.navigate("listingForm", undefined)} hitSlop={TAP_SLOP}>
             <Text style={styles.headerLink}>+ List</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate("myInquiries")} hitSlop={10}>
+          <TouchableOpacity onPress={() => navigation.navigate("myInquiries")} hitSlop={TAP_SLOP}>
             <Text style={styles.headerLink}>My inquiries ›</Text>
           </TouchableOpacity>
         </View>
@@ -59,7 +68,7 @@ export function AdoptScreen({ navigation }: Props) {
 
       <View style={styles.filterRow}>
         {SPECIES.map((f) => (
-          <TouchableOpacity
+          <TouchableOpacity hitSlop={TAP_SLOP}
             key={f.key || "all"}
             style={[styles.filterChip, species === f.key && styles.filterChipActive]}
             onPress={() => setSpecies(f.key)}
@@ -71,13 +80,21 @@ export function AdoptScreen({ navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {loaded && listings.length === 0 ? (
-          <Text style={styles.empty}>
-            {city ? `No pets up for adoption in ${city} yet.` : "Set your city to see nearby pets."}
-          </Text>
+        {loadState(res, listings?.length).kind !== "ready" ? (
+          <LoadStateView
+            state={loadState(res, listings?.length)}
+            emptyTitle={city ? `No pets up for adoption in ${city} yet.`
+              : "Set your city to see nearby pets."}
+            onRetry={load}
+          />
         ) : (
-          listings.map((l) => (
+          <>
+          {stale ? <StaleBanner offline={isOffline(res)} /> : null}
+          {(listings ?? []).map((l, i) => (
             <TouchableOpacity
+              // Indexed, so a flow can tap "the first listing" without knowing the fixture's
+              // id. `card.adopt.0` is the contract; which animal is in it is the seed's business.
+              testID={`card.adopt.${i}`}
               key={l.listing_id}
               style={styles.card}
               activeOpacity={0.9}
@@ -100,7 +117,8 @@ export function AdoptScreen({ navigation }: Props) {
                 </Text>
               </View>
             </TouchableOpacity>
-          ))
+          ))}
+          </>
         )}
       </ScrollView>
 
@@ -119,7 +137,7 @@ const card = {
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.page },
+  screen: { flex: 1, backgroundColor: "transparent" },
   header: { paddingTop: 58, paddingHorizontal: 26, paddingBottom: 4, flexDirection: "row",
             alignItems: "center", justifyContent: "space-between" },
   title: { color: colors.ink, fontSize: 26, fontWeight: "800" },
