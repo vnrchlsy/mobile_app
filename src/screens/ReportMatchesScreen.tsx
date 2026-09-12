@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.page },
   content: { paddingHorizontal: spacing.lg, paddingTop: 12, paddingBottom: 60 },
   intro: { color: colors.muted, ...typography.body, marginBottom: 16 },
-  empty: { marginTop: 40, color: colors.muted, fontSize: 16, textAlign: "center", lineHeight: 23 },
+  empty: { marginTop: 40, color: colors.muted, ...typography.body, textAlign: "center" },
   matchCard: { marginBottom: 14, padding: 16, borderRadius: radii.card, ...card },
   row: { flexDirection: "row", gap: 14 },
   photo: { width: 96, height: 96, borderRadius: squircle(96), backgroundColor: colors.soft },
@@ -106,6 +106,6 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 11, paddingVertical: 4, borderRadius: radii.chip },
   chipText: { ...typography.meta, fontWeight: "700" },
   reasons: { marginTop: 8, color: colors.muted, ...typography.meta, lineHeight: 19 },
-  review: { marginTop: 10, color: colors.teal, fontSize: 14.5, fontWeight: "700" },
+  review: { marginTop: 10, color: colors.teal, ...typography.strong, fontWeight: "700" },
   footnote: { marginTop: 8, color: colors.muted, ...typography.meta, textAlign: "center" }
 });

@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.infoBg
   },
   docMeta: { flex: 1, gap: 8 },
-  docName: { color: colors.ink, fontSize: 18, fontWeight: "700" },
+  docName: { color: colors.ink, ...typography.subtitle, fontWeight: "700" },
   docCount: { color: colors.muted, ...typography.meta, fontWeight: "600", marginTop: -4 },
   chip: { alignSelf: "flex-start", paddingHorizontal: 12, height: 28, borderRadius: 14, justifyContent: "center" },
   chipText: { ...typography.meta, fontWeight: "800" },

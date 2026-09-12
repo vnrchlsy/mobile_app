@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   },
   statCol: { flex: 1, alignItems: "center" },
   statDivider: { width: 1, height: 40, backgroundColor: colors.border },
-  statValue: { color: colors.ink, fontSize: 24, fontWeight: "800" },
+  statValue: { color: colors.ink, ...typography.hero },
   statLabel: { marginTop: 4, color: colors.muted, ...typography.meta, fontWeight: "700" },
   sectionLabel: { marginTop: 4, marginBottom: 12, color: colors.ink, ...typography.subtitle, fontWeight: "800" },
   card: { flexDirection: "row", alignItems: "center", gap: 12, padding: 18, borderRadius: radii.field, marginBottom: 12, ...card },

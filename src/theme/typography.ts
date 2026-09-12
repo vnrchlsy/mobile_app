@@ -71,6 +71,13 @@ export const typography = {
   /** Metadata, helper text, chip labels. Weight is the caller's — see the range note. */
   meta: { fontSize: 13 },
   /** Field labels and tab labels. Uppercase where used as a field label. */
+  /**
+   * Captions, tab labels, badges at eleven. Weight is the caller's, 600–800 — the artboards
+   * draw the muted caption at 600 and a badge at 800, and never an eleven at 400. Library #12
+   * added the row the artboards were already using; `label` below is the uppercase field
+   * label with its tracking, a different element at the same size.
+   */
+  caption: { fontSize: 11 },
   label: { fontSize: 11, fontWeight: "800", letterSpacing: 0.8 }
 } as const satisfies Record<string, Style>;
 

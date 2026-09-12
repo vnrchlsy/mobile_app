@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   currentChipText: { ...typography.meta, fontWeight: "800" },
   handoffRow: { marginTop: 20, flexDirection: "row", gap: 12 },
   handoffBtn: { flex: 1 },
-  resolvedNote: { marginTop: 24, color: colors.muted, fontSize: 16, lineHeight: 22 },
+  resolvedNote: { marginTop: 24, color: colors.muted, ...typography.body },
   sectionTitle: { marginTop: 26, marginBottom: 12, color: colors.ink, ...typography.section },
   radioList: { gap: 10 },
   radioRow: { flexDirection: "row", alignItems: "center", gap: 14, padding: 16, borderRadius: radii.tile, borderWidth: 2, borderColor: "transparent", ...card },

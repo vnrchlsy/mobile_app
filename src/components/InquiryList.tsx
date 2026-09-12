@@ -142,5 +142,5 @@ const styles = StyleSheet.create({
   progress: { marginTop: 12, color: colors.teal, ...typography.meta, fontWeight: "700" },
   placementNote: { marginTop: 12, color: colors.teal, ...typography.meta, fontWeight: "800" },
   shareStory: { marginTop: 14, alignSelf: "flex-start", height: 38, paddingHorizontal: 16, justifyContent: "center", borderRadius: pill(38), backgroundColor: colors.successBg },
-  shareStoryLabel: { color: colors.success, fontSize: 14.5, fontWeight: "700" }
+  shareStoryLabel: { color: colors.success, ...typography.strong, fontWeight: "700" }
 });

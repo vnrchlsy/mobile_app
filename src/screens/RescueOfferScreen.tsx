@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.page },
   content: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: 12 },
   h1: { color: colors.ink, ...typography.display },
-  sub: { marginTop: 10, color: colors.muted, fontSize: 16, lineHeight: 22 },
+  sub: { marginTop: 10, color: colors.muted, ...typography.body },
   cardList: { marginTop: 24, gap: 12 },
   optionCard: { flexDirection: "row", alignItems: "center", gap: 14, padding: 18, borderRadius: radii.field, borderWidth: 2, borderColor: "transparent", ...card },
   optionCardActive: { borderColor: colors.teal },

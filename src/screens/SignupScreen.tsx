@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   terms: {
     marginTop: 18,
     color: "#9A988F",
-    fontSize: 11,
+    ...typography.caption, fontWeight: "600",
     lineHeight: 16,
     textAlign: "center"
   }

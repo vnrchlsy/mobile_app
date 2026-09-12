@@ -298,8 +298,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: c.onHeroSoft,
-    fontSize: 17,
-    lineHeight: 24,
+    ...typography.body,
     textAlign: "center",
     maxWidth: 320,
   },

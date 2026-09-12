@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     ...elevation.soft
   },
-  statNum: { color: colors.ink, fontSize: 26, fontWeight: "800" },
+  statNum: { color: colors.ink, ...typography.hero },
   statLabel: { marginTop: 6, color: colors.muted, ...typography.meta },
   primaryButton: { marginTop: 22 },
   primaryHint: { marginTop: 12, color: colors.muted, ...typography.body, textAlign: "center" },

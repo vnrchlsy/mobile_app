@@ -198,10 +198,12 @@ const styles = StyleSheet.create({
     // already did. T2's size table maps 12 -> meta (13); following it would have moved the
     // label further from the design, so it was held back then and corrected to 11 here.
     //
-    // It still fits no step: `label` is 11 but uppercase, 800 and +0.8 tracking, while this
-    // is sentence case at +0.1 with a weight that changes on selection. Written as literals
-    // because the design says so, not because nobody has migrated it.
-    fontSize: 11,
+    // For a while it fit no step: `label` is 11 but uppercase, 800 and +0.8 tracking, while
+    // this is sentence case at +0.1 with a weight that changes on selection. Library #12
+    // declared the eleven the artboards draw — "Caption, tab label, badge | 11 / 600-800" —
+    // and `caption` is its size; the tracking and the switching weight are still the
+    // canvas's own values, named here.
+    ...typography.caption,
     letterSpacing: 0.1,
     fontWeight: "600"
   },

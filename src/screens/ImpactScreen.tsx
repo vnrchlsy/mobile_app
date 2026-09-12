@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: spacing.lg, paddingTop: 12, paddingBottom: 60 },
   statRow: { flexDirection: "row", gap: 10 },
   statTile: { flex: 1, paddingVertical: 16, borderRadius: radii.tile, alignItems: "center", ...card },
-  statValue: { color: colors.teal, fontSize: 26, fontWeight: "800" },
+  statValue: { color: colors.teal, ...typography.hero },
   statLabel: { marginTop: 4, color: colors.muted, ...typography.meta, fontWeight: "600" },
   sectionTitle: { marginTop: 28, marginBottom: 14, color: colors.ink, ...typography.section },
   grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },

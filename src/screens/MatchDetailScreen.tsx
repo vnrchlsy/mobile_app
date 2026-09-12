@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   factVal: { color: colors.ink, ...typography.strong, fontWeight: "700", flexShrink: 1, textAlign: "right" },
   reasonsCard: { marginTop: 16, padding: 16, borderRadius: radii.tile, backgroundColor: colors.soft },
   reasonsTitle: { color: colors.tealDark, ...typography.meta, fontWeight: "700" },
-  reasonsText: { marginTop: 6, color: colors.tealDark, fontSize: 14.5, lineHeight: 20 },
+  reasonsText: { marginTop: 6, color: colors.tealDark, ...typography.body },
   decidedNote: { marginTop: 24, color: colors.muted, ...typography.body, textAlign: "center" },
   primaryBtn: { marginTop: 24 },
   secondaryBtn: { marginTop: 14 },

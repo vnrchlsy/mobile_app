@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.lg },
   heroIcon: { width: 76, height: 76, borderRadius: squircle(76), alignItems: "center", justifyContent: "center", backgroundColor: colors.teal },
   heroTitle: { marginTop: 18, color: colors.ink, ...typography.hero },
-  heroBody: { marginTop: 10, color: colors.muted, fontSize: 16, textAlign: "center", lineHeight: 22 },
+  heroBody: { marginTop: 10, color: colors.muted, ...typography.body, textAlign: "center" },
   primary: { marginTop: 30, width: "100%" },
   secondary: { marginTop: 16, color: colors.teal, ...typography.strong, fontWeight: "700" }
 });

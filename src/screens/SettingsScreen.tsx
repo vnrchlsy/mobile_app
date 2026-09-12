@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   rowLabelDanger: { color: colors.danger },
   rowRight: { flexDirection: "row", alignItems: "center" },
   rowValue: { ...typography.meta, color: colors.muted, marginRight: 8 },
-  chevron: { fontSize: 22, color: colors.muted },
+  chevron: { fontSize: 19, fontWeight: "700", color: colors.muted },
   logoutCard: { marginTop: 28, minHeight: 56, alignItems: "center", justifyContent: "center" },
   logoutLabel: { ...typography.subtitle, fontWeight: "700", color: colors.danger },
   version: { textAlign: "center", ...typography.meta, color: colors.muted, marginTop: 24 },

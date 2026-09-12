@@ -112,13 +112,13 @@ export function MyDonationsScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.page },
   content: { paddingHorizontal: spacing.lg, paddingTop: 12, paddingBottom: 60 },
-  empty: { marginTop: 40, color: colors.muted, fontSize: 16, lineHeight: 23, textAlign: "center" },
+  empty: { marginTop: 40, color: colors.muted, ...typography.body, textAlign: "center" },
   pledgeCard: { marginBottom: 14, padding: 18, borderRadius: radii.card, ...card },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   needTitle: { flex: 1, color: colors.ink, ...typography.subtitle, fontWeight: "800" },
   chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: radii.chip },
   chipText: { ...typography.meta, fontWeight: "700" },
-  meta: { marginTop: 8, color: colors.muted, fontSize: 14.5 },
+  meta: { marginTop: 8, color: colors.muted, ...typography.body },
   cancelBtn: { marginTop: 14, alignSelf: "flex-start", height: 38, paddingHorizontal: 16, justifyContent: "center", borderRadius: pill(38), backgroundColor: "#FBEEEC" },
-  cancelLabel: { color: colors.danger, fontSize: 14.5, fontWeight: "700" }
+  cancelLabel: { color: colors.danger, ...typography.strong, fontWeight: "700" }
 });

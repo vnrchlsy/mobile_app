@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
   },
   accountRowChevron: {
     color: "#B9B5AA",
-    fontSize: 22,
+    fontSize: 19, fontWeight: "700",
     lineHeight: 22
   }
 });

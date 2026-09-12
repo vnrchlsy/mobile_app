@@ -37,8 +37,8 @@ if (!canvasPath) {
 const STEPS = Object.entries(typography) as Array<[string, Record<string, unknown>]>;
 
 describe("the type ramp", () => {
-  it("has the canvas's nine sizes — fifteen twice, once closed and once open", () => {
-    expect(STEPS.map(([, s]) => s.fontSize)).toEqual([27, 25, 21, 19, 17, 15, 15, 13, 11]);
+  it("has the canvas's ten sizes — fifteen and eleven twice each, once closed and once open", () => {
+    expect(STEPS.map(([, s]) => s.fontSize)).toEqual([27, 25, 21, 19, 17, 15, 15, 13, 11, 11]);
   });
 
   it("names a lineHeight on body and nowhere else", () => {
@@ -73,6 +73,7 @@ describeParity("parity with the approved canvas", () => {
     expect(canvas).toContain("17 / 700-800");
     expect(canvas).toContain("15 / 700-800");
     expect(canvas).toContain("13 / 400-800");
+    expect(canvas).toContain("11 / 600-800");
     expect(canvas).not.toContain("17 / 700 / -0.2");
   });
 
@@ -81,13 +82,13 @@ describeParity("parity with the approved canvas", () => {
   });
 });
 
-describe("the three range steps", () => {
+describe("the four range steps", () => {
   /**
    * ⚠️ A RANGE CANNOT BE PINNED. Collapsing "13 / 400-800" to 400 picked the weight the app
    * uses least — 800x44 and 700x39 against 400x25 — so spreading the token would have
    * de-bolded the majority. Size only; the caller brings the weight.
    */
-  it.each(["subtitle", "strong", "meta"] as const)("%s names no fontWeight", (step) => {
+  it.each(["subtitle", "strong", "meta", "caption"] as const)("%s names no fontWeight", (step) => {
     expect(typography[step]).not.toHaveProperty("fontWeight");
   });
 
@@ -96,6 +97,8 @@ describe("the three range steps", () => {
     expect(typography.strong).not.toHaveProperty("letterSpacing");
     // ...and no lineHeight either: a bound label stays on RN's default leading, as it rendered.
     expect(typography.strong).not.toHaveProperty("lineHeight");
+    expect(typography.caption).not.toHaveProperty("letterSpacing");
+    expect(typography.caption).not.toHaveProperty("lineHeight");
   });
 
   it("still pins a weight on the six steps the panel pins", () => {

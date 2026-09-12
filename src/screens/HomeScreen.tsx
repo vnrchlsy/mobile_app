@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
   reviewText: {
     marginTop: 5,
     color: colors.warning,
-    fontSize: 11
+    ...typography.caption, fontWeight: "600"
   },
   statusLink: {
     color: colors.warningStrong,
@@ -774,8 +774,8 @@ const styles = StyleSheet.create({
   },
   spotChevron: {
     color: colors.teal,
-    fontSize: 20,
-    fontWeight: "800"
+    fontSize: 19,
+    fontWeight: "700"
   },
   trailRow: {
     marginTop: 16,
@@ -855,7 +855,7 @@ const styles = StyleSheet.create({
   petDetails: {
     marginTop: 5,
     color: colors.muted,
-    fontSize: 11
+    ...typography.caption, fontWeight: "600"
   },
   petMeta: {
     alignItems: "flex-end"
@@ -876,7 +876,7 @@ const styles = StyleSheet.create({
   shelterText: {
     marginTop: 8,
     color: "#AAA69D",
-    fontSize: 10
+    ...typography.caption, fontWeight: "600"
   },
   rescueTitle: {},
   rescueCard: {
@@ -905,7 +905,7 @@ const styles = StyleSheet.create({
   lockedNote: {
     marginTop: 14,
     color: colors.muted,
-    fontSize: 11,
+    ...typography.caption, fontWeight: "600",
     textAlign: "center"
   },
   emptyNote: {

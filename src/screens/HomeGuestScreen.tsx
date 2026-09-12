@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   guestBody: {
     marginTop: 3,
     color: colors.muted,
-    fontSize: 11
+    ...typography.caption, fontWeight: "600"
   },
   guestLink: {
     marginLeft: 8,
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
   mapChevron: {
     marginLeft: 8,
     color: colors.teal,
-    fontSize: 22,
+    fontSize: 19,
     fontWeight: "700"
   },
   sectionHeader: {
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   petDetails: {
     marginTop: 5,
     color: colors.muted,
-    fontSize: 11
+    ...typography.caption, fontWeight: "600"
   },
   petMeta: {
     alignItems: "flex-end"
@@ -464,6 +464,6 @@ const styles = StyleSheet.create({
   shelterText: {
     marginTop: 8,
     color: "#AAA69D",
-    fontSize: 10
+    ...typography.caption, fontWeight: "600"
   },
 });

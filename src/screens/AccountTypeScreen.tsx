@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   identitySource: { color: colors.muted, ...typography.meta },
   chevron: {
     color: authColors.muted,
-    fontSize: 26,
+    fontSize: 19,
     fontWeight: "700",
     marginLeft: 8
   }

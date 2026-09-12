@@ -109,12 +109,12 @@ const styles = StyleSheet.create({
   stepBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.soft, alignItems: "center", justifyContent: "center" },
   stepGlyph: { color: colors.teal, fontSize: 30, fontWeight: "800", marginTop: -2 },
   qty: { color: colors.ink, fontSize: 30, fontWeight: "800", minWidth: 40, textAlign: "center" },
-  error: { marginTop: 18, color: "#B23B3B", fontSize: 14.5, fontWeight: "600" },
+  error: { marginTop: 18, color: "#B23B3B", ...typography.strong, fontWeight: "700" },
   primaryBtn: { marginTop: 30 },
   secondaryBtn: { marginTop: 14 },
   confirmWrap: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingTop: 140, paddingBottom: 60, alignItems: "center" },
   checkTile: { width: 84, height: 84, borderRadius: squircle(84), backgroundColor: colors.successBg, alignItems: "center", justifyContent: "center" },
   checkGlyph: { color: colors.success, fontSize: 44, fontWeight: "800" },
   confirmTitle: { marginTop: 22, color: colors.ink, ...typography.hero },
-  confirmBody: { marginTop: 12, color: colors.muted, fontSize: 15.5, lineHeight: 23, textAlign: "center" }
+  confirmBody: { marginTop: 12, color: colors.muted, ...typography.body, textAlign: "center" }
 });

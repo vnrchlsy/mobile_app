@@ -35,9 +35,14 @@ const stripComments = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, "").repl
  */
 const SHARED = files.filter((f) => /<ScreenHeader|<SimpleHeader|<AuthHeader/.test(stripComments(read(f))));
 /** A screen still drawing its own back affordance. */
-const HAND_ROLLED_RE = /testID="btn\.back"|styles\.backGlyph|accessibilityLabel="Go back"/;
+// Not `testID="btn.back"`: three screens put that id on a "Wrong email? Change it" link or a
+// "Keep my account" button so a flow can leave the screen, and neither is a header.
+const HAND_ROLLED_RE = /styles\.backGlyph|accessibilityLabel="Go back"/;
+// ⚠️ HAND-ROLLED FIRST. ListingForm rendered ScreenHeader in its loading branch and its own
+// header everywhere else, and a "shared wins" classifier called the file converted for two
+// PRs. A file that draws its own back glyph anywhere is hand-rolled, whatever else it renders.
 const classify = (src: string) =>
-  /<ScreenHeader|<SimpleHeader|<AuthHeader/.test(src) ? "SHARED" : HAND_ROLLED_RE.test(src) ? "HAND_ROLLED" : "NONE";
+  HAND_ROLLED_RE.test(src) ? "HAND_ROLLED" : /<ScreenHeader|<SimpleHeader|<AuthHeader/.test(src) ? "SHARED" : "NONE";
 const HAND_ROLLED = files.filter((f) => classify(stripComments(read(f))) === "HAND_ROLLED");
 
 /**

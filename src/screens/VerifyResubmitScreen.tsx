@@ -121,13 +121,13 @@ const styles = StyleSheet.create({
     marginTop: 22, padding: 18, borderRadius: radii.field, backgroundColor: colors.warningBg
   },
   noteLabel: { color: colors.warningStrong, ...typography.meta, fontWeight: "800", letterSpacing: 0.6 },
-  noteText: { marginTop: 8, color: colors.warningStrong, fontSize: 16, lineHeight: 23, fontWeight: "600" },
+  noteText: { marginTop: 8, color: colors.warningStrong, ...typography.strong, lineHeight: 23, fontWeight: "700" },
   fileCard: {
     marginTop: 20, padding: 20, borderRadius: radii.card, backgroundColor: "#FFFFFF",
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     ...elevation.soft
   },
-  fileName: { color: colors.ink, fontSize: 18, fontWeight: "700", flex: 1 },
+  fileName: { color: colors.ink, ...typography.subtitle, fontWeight: "700", flex: 1 },
   replaceBtn: {
     paddingHorizontal: 22, height: 44, borderRadius: 22, alignItems: "center",
     justifyContent: "center", backgroundColor: colors.infoBg

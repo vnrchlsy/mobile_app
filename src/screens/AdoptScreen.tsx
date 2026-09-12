@@ -151,5 +151,5 @@ const styles = StyleSheet.create({
   filterText: { color: colors.muted, ...typography.meta, fontWeight: "700" },
   filterTextActive: { color: colors.white },
   content: { paddingHorizontal: spacing.lg, paddingTop: 12, paddingBottom: tabBarClearance },
-  empty: { marginTop: 50, color: colors.muted, fontSize: 16, textAlign: "center", lineHeight: 22 }
+  empty: { marginTop: 50, color: colors.muted, ...typography.body, textAlign: "center" }
 });

@@ -22,6 +22,7 @@ import { existsSync, readFileSync } from "fs";
 import { dirname, join } from "path";
 
 import { gradients } from "../theme/gradients";
+import { typography } from "../theme/typography";
 import { radii } from "../theme/radii";
 import { TAB_BAR } from "../components/ui/TabBar";
 
@@ -100,7 +101,9 @@ describeParity("the tab bar matches the canvas", () => {
 
   it("sets the label at the canvas's size and tracking", () => {
     expect(Number(label![1])).toBe(11);
-    expect(new RegExp(`fontSize:\\s*${label![1]},`).test(source)).toBe(true);
+    // The size comes from the ramp's caption step (library #12), which the panel pins at 11.
+    expect(typography.caption.fontSize).toBe(Number(label![1]));
+    expect(/\.\.\.typography\.caption,/.test(source)).toBe(true);
     expect(new RegExp(`letterSpacing:\\s*0?\\.${label![2].replace(/^0?\./, "")},`).test(source))
       .toBe(true);
   });

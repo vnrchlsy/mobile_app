@@ -61,12 +61,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.page
   },
-  header: {
-    height: 96,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    paddingBottom: 14
-  },
   backButton: {
     position: "absolute",
     left: 26,
@@ -78,12 +72,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: colors.white,
     ...elevation.soft
-  },
-  backText: {
-    color: colors.ink,
-    fontSize: 26,
-    fontWeight: "700",
-    lineHeight: 28
   },
   content: {
     flex: 1,

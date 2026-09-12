@@ -184,12 +184,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.page
   },
-  header: {
-    height: 96,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    paddingBottom: 14
-  },
   backButton: {
     position: "absolute",
     left: 26,
@@ -201,12 +195,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: colors.white,
     ...elevation.soft
-  },
-  backText: {
-    color: colors.ink,
-    fontSize: 26,
-    fontWeight: "700",
-    lineHeight: 28
   },
   content: {
     paddingHorizontal: spacing.lg,
@@ -253,7 +241,7 @@ const styles = StyleSheet.create({
   docSubtitle: {
     marginTop: 5,
     color: colors.muted,
-    fontSize: 11
+    ...typography.caption, fontWeight: "600"
   },
   docUploadLink: {
     color: colors.teal,
@@ -274,7 +262,7 @@ const styles = StyleSheet.create({
   docDoneText: {
     marginTop: 5,
     color: colors.muted,
-    fontSize: 10,
+    ...typography.caption,
     fontWeight: "700"
   },
   fieldLabel: {

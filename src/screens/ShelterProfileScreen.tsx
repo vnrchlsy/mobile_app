@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     ...elevation.soft
   },
-  statNum: { color: colors.ink, fontSize: 25, fontWeight: "800" },
+  statNum: { color: colors.ink, ...typography.hero },
   statLabel: { marginTop: 6, color: colors.muted, ...typography.meta },
   groupTitle: { marginTop: 26, marginBottom: 12, color: colors.ink, ...typography.section },
   group: {
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   rowDanger: { color: colors.danger, ...typography.subtitle, fontWeight: "600" },
   rowRight: { flexDirection: "row", alignItems: "center", gap: 10 },
   rowValue: { color: colors.muted, ...typography.strong, fontWeight: "700" },
-  chev: { color: "#C9CEC7", fontSize: 22, fontWeight: "700" },
+  chev: { color: "#C9CEC7", fontSize: 19, fontWeight: "700" },
   accentWarn: {
     margin: 12,
     minHeight: 52,
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   accentCopy: { flex: 1 },
   accentWarnTitle: { color: colors.warningStrong, ...typography.subtitle, fontWeight: "800" },
   accentWarnBody: { marginTop: 3, color: "#8a6d3b", ...typography.meta },
-  accentWarnChev: { color: colors.warningStrong, fontSize: 22, fontWeight: "800" },
+  accentWarnChev: { color: colors.warningStrong, fontSize: 19, fontWeight: "700" },
   accentTeal: {
     margin: 12,
     minHeight: 52,
@@ -341,5 +341,5 @@ const styles = StyleSheet.create({
   },
   accentTealTitle: { color: colors.tealDark, ...typography.subtitle, fontWeight: "800" },
   accentTealBody: { marginTop: 3, color: "#5f6b6a", ...typography.meta },
-  accentTealChev: { color: colors.tealDark, fontSize: 22, fontWeight: "800" }
+  accentTealChev: { color: colors.tealDark, fontSize: 19, fontWeight: "700" }
 });

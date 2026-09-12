@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   pledger: { flex: 1, color: colors.ink, ...typography.subtitle, fontWeight: "800" },
   chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: radii.chip },
   chipText: { ...typography.meta, fontWeight: "700" },
-  meta: { marginTop: 8, color: colors.muted, fontSize: 14.5 },
+  meta: { marginTop: 8, color: colors.muted, ...typography.body },
   receiveBtn: { marginTop: 14, alignSelf: "flex-start", height: 38, paddingHorizontal: 18, justifyContent: "center", borderRadius: pill(38), backgroundColor: colors.soft },
-  receiveLabel: { color: colors.teal, fontSize: 14.5, fontWeight: "700" }
+  receiveLabel: { color: colors.teal, ...typography.strong, fontWeight: "700" }
 });

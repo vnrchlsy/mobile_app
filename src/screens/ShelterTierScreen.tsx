@@ -121,5 +121,5 @@ const styles = StyleSheet.create({
   copy: { flex: 1, marginLeft: 18 },
   cardTitle: { color: authColors.ink, ...typography.section },
   cardBody: { marginTop: 6, color: authColors.muted, ...typography.meta, lineHeight: 17 },
-  chevron: { color: authColors.muted, fontSize: 26, fontWeight: "700", marginLeft: 8 }
+  chevron: { color: authColors.muted, fontSize: 19, fontWeight: "700", marginLeft: 8 }
 });

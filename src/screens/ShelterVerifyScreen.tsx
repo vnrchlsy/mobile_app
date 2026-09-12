@@ -252,11 +252,11 @@ const styles = StyleSheet.create({
   docIcon: { width: 48, height: 48, borderRadius: squircle(48), alignItems: "center", justifyContent: "center", backgroundColor: colors.soft },
   docCopy: { flex: 1, marginLeft: 14 },
   docTitle: { color: colors.ink, ...typography.strong, fontWeight: "800" },
-  docSubtitle: { marginTop: 5, color: colors.muted, fontSize: 11 },
+  docSubtitle: { marginTop: 5, color: colors.muted, ...typography.caption, fontWeight: "600" },
   docUploadLink: { color: authColors.teal, ...typography.meta, fontWeight: "800" },
   docDone: { alignItems: "center" },
   docCheck: { width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: "#5B8A3A" },
-  docDoneText: { marginTop: 5, color: colors.muted, fontSize: 10, fontWeight: "700" },
+  docDoneText: { marginTop: 5, color: colors.muted, ...typography.caption, fontWeight: "700" },
   fieldLabel: { marginTop: 22, marginBottom: 8, color: colors.muted, ...typography.meta, fontWeight: "800" },
   socialField: {
     height: 54,

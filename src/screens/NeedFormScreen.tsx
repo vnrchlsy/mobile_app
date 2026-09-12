@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   field: { marginTop: 16, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 8, borderRadius: radii.field, ...card },
   fieldError: { borderWidth: 1.5, borderColor: colors.danger },
   fieldLabel: { color: colors.muted, ...typography.meta, fontWeight: "600", letterSpacing: 0.4 },
-  input: { color: colors.ink, fontSize: 18, fontWeight: "700", paddingVertical: 6 },
+  input: { color: colors.ink, ...typography.subtitle, fontWeight: "700", paddingVertical: 6 },
   multiline: { minHeight: 72, textAlignVertical: "top", fontWeight: "400", ...typography.subtitle },
   error: { marginTop: 8, color: colors.danger, ...typography.meta, fontWeight: "600" },
   groupLabel: { marginTop: 22, marginBottom: 10, color: colors.muted, ...typography.meta, fontWeight: "600", letterSpacing: 0.4 },

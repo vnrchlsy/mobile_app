@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   consentBoxAlert: { borderColor: colors.danger },
   consentText: { color: colors.tealDark, ...typography.meta, fontWeight: "700", lineHeight: 19 },
   consentLink: { textDecorationLine: "underline" },
-  consentHelper: { marginTop: 6, color: colors.muted, fontSize: 11, fontWeight: "600" },
+  consentHelper: { marginTop: 6, color: colors.muted, ...typography.caption, fontWeight: "600" },
   formError: { marginTop: 4, marginBottom: 10, color: colors.danger, ...typography.meta, fontWeight: "700" },
   submitButton: { marginTop: 8 },
   consentError: { marginTop: 8, color: colors.danger, ...typography.meta, fontWeight: "700" }

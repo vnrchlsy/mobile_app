@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   city: { color: colors.muted, ...typography.meta, marginTop: 2 },
   chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: radii.chip },
   chipText: { ...typography.meta, fontWeight: "700" },
-  caption: { marginTop: 18, color: colors.ink, fontSize: 17, lineHeight: 25 },
+  caption: { marginTop: 18, color: colors.ink, ...typography.body },
   actionRow: { flexDirection: "row", gap: 12, marginTop: 26 },
   reactBtn: { flexDirection: "row", alignItems: "center", gap: 10, height: 44, paddingHorizontal: 22, borderRadius: pill(44), ...card },
   heart: { fontSize: 22, color: "#C9D3CF" },

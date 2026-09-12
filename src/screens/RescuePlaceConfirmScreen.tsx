@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: spacing.lg, paddingTop: 12, paddingBottom: 60 },
   recipientCard: { marginTop: 8, padding: 18, borderRadius: radii.field, backgroundColor: colors.soft },
   recipientLabel: { color: colors.teal, ...typography.meta, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.5 },
-  recipientEmail: { marginTop: 6, color: colors.ink, fontSize: 18, fontWeight: "700" },
+  recipientEmail: { marginTop: 6, color: colors.ink, ...typography.subtitle, fontWeight: "700" },
   label: { marginTop: 20, marginBottom: 10, color: colors.ink, ...typography.strong, fontWeight: "700" },
   input: { height: 52, borderRadius: radii.field, paddingHorizontal: 16, color: colors.ink, ...typography.subtitle, ...card },
   fine: { marginTop: 8, color: colors.muted, ...typography.meta, lineHeight: 18 },

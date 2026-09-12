@@ -142,5 +142,5 @@ const styles = StyleSheet.create({
   cardTitle: { color: colors.ink, ...typography.subtitle, fontWeight: "800" },
   cardBody: { marginTop: 4, color: colors.muted, ...typography.meta, lineHeight: 20 },
   cardTime: { marginTop: 8, color: "#9a988f", ...typography.meta, fontWeight: "600" },
-  empty: { marginTop: 40, color: colors.muted, fontSize: 16, textAlign: "center", lineHeight: 22 }
+  empty: { marginTop: 40, color: colors.muted, ...typography.body, textAlign: "center" }
 });

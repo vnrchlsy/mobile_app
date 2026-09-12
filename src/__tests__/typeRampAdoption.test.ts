@@ -38,7 +38,7 @@ const isOpen = (step: string) => !("fontWeight" in RAMP[step]);
  * the step — and must not bind to `strong` on size alone, the way T1 bound by size before
  * the ranges were written down.
  */
-const RANGE: Record<string, [number, number]> = { subtitle: [700, 800], strong: [700, 800], meta: [400, 800] };
+const RANGE: Record<string, [number, number]> = { subtitle: [700, 800], strong: [700, 800], meta: [400, 800], caption: [600, 800] };
 const inRange = (step: string, weight: string) => {
   const r = RANGE[step];
   const w = Number(weight);
@@ -245,7 +245,7 @@ const MIGRATION: Record<number, string> = {};
 for (const [sizes, step] of [
   [[30, 28, 27], "display"], [[26, 25, 24], "hero"], [[23, 22, 21], "title"],
   [[20, 19, 18], "section"], [[17, 16.5, 16], "subtitle"], [[15.5, 15, 14.5], "body"],
-  [[14, 13.5, 13, 12.5, 12], "meta"], [[11, 10, 9], "label"]
+  [[14, 13.5, 13, 12.5, 12], "meta"], [[11, 10, 9], "caption"]
 ] as [number[], string][]) {
   for (const s of sizes) MIGRATION[s] = step;
 }
@@ -267,6 +267,17 @@ function sideEffects(r: Resolved, step: string): string[] {
 
 const bound: string[] = [];
 const rawSites: { file: string; resolved: Resolved }[] = [];
+/**
+ * ⚠️ A GLYPH DRAWN AS TEXT IS NOT TEXT. A "›" chevron, a "‹" back glyph, a "♥", a medal, the
+ * avatar's initials, an OTP digit box, a stepper's "–" and "+" — the ramp has no step for
+ * any of them and never will, because they are shapes that happen to be characters. They are
+ * told apart by the style's NAME, the same way radiusAdoption tells drawn geometry from
+ * containers, and counted on a ratchet of their own. The canvas does draw one of them as
+ * text: the "›" row chevron, at 19 / 700 on Main and Profile — and every chevron-named style
+ * is held to that value below.
+ */
+const GLYPH_RE = /glyph|chev|initials|otp|heart|icon|qty|symbol/i;
+const glyphSites: { file: string; name: string; resolved: Resolved }[] = [];
 const bindableButRaw: string[] = [];
 const snappableButRaw: string[] = [];
 
@@ -287,6 +298,12 @@ for (const file of sources(SRC)) {
     }
     const r = render(props);
     if (!r) continue;
+    const pre = text.slice(Math.max(0, blk[0] - 80), blk[0]);
+    const nm = /(\w+)\s*[:=]\s*$/.exec(pre);
+    if (nm && GLYPH_RE.test(nm[1]) && !stepFor(r)) {
+      glyphSites.push({ file, name: nm[1], resolved: r });
+      continue;
+    }
     rawSites.push({ file, resolved: r });
     const step = stepFor(r);
     if (step) {
@@ -410,15 +427,36 @@ for (const file of sources(SRC)) {
  * Accept and Decline (disabled once decided). Each is a real "not possible now" state, not a
  * validation gate, and `Button` has no `disabled` on purpose — a decision for that primitive,
  * not a bind. The 2 inputs at 18 / 700 are a Field adoption of the same shape.
+ *
+ * ZERO, AND A FLAT RULE FROM HERE. The 92 were seven kinds, and each got its answer:
+ *   · 20 small captions at 10–11 — the panel now declares the eleven-point caption the
+ *     artboards were already drawing (library #12: "Caption, tab label, badge | 11 /
+ *     600-800"), `typography.caption` is its token, and the nine at 400 moved to 600 because
+ *     the artboards never draw an eleven lighter than that. The two uppercase field labels
+ *     went to `label`, which is what they were.
+ *   · 13 body-copy sites at 16–17 / 400 — the artboards never draw body copy above 15;
+ *     `body`, gaining its 21 pt leading. The one 16 / 600 note is `strong`.
+ *   · 10 half-point strays — `strong` or `body` by T2's own rule.
+ *   · 7 large numerals — the heading step of their size, the #70 decision applied to the
+ *     one text it had skipped for want of evidence; a stat's number IS its heading.
+ *   · 5 at 18 / 700 — two inputs and three file/name labels — `subtitle` at 700, the panel's
+ *     "Card title, button, field" row.
+ *   · 4 were dead: three `backText` styles and ListingForm's other header, which #69 had
+ *     missed because the file's loading branch already used ScreenHeader.
+ *   · 33 are glyphs drawn as text, now counted apart by rule (GLYPHS below); the 11 chevrons
+ *     among them unified at the canvas's 19 / 700.
  */
-const OFF_RAMP = 92;
+const OFF_RAMP = 0;
+/** Glyphs drawn as text — see GLYPH_RE. May fall; may not rise. */
+const GLYPHS = 33;
 
 describe("screens take their text sizes from the ramp", () => {
   it("found style objects to classify", () => {
     // Guard the guard: scans in this repo have reported a plausible smaller number more
     // than once, and a guard that silently matches nothing passes forever.
-    // 876 before T1; 45 hand-rolled button labels left with their buttons for <Button>.
-    expect(rawSites.length + bound.length).toBeGreaterThan(750);
+    // 876 before T1; 45 hand-rolled button labels left with their buttons for <Button>, and
+    // 33 glyphs are counted apart. The floor moves with what was removed; it is still a floor.
+    expect(rawSites.length + bound.length + glyphSites.length).toBeGreaterThan(700);
     expect(bound.length).toBeGreaterThan(150);
   });
 
@@ -442,6 +480,17 @@ describe("screens take their text sizes from the ramp", () => {
 
   it("has not grown a new off-ramp text size", () => {
     expect(rawSites.length).toBeLessThanOrEqual(OFF_RAMP);
+  });
+
+  it("counts glyphs drawn as text apart, and they may not rise either", () => {
+    expect(glyphSites.length).toBeLessThanOrEqual(GLYPHS);
+    expect(glyphSites.length).toBe(GLYPHS);
+  });
+
+  it("draws every text chevron at the canvas's 19 / 700", () => {
+    const chevrons = glyphSites.filter((g) => /chev/i.test(g.name));
+    expect(chevrons.length).toBeGreaterThan(5);
+    for (const c of chevrons) expect([c.resolved.size, c.resolved.weight]).toEqual([19, "700"]);
   });
 
   it("records the remaining off-ramp sizes rather than absorbing them", () => {
