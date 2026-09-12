@@ -25,5 +25,7 @@ appId: ph.kupkop.app
 - tapOn:
     text: "OK"
     optional: true
-- assertVisible: "Inquiry sent"
+# Maestro matches a text selector against the WHOLE string, as a regex. The note reads
+# "Inquiry sent — the poster will reach out.", so the bare copy no longer matches it.
+- assertVisible: "Inquiry sent.*"
 
