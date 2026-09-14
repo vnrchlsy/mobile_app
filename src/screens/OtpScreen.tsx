@@ -23,7 +23,7 @@ import { RootStackParamList } from "../navigation/types";
 import { AuthHeader, PrimaryButton, SHELTER_STEP_COUNT, authColors } from "./AuthFormKit";
 import { TAP_SLOP } from "../touch";
 import { radii, spacing, typography } from "../theme";
-import { resendOutcome } from "../otpResend";
+import { formatCountdown, resendOutcome } from "../otpResend";
 
 const CODE_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -195,7 +195,7 @@ export function OtpScreen({ navigation, route }: Props) {
         <Text style={styles.resendHint}>Didn't get a code?</Text>
         <TouchableOpacity activeOpacity={0.75} onPress={onResend} disabled={cooldown > 0 || resending}>
           <Text style={[styles.resendAction, cooldown > 0 && styles.resendMuted]}>
-            {cooldown > 0 ? `Resend in 0:${cooldown.toString().padStart(2, "0")}` : "Resend code"}
+            {cooldown > 0 ? `Resend in ${formatCountdown(cooldown)}` : "Resend code"}
           </Text>
         </TouchableOpacity>
         {!!resendNotice && <Text style={styles.resendNotice}>{resendNotice}</Text>}

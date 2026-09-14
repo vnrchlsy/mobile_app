@@ -1,5 +1,5 @@
 // src/__tests__/otpResend.test.ts
-import { resendOutcome } from "../otpResend";
+import { formatCountdown, resendOutcome } from "../otpResend";
 
 describe("resendOutcome", () => {
   it("reports success only on 2xx", () => {
@@ -11,5 +11,17 @@ describe("resendOutcome", () => {
   });
   it("names an unreachable server", () => {
     expect(resendOutcome({ status: 0, data: {} }).notice).toBe("Couldn't reach the server. Check your connection and try again.");
+  });
+});
+
+describe("formatCountdown", () => {
+  it("formats sub-minute cooldowns as 0:SS", () => {
+    expect(formatCountdown(45)).toBe("0:45");
+  });
+  it("formats multi-minute cooldowns as M:SS, not 0:SSS", () => {
+    expect(formatCountdown(3590)).toBe("59:50");
+  });
+  it("pads single-digit seconds", () => {
+    expect(formatCountdown(65)).toBe("1:05");
   });
 });

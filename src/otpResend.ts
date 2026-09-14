@@ -12,3 +12,12 @@ export function resendOutcome(res: { status: number; data?: any }): ResendOutcom
   }
   return { ok: false, notice: "Couldn't send a new code. Please try again.", cooldown: 0 };
 }
+
+// F3 fix round 1 — cooldown can now be the server's raw retry_after (seconds), which for a 429
+// throttle can run well past 60s. Format as M:SS instead of assuming a sub-minute wait.
+export function formatCountdown(seconds: number): string {
+  const total = Math.max(0, Math.floor(seconds));
+  const mins = Math.floor(total / 60);
+  const secs = total % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
