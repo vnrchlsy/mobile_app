@@ -47,7 +47,7 @@ export function DevMenuScreen({ navigation }: Props) {
         await setTokens({ access: res.data.access, refresh: res.data.refresh });
         // Single-stack nav doesn't auto-switch on token change — explicitly land on home,
         // same as SigninScreen/OtpScreen do after a real login.
-        navigation.reset({ index: 0, routes: [{ name: "home" }] });
+        navigation.reset({ index: 0, routes: [{ name: "home", params: { justSignedUp: true } }] });
         return;
       }
       if (res.status === 0) {

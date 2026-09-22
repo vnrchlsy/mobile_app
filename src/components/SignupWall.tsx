@@ -11,7 +11,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Constants from "expo-constants";
 
-import { GuestIntentAction } from "../guestIntent";
+import { GuestIntentAction, setIntent } from "../guestIntent";
 import { CheckIcon, ProfileIcon, VolunteerIcon } from "./AppIcons";
 import { PrimaryButton, authColors } from "../screens/AuthFormKit";
 import { TAP_SLOP } from "../touch";
@@ -125,7 +125,7 @@ export function SignupWall({ visible, action, subject, onCreateAccount, onLogin,
             <TouchableOpacity
               hitSlop={TAP_SLOP}
               activeOpacity={0.75}
-              onPress={() => navigation.navigate("dev")}
+              onPress={() => { setIntent(action); navigation.navigate("dev"); }}
               style={styles.devPressable}
             >
               <Text style={styles.devLink}>Dev · Seed as e2e.owner</Text>
