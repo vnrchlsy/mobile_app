@@ -129,6 +129,7 @@ appId: ph.kupkop.app
 - tapOn:
     id: "field.shelterVerify.socialLink"
 - inputText: "facebook.com/e2e.shelter"
+- hideKeyboard
 
 # ⚠️ THE POINT OF THIS FLOW: consent is deliberately left UNTICKED. Do NOT tap
 # chk.shelterVerify.consentDpa.

@@ -108,6 +108,7 @@ appId: ph.kupkop.app
 - tapOn:
     id: "field.shelterVerify.socialLink"
 - inputText: "facebook.com/e2e.shelter"
+- hideKeyboard
 
 - tapOn:
     id: "chk.shelterVerify.consentDpa"
