@@ -39,16 +39,21 @@ const facts = (html: string) =>
   );
 
 describeParity("the volunteer side matches its anchor artboards", () => {
-  const hub = facts(readCanvas("VolunteerHub.dc.html"));
-  const detail = facts(readCanvas("ShiftDetail.dc.html"));
+  // Lazy — Jest still executes a `describe.skip` body to collect its `it`s, so a call here
+  // (rather than inside each `it`) would run `readCanvas` against a null `canvasDir` even
+  // when the suite is skipped. Same convention as shelterShellParity.test.ts, which reads
+  // inside each `it` for the same reason.
+  const hub = () => facts(readCanvas("VolunteerHub.dc.html"));
+  const detail = () => facts(readCanvas("ShiftDetail.dc.html"));
   const src = (f: string) => readFileSync(join(SRC, f), "utf8");
 
   it("hub segments and filter labels", () => {
-    expect(hub.segments).toBe("Browse,My shifts");
+    const h = hub();
+    expect(h.segments).toBe("Browse,My shifts");
     const screen = src("screens/KawangGawaScreen.tsx");
     expect(screen).toContain('segments={["Browse", "My shifts"]}');
     const vol = src("volunteer.ts");
-    for (const label of hub.filters.split(",").slice(1)) expect(vol).toContain(`"${label}"`);
+    for (const label of h.filters.split(",").slice(1)) expect(vol).toContain(`"${label}"`);
   });
 
   it("my-shifts sections, in order", () => {
@@ -63,7 +68,7 @@ describeParity("the volunteer side matches its anchor artboards", () => {
       Past: "Shift history",
     };
     const my = src("components/volunteer/MyShifts.tsx");
-    const order = hub["my-sections"]
+    const order = hub()["my-sections"]
       .split(",")
       .map((bucket: string) => my.indexOf(HEADING_FOR[bucket]));
     expect(order.every((i: number) => i >= 0)).toBe(true);
@@ -72,16 +77,17 @@ describeParity("the volunteer side matches its anchor artboards", () => {
 
   it("every status chip uses the artboard's tone", () => {
     const vol = src("volunteer.ts");
-    for (const pair of hub["status-chips"].split(",")) {
+    for (const pair of hub()["status-chips"].split(",")) {
       const [label, tone] = pair.split(":");
       expect(vol).toMatch(new RegExp(`label: "${label}", tone: "${tone}"`));
     }
   });
 
   it("detail sections and consents", () => {
+    const d = detail();
     const screen = src("screens/KawangGawaDetailScreen.tsx");
-    for (const title of detail.sections.split(",")) expect(screen).toContain(title);
-    expect(detail.consents).toBe("waiver:required,contact:optional");
+    for (const title of d.sections.split(",")) expect(screen).toContain(title);
+    expect(d.consents).toBe("waiver:required,contact:optional");
     expect(screen).toContain("Optional.");
   });
 
