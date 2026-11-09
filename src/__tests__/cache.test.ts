@@ -202,7 +202,9 @@ describe("F-R3-1 · a failed refresh with rows on screen still SHOWS them", () =
 
     it.each(FEEDS)("%s decides its render with feedState", (file) => {
       const src = code(file);
-      expect(src).toMatch(/feedState\(\s*res\s*,/);
+      // Stories review step 4 · StoriesScreen goes through `storiesViewState` (src/storyFeed.ts), which IS `feedState` plus one
+      // rule: rows on screen stay while a refetch is in flight, so the list is not swapped for a spinner on every focus.
+      expect(src).toMatch(/(feedState|storiesViewState)\(\s*res\s*,/);
       // Whatever `loadState` is still used for (a count badge, say), it must not be what
       // decides between rows and LoadStateView.
       expect(src).not.toMatch(/loadState\([^)]*\)\.kind\s*!==\s*"ready"/);

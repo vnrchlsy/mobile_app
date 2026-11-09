@@ -3,9 +3,9 @@
 // count. Compose from the header; tap a card for its detail.
 import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View
+  ActivityIndicator, FlatList, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View
 } from "react-native";
 
 import { useApi } from "../api/useApi";
@@ -18,7 +18,10 @@ import { StaleBanner } from "../components/StaleBanner";
 import { isOffline } from "../net";
 import { storyTypeChip, StoryType } from "../community";
 import { RootStackParamList } from "../navigation/types";
-import { feedState, useCachedFeed } from "../useCachedFeed";
+import {
+  allStories, beginMore, finishMore, moreUrl, pagingAfterRefresh, pagingFrom, shouldLoadMore, StoryPaging, storiesViewState
+} from "../storyFeed";
+import { useCachedFeed } from "../useCachedFeed";
 import { TAP_SLOP } from "../touch";
 import { useLargeText } from "../useLargeText";
 import { colors, elevation, pill, radii, spacing, typography } from "../theme";
@@ -52,7 +55,7 @@ export function StoriesScreen({ navigation }: Props) {
   const { tokens } = useAuth();
   const isGuest = tokens === null;
   const [wallOpen, setWallOpen] = useState(false);
-  const { rows: stories, res, stale, load: loadFeed } =
+  const { rows: stories, res, stale, load: loadFeed, data } =
     useCachedFeed<StoryCard>(api, (d) => d?.results ?? []);
   // US-O1 · keep the RESULT, not just the rows. Collapsing a failure into `[]` told an
   // offline person "No stories yet — be the first to share one", which is untrue and makes
@@ -61,12 +64,86 @@ export function StoriesScreen({ navigation }: Props) {
   const load = useCallback(() => {
     // US-X1 · this used to be `setStories(r.ok ? r.data.results : [])`, so a failed REFETCH
     // replaced stories the person was reading with an empty list. The hook keeps them.
-    loadFeed("/stories");
+    return loadFeed("/stories");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  useFocusEffect(load);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const state = feedState(res, stories, stale);
+  // Stories review step 4 (ST5) · the wall pages. The first page is the hook's (cache-first, stale banner); later pages are
+  // read from the API by cursor and held in memory only (src/storyFeed.ts has the rules and the races).
+  const [paging, setPaging] = useState<StoryPaging<StoryCard>>(() => pagingFrom({}, 0));
+  const generation = useRef(0);
+  const prevFirst = useRef<StoryCard[] | null>(null);
+  const shownRef = useRef<StoryCard[]>([]);
+  shownRef.current = stories ?? [];
+  const asking = useRef(false);   // two scroll events in one tick both see loading === false in state
+  useEffect(() => {
+    if (!data) return;
+    const gen = ++generation.current;
+    setPaging((p) => pagingAfterRefresh(p, prevFirst.current, data, gen));
+    prevFirst.current = Array.isArray(data.results) ? data.results : [];
+  }, [data]);
+
+  const askMore = useCallback(async (retry: boolean) => {
+    if (asking.current || paging.next === null || paging.loading || (paging.failed && !retry)) return;
+    asking.current = true;
+    const gen = paging.gen;
+    const cursor = paging.next;
+    setPaging(beginMore(paging));
+    const r = await api.get(moreUrl(cursor));
+    asking.current = false;
+    setPaging((p) => finishMore(p, gen, r.ok, r.data, shownRef.current));
+  }, [api, paging]);
+  const loadMore = useCallback(() => { if (shouldLoadMore(paging)) askMore(false); }, [askMore, paging]);
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
+
+  const state = storiesViewState(res, stories, stale);
+
+  const renderStory = ({ item: s }: { item: StoryCard }) => {
+    const chip = storyTypeChip(s.story_type);
+    return (
+      <TouchableOpacity style={styles.storyCard} activeOpacity={0.85}
+        onPress={() => navigation.navigate("storyDetail", { storyId: s.story_id })}>
+        {s.photos[0]
+          ? <Image source={{ uri: s.photos[0].url }} style={styles.photo} resizeMode="cover" />
+          : <View style={styles.photo} />}
+        <View style={[styles.authorRow, large && styles.authorRowLarge]}>
+          <Avatar initials={initials(s.author.name)} tinted size={46} />
+          <View style={large ? styles.authorCopyLarge : styles.authorCopy}>
+            <Text style={styles.authorName}>{s.author.name}</Text>
+            {s.author.city ? <Text style={styles.city}>{s.author.city}</Text> : null}
+          </View>
+          <View style={[styles.chip, { backgroundColor: CHIP[chip.tone].bg }]}>
+            <Text style={[styles.chipText, { color: CHIP[chip.tone].fg }]}>{chip.label}</Text>
+          </View>
+        </View>
+        {s.caption ? <Text style={styles.caption} numberOfLines={large ? undefined : 2}>{s.caption}</Text> : null}
+        <View style={styles.reactRow}>
+          <Text style={[styles.heart, s.my_reaction ? styles.heartOn : null]}>♥</Text>
+          <Text style={styles.reactCount}>{s.reaction_count}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // The end of the list: a spinner while a page is on its way, and a way to ask again when it failed (never a silent stop).
+  const footer = paging.loading ? (
+    <ActivityIndicator style={styles.more} color={colors.teal} testID="state.stories.loadingMore" />
+  ) : paging.failed ? (
+    <View style={styles.more}>
+      <Text style={styles.moreText}>Couldn't load more stories.</Text>
+      <TouchableOpacity hitSlop={TAP_SLOP} style={styles.moreRetry} onPress={() => askMore(true)}
+        accessibilityRole="button" accessibilityLabel="Try loading more stories again" testID="btn.stories.moreRetry">
+        <Text style={styles.moreRetryLabel}>Try again</Text>
+      </TouchableOpacity>
+    </View>
+  ) : null;
 
   return (
     <View style={styles.screen}>
@@ -79,46 +156,31 @@ export function StoriesScreen({ navigation }: Props) {
           </TouchableOpacity>
         }
       />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {state.kind !== "ready" ? (
+      {state.kind !== "ready" ? (
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <LoadStateView
             state={state}
             emptyTitle="No stories yet"
             emptyBody="Be the first to share one."
             onRetry={load}
           />
-        ) : (
-          <>
-          {stale ? <StaleBanner offline={isOffline(res)} /> : null}
-          {(stories ?? []).map((s) => {
-            const chip = storyTypeChip(s.story_type);
-            return (
-              <TouchableOpacity key={s.story_id} style={styles.storyCard} activeOpacity={0.85}
-                onPress={() => navigation.navigate("storyDetail", { storyId: s.story_id })}>
-                {s.photos[0]
-                  ? <Image source={{ uri: s.photos[0].url }} style={styles.photo} resizeMode="cover" />
-                  : <View style={styles.photo} />}
-                <View style={[styles.authorRow, large && styles.authorRowLarge]}>
-                  <Avatar initials={initials(s.author.name)} tinted size={46} />
-                  <View style={large ? styles.authorCopyLarge : styles.authorCopy}>
-                    <Text style={styles.authorName}>{s.author.name}</Text>
-                    {s.author.city ? <Text style={styles.city}>{s.author.city}</Text> : null}
-                  </View>
-                  <View style={[styles.chip, { backgroundColor: CHIP[chip.tone].bg }]}>
-                    <Text style={[styles.chipText, { color: CHIP[chip.tone].fg }]}>{chip.label}</Text>
-                  </View>
-                </View>
-                {s.caption ? <Text style={styles.caption} numberOfLines={large ? undefined : 2}>{s.caption}</Text> : null}
-                <View style={styles.reactRow}>
-                  <Text style={[styles.heart, s.my_reaction ? styles.heartOn : null]}>♥</Text>
-                  <Text style={styles.reactCount}>{s.reaction_count}</Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-          </>
-        )}
-      </ScrollView>
+        </ScrollView>
+      ) : (
+        <FlatList
+          testID="list.stories"
+          data={allStories(stories, paging)}
+          keyExtractor={(s) => s.story_id}
+          renderItem={renderStory}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={stale ? <StaleBanner offline={isOffline(res)} /> : null}
+          ListFooterComponent={footer}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.6}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        />
+      )}
       <SignupWall
         visible={wallOpen}
         action="share_story"
@@ -135,6 +197,10 @@ const styles = StyleSheet.create({
   share: { minHeight: 38, paddingVertical: 8, paddingHorizontal: 18, justifyContent: "center", borderRadius: pill(38), backgroundColor: colors.teal },
   shareLabel: { color: colors.white, ...typography.strong, fontWeight: "700" },
   content: { paddingHorizontal: spacing.lg, paddingTop: 12, paddingBottom: 60 },
+  more: { marginTop: 4, marginBottom: 12, alignItems: "center", gap: 8 },
+  moreText: { color: colors.muted, ...typography.meta },
+  moreRetry: { minHeight: 44, paddingHorizontal: 18, justifyContent: "center", borderRadius: pill(44), borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white },
+  moreRetryLabel: { color: colors.teal, ...typography.strong, fontWeight: "700" },
   empty: { marginTop: 40, color: colors.muted, ...typography.subtitle, textAlign: "center" },
   storyCard: { marginBottom: 16, padding: 16, borderRadius: radii.card, ...card },
   photo: { height: 150, borderRadius: radii.card, backgroundColor: colors.placeholder },
