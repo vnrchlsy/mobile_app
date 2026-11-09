@@ -561,6 +561,8 @@ function intentToast(action: GuestIntentAction): [string, string] {
       return ["You're in!", "You can now react to stories."];
     case "donate":
       return ["You're in!", "You can now pledge to a shelter's wishlist."];
+    case "share_story":
+      return ["You're in!", "You can now share a story."];
     case "account":
     default:
       return ["You're in!", "You can now manage your profile."];

@@ -3,12 +3,15 @@
 // count. Compose from the header; tap a card for its detail.
 import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View
 } from "react-native";
 
 import { useApi } from "../api/useApi";
+import { useAuth } from "../auth/AuthContext";
+import { SignupWall } from "../components/SignupWall";
+import { setIntent } from "../guestIntent";
 import { LoadStateView } from "../components/LoadStateView";
 import { Avatar, ScreenHeader } from "../components/ui";
 import { StaleBanner } from "../components/StaleBanner";
@@ -44,6 +47,11 @@ export function StoriesScreen({ navigation }: Props) {
   // At Dynamic Type AX3 and up the author row (avatar | name | chip) cannot share a line, so it stacks.
   const large = useLargeText();
   const api = useApi();
+  // Stories review step 7 (ST13) · stories are readable as a guest, so "+ Share" is drawn for one too. Compose then
+  // failed at the photo step with "Couldn't add photo". A guest gets the sign-up wall here, as the detail's React does (G16).
+  const { tokens } = useAuth();
+  const isGuest = tokens === null;
+  const [wallOpen, setWallOpen] = useState(false);
   const { rows: stories, res, stale, load: loadFeed } =
     useCachedFeed<StoryCard>(api, (d) => d?.results ?? []);
   // US-O1 · keep the RESULT, not just the rows. Collapsing a failure into `[]` told an
@@ -66,7 +74,7 @@ export function StoriesScreen({ navigation }: Props) {
         title="Stories"
         onBack={() => navigation.goBack()}
         right={
-          <TouchableOpacity hitSlop={TAP_SLOP} style={styles.share} onPress={() => navigation.navigate("storyCompose", {})}>
+          <TouchableOpacity hitSlop={TAP_SLOP} style={styles.share} onPress={() => isGuest ? setWallOpen(true) : navigation.navigate("storyCompose", {})}>
             <Text style={styles.shareLabel}>+ Share</Text>
           </TouchableOpacity>
         }
@@ -111,6 +119,13 @@ export function StoriesScreen({ navigation }: Props) {
           </>
         )}
       </ScrollView>
+      <SignupWall
+        visible={wallOpen}
+        action="share_story"
+        onCreateAccount={() => { setIntent("share_story"); setWallOpen(false); navigation.navigate("accountType"); }}
+        onLogin={() => { setWallOpen(false); navigation.navigate("signin"); }}
+        onDismiss={() => setWallOpen(false)}
+      />
     </View>
   );
 }
