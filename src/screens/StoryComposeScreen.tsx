@@ -46,6 +46,7 @@ export function StoryComposeScreen({ navigation, route }: Props) {
     if (uploading) return;
     setUploading(true);
     setPhotoError(null);
+    setError(null);
     const outcome = photoPickOutcome(await pickAndUpload(api, "story_photo"));
     setUploading(false);
     // ST11 · backing out of the picker is a choice, not a failure: nothing to say.
