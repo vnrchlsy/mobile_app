@@ -70,6 +70,13 @@ function getCopy(action: SignupWallAction, subject?: string): WallCopy {
         body: "Create a free account to react to stories from the community.",
         note: "Takes a minute — we'll bring you right back."
       };
+    case "share_story":
+      return {
+        icon: <HeartIcon />,
+        title: "Share your story",
+        body: "Create a free account to share an adoption or rescue story with the community.",
+        note: "Takes a minute — we'll bring you right back."
+      };
     case "donate":
       return {
         icon: <HeartIcon />,
