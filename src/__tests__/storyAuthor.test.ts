@@ -135,7 +135,7 @@ describe("the screens", () => {
   });
 
   test("an edit does not offer to change the photo", () => {
-    expect(compose).toMatch(/onPress=\{edit \? undefined : addPhoto\}/);
+    expect(compose).toMatch(/onPress=\{edit \|\| !canAddPhoto\(photoUrls\) \? undefined : addPhoto\}/);
   });
 
   test("the wall screen serves your stories too: the other path, its own title, and it marks a hidden story", () => {

@@ -10,9 +10,12 @@ import {
 import { useApi } from "../api/useApi";
 import { pickAndUpload } from "../media/pickAndUpload";
 import { RootStackParamList } from "../navigation/types";
-import { colors, maxFontScale, pill, radii, spacing, typography } from "../theme";
+import { colors, maxFontScale, pill, radii, spacing, squircle, typography } from "../theme";
 import { Button, Field, ScreenHeader } from "../components/ui";
-import { hasUnsavedStory, photoPickOutcome, storyPostFailure } from "../storyCompose";
+import { TAP_SLOP } from "../touch";
+import {
+  MAX_CAPTION, MAX_PHOTOS, canAddPhoto, captionCount, hasUnsavedStory, photoPickOutcome, photosBody, storyPostFailure, withCover, withoutPhoto, withPhoto
+} from "../storyCompose";
 import { hasUnsavedEdit, storyEditFailure } from "../storyAuthor";
 
 type Props = NativeStackScreenProps<RootStackParamList, "storyCompose">;
@@ -23,7 +26,8 @@ export function StoryComposeScreen({ navigation, route }: Props) {
   // Stories review step 6 · edit mode: the caption of a story you posted. The photo and the link are what was shared, and stay.
   const edit = route.params?.edit;
   const [caption, setCaption] = useState(edit?.caption ?? "");
-  const [photoUrl, setPhotoUrl] = useState<string | null>(edit?.photoUrl ?? null);
+  // Stories review step 8 · up to MAX_PHOTOS photos; the FIRST is the cover (what the wall shows). Editing never changes them.
+  const [photoUrls, setPhotoUrls] = useState<string[]>(edit?.photoUrl ? [edit.photoUrl] : []);
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   // Stories review step 7 · where a message belongs (ST12): under the photo, under the caption, or by the button.
@@ -37,24 +41,24 @@ export function StoryComposeScreen({ navigation, route }: Props) {
 
   // ST13 · a stray back (the header, the edge swipe) used to discard a typed caption without a word.
   useEffect(() => navigation.addListener("beforeRemove", (e) => {
-    if (posted.current || !(edit ? hasUnsavedEdit(caption, edit.caption) : hasUnsavedStory(caption, photoUrl))) return;
+    if (posted.current || !(edit ? hasUnsavedEdit(caption, edit.caption) : hasUnsavedStory(caption, photoUrls))) return;
     e.preventDefault();
     Alert.alert(edit ? "Discard your changes?" : "Discard this story?",
-      edit ? "Your caption will go back to what it was." : "What you've written and the photo you added will be lost.", [
+      edit ? "Your caption will go back to what it was." : "What you've written and the photos you added will be lost.", [
         { text: "Keep editing", style: "cancel" },
         { text: "Discard", style: "destructive", onPress: () => navigation.dispatch(e.data.action) }
       ]);
-  }), [navigation, caption, photoUrl, edit]);
+  }), [navigation, caption, photoUrls, edit]);
 
   async function addPhoto() {
-    if (uploading) return;
+    if (uploading || !canAddPhoto(photoUrls)) return;
     setUploading(true);
     setPhotoError(null);
     setError(null);
     const outcome = photoPickOutcome(await pickAndUpload(api, "story_photo"));
     setUploading(false);
     // ST11 · backing out of the picker is a choice, not a failure: nothing to say.
-    if (outcome.kind === "added") setPhotoUrl(outcome.url);
+    if (outcome.kind === "added") setPhotoUrls((list) => withPhoto(list, outcome.url));
     else if (outcome.kind === "failed") setPhotoError(outcome.message);
   }
 
@@ -76,13 +80,13 @@ export function StoryComposeScreen({ navigation, route }: Props) {
 
   async function post() {
     if (posting.current) return;
-    if (!photoUrl) { setPhotoError("A story needs at least one photo."); return; }
+    if (photoUrls.length === 0) { setPhotoError("A story needs at least one photo."); return; }
     posting.current = true;
     setBusy(true);
     setError(null);
     setPhotoError(null);
     setCaptionError(null);
-    const body: Record<string, any> = { caption: caption.trim(), photos: [{ file_url: photoUrl }] };
+    const body: Record<string, any> = { caption: caption.trim(), photos: photosBody(photoUrls) };
     if (prefillListing) body.adoption_listing_id = prefillListing;
     const res = await api.post("/stories", body);
     posting.current = false;
@@ -100,14 +104,42 @@ export function StoryComposeScreen({ navigation, route }: Props) {
       <ScreenHeader title={edit ? "Edit your story" : "Share a story"} onBack={() => navigation.goBack()} />
       <ScrollView keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.h1} maxFontSizeMultiplier={maxFontScale.title}>{edit ? "Change what you wrote" : "A photo makes the story"}</Text>
-        <TouchableOpacity style={[styles.photoTile, photoUrl ? styles.photoTileSet : null]}
-          onPress={edit ? undefined : addPhoto} activeOpacity={edit ? 1 : 0.85}>
-          {/* ST13 · the picked photo, so the person is not posting blind. */}
-          {photoUrl ? <Image source={{ uri: photoUrl }} style={styles.preview} resizeMode="cover" accessibilityLabel="The photo you added" /> : null}
+        <TouchableOpacity style={[styles.photoTile, photoUrls.length ? styles.photoTileSet : null]} testID="btn.storyCompose.addPhoto"
+          onPress={edit || !canAddPhoto(photoUrls) ? undefined : addPhoto} activeOpacity={edit || !canAddPhoto(photoUrls) ? 1 : 0.85}>
+          {/* ST13 · the cover, so the person is not posting blind. */}
+          {photoUrls.length ? <Image source={{ uri: photoUrls[0] }} style={styles.preview} resizeMode="cover" accessibilityLabel="Your cover photo" /> : null}
           <Text style={styles.photoLabel}>
-            {edit ? "The photo stays as you shared it" : uploading ? "Adding…" : photoUrl ? "Photo added · tap to replace" : "Add a photo · required"}
+            {edit ? "The photos stay as you shared them"
+              : uploading ? "Adding…"
+              : photoUrls.length === 0 ? "Add a photo · required"
+              : canAddPhoto(photoUrls) ? `${photoUrls.length} of ${MAX_PHOTOS} photos · tap to add another`
+              : `${MAX_PHOTOS} of ${MAX_PHOTOS} photos`}
           </Text>
         </TouchableOpacity>
+        {/* Step 8 · every photo, the first is the cover. Tap one to make it the cover; the cross removes it. */}
+        {!edit && photoUrls.length > 1 ? (
+          <View style={styles.thumbRow}>
+            {photoUrls.map((url, i) => (
+              <View key={url} style={styles.thumbWrap}>
+                <TouchableOpacity activeOpacity={0.85} onPress={() => setPhotoUrls(withCover(photoUrls, i))} accessibilityRole="button"
+                  accessibilityLabel={i === 0 ? `Photo ${i + 1} of ${photoUrls.length}, the cover` : `Make photo ${i + 1} of ${photoUrls.length} the cover`}>
+                  <Image source={{ uri: url }} style={[styles.thumb, i === 0 ? styles.thumbCover : null]} resizeMode="cover" />
+                  {i === 0 ? <Text style={styles.coverTag}>Cover</Text> : null}
+                </TouchableOpacity>
+                <TouchableOpacity hitSlop={TAP_SLOP} style={styles.thumbX} onPress={() => setPhotoUrls(withoutPhoto(photoUrls, i))} accessibilityRole="button"
+                  accessibilityLabel={`Remove photo ${i + 1}`} testID={`btn.storyCompose.removePhoto.${i}`}>
+                  <Text style={styles.thumbXLabel}>×</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        ) : null}
+        {!edit && photoUrls.length === 1 ? (
+          <TouchableOpacity hitSlop={TAP_SLOP} style={styles.removeOnly} onPress={() => setPhotoUrls([])} accessibilityRole="button"
+            accessibilityLabel="Remove the photo" testID="btn.storyCompose.removePhoto.0">
+            <Text style={styles.removeOnlyLabel}>Remove photo</Text>
+          </TouchableOpacity>
+        ) : null}
         {photoError ? <Text style={styles.error} accessibilityLiveRegion="polite">{photoError}</Text> : null}
 
         {prefillListing ? (
@@ -121,9 +153,12 @@ export function StoryComposeScreen({ navigation, route }: Props) {
           value={caption}
           onChangeText={(t) => { setCaption(t); if (captionError) setCaptionError(null); }}
           error={captionError ?? undefined}
+          maxLength={MAX_CAPTION}
           multiline
           placeholder="Tell people what happened — how you met, how it's going now."
         />
+
+        {captionCount(caption) ? <Text style={styles.count} accessibilityLiveRegion="polite">{captionCount(caption)}</Text> : null}
 
         {error ? <Text style={styles.error} accessibilityLiveRegion="polite">{error}</Text> : null}
 
@@ -140,6 +175,16 @@ const styles = StyleSheet.create({
   photoTile: { minHeight: 150, paddingVertical: 16, paddingHorizontal: 12, borderRadius: radii.field, borderWidth: 2, borderColor: colors.border, borderStyle: "dashed", alignItems: "center", justifyContent: "center", backgroundColor: colors.white },
   photoTileSet: { borderStyle: "solid", borderColor: colors.teal, backgroundColor: colors.soft },
   preview: { alignSelf: "stretch", height: 180, borderRadius: radii.field, marginBottom: 12, backgroundColor: colors.placeholder },
+  thumbRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 },
+  thumbWrap: { width: 72 },
+  thumb: { width: 72, height: 72, borderRadius: squircle(72), backgroundColor: colors.placeholder, borderWidth: 2, borderColor: "transparent" },
+  thumbCover: { borderColor: colors.teal },
+  coverTag: { position: "absolute", left: 4, bottom: 4, color: colors.white, backgroundColor: colors.teal, ...typography.meta, fontWeight: "700", paddingHorizontal: 6, borderRadius: radii.chip, overflow: "hidden" },
+  thumbX: { position: "absolute", right: -6, top: -6, width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: colors.ink },
+  thumbXLabel: { color: colors.white, fontWeight: "800", lineHeight: 18 },
+  removeOnly: { alignSelf: "flex-start", marginTop: 8, minHeight: 44, justifyContent: "center" },
+  removeOnlyLabel: { color: colors.muted, ...typography.meta, fontWeight: "700", textDecorationLine: "underline" },
+  count: { marginTop: 6, textAlign: "right", color: colors.muted, ...typography.meta },
   photoLabel: { color: colors.teal, ...typography.subtitle, fontWeight: "700" },
   linkedPill: { alignSelf: "flex-start", marginTop: 16, minHeight: 32, paddingVertical: 6, paddingHorizontal: 14, justifyContent: "center", borderRadius: pill(32), backgroundColor: "#EAF3DE" },
   linkedText: { color: "#27500A", ...typography.meta, fontWeight: "700" },

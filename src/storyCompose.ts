@@ -64,6 +64,42 @@ export function photoPickOutcome(res: UploadResult | null): PhotoPickOutcome {
 }
 
 /** Something has been typed or picked that a stray back would throw away. */
-export function hasUnsavedStory(caption: string, photoUrl: string | null): boolean {
-  return caption.trim().length > 0 || photoUrl !== null;
+export function hasUnsavedStory(caption: string, photoUrls: string[]): boolean {
+  return caption.trim().length > 0 || photoUrls.length > 0;
+}
+
+// Stories review step 8 (ST8, SQ4) · the server's limits, and the photo list the compose screen keeps. The FIRST photo is the cover (what the wall shows); the
+// rest follow in the order they were added. All pure, so the rules run as tests and the screen only draws the list.
+export const MAX_PHOTOS = 6;
+export const MAX_CAPTION = 2000;
+
+export function canAddPhoto(urls: string[]): boolean {
+  return urls.length < MAX_PHOTOS;
+}
+
+/** The list with `url` added at the end, unless it is full or the photo is already in (the server refuses a duplicate). */
+export function withPhoto(urls: string[], url: string): string[] {
+  return canAddPhoto(urls) && !urls.includes(url) ? [...urls, url] : urls;
+}
+
+/** The list without the photo at `index`; when the cover goes, the next one becomes the cover. */
+export function withoutPhoto(urls: string[], index: number): string[] {
+  return index >= 0 && index < urls.length ? urls.filter((_, i) => i !== index) : urls;
+}
+
+/** The list with the photo at `index` moved to the front, to be the cover. */
+export function withCover(urls: string[], index: number): string[] {
+  if (index <= 0 || index >= urls.length) return urls;
+  return [urls[index], ...urls.filter((_, i) => i !== index)];
+}
+
+/** The `photos` the server takes: every photo in order, exactly the first marked primary. */
+export function photosBody(urls: string[]): { file_url: string; is_primary: boolean }[] {
+  return urls.map((file_url, i) => ({ file_url, is_primary: i === 0 }));
+}
+
+/** "1,701 / 2,000" once the caption is within 300 of the limit, else null (a counter that is always there is noise). Characters, as the server counts them. */
+export function captionCount(caption: string): string | null {
+  const n = [...caption].length;
+  return n > MAX_CAPTION - 300 ? `${n.toLocaleString("en-US")} / ${MAX_CAPTION.toLocaleString("en-US")}` : null;
 }

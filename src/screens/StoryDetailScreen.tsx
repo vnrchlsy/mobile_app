@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useRef, useState } from "react";
 import {
-  Alert, Image, ScrollView, StyleSheet, Text, View
+  Alert, Image, ScrollView, StyleSheet, Text, View, useWindowDimensions
 } from "react-native";
 
 import { useAuth } from "../auth/AuthContext";
@@ -37,6 +37,10 @@ function initials(name: string) {
 export function StoryDetailScreen({ navigation, route }: Props) {
   // At Dynamic Type AX3 and up the author row (avatar | name | chip) cannot share a line, so it stacks.
   const large = useLargeText();
+  // Stories review step 8 · a story can have up to six photos: the first (the cover) shows alone; with more, they page sideways, one at a time.
+  const { width } = useWindowDimensions();
+  const photoWidth = width - spacing.lg * 2;
+  const [photoIndex, setPhotoIndex] = useState(0);
   const api = useApi();
   const { tokens } = useAuth();
   const isGuest = tokens === null;
@@ -153,7 +157,18 @@ export function StoryDetailScreen({ navigation, route }: Props) {
             </PressScale>
           </View>
         ) : null}
-        {story.photos[0]
+        {story.photos.length > 1 ? (
+          <View>
+            <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} testID="gallery.storyDetail"
+              onMomentumScrollEnd={(e) => setPhotoIndex(Math.round(e.nativeEvent.contentOffset.x / photoWidth))}>
+              {story.photos.map((p, i) => (
+                <Image key={p.url} source={{ uri: p.url }} style={[styles.photo, { width: photoWidth }]} resizeMode="cover"
+                  accessibilityLabel={`Photo ${i + 1} of ${story.photos.length}`} />
+              ))}
+            </ScrollView>
+            <Text style={styles.photoCount} accessibilityLabel={`Photo ${photoIndex + 1} of ${story.photos.length}`}>{photoIndex + 1} / {story.photos.length}</Text>
+          </View>
+        ) : story.photos[0]
           ? <Image source={{ uri: story.photos[0].url }} style={styles.photo} resizeMode="cover" />
           : <View style={styles.photo} />}
         <Card style={styles.authorCard}>
@@ -249,6 +264,7 @@ const styles = StyleSheet.create({
   city: { color: colors.muted, ...typography.meta, marginTop: 2 },
   chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: radii.chip },
   chipText: { ...typography.meta, fontWeight: "700" },
+  photoCount: { position: "absolute", right: 12, bottom: 12, color: colors.white, backgroundColor: "rgba(0,0,0,0.55)", ...typography.meta, fontWeight: "700", paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.chip, overflow: "hidden" },
   date: { marginTop: 10, color: colors.muted, ...typography.meta },
   linkBtn: { alignSelf: "flex-start", marginTop: 12, minHeight: 44, justifyContent: "center" },
   linkLabel: { color: colors.teal, ...typography.strong, fontWeight: "700" },
