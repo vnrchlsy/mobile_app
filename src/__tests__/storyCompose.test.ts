@@ -112,13 +112,13 @@ describe("photoPickOutcome", () => {
 
 describe("hasUnsavedStory", () => {
   test.each([
-    ["", null, false],
-    ["   \n ", null, false],
-    ["Meet Rex", null, true],
-    ["", "https://b/story_photo/a/b", true],
-    ["Meet Rex", "https://b/story_photo/a/b", true],
-  ])("caption %p, photo %p -> %p", (caption, photo, expected) => {
-    expect(hasUnsavedStory(caption, photo)).toBe(expected);
+    ["", [], false],
+    ["   \n ", [], false],
+    ["Meet Rex", [], true],
+    ["", ["https://b/story_photo/a/b"], true],
+    ["Meet Rex", ["https://b/story_photo/a/b", "https://b/story_photo/a/c"], true],
+  ])("caption %p, photos %p -> %p", (caption, photos, expected) => {
+    expect(hasUnsavedStory(caption, photos)).toBe(expected);
   });
 });
 
@@ -148,7 +148,7 @@ describe("the screens", () => {
   });
 
   test("compose: the picked photo is drawn", () => {
-    expect(compose).toMatch(/<Image[^>]*source=\{\{ uri: photoUrl \}\}/);
+    expect(compose).toMatch(/<Image[^>]*source=\{\{ uri: photoUrls\[0\] \}\}/);
   });
 
   test("compose: leaving with something typed asks first, and a posted story does not", () => {

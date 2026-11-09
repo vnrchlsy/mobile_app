@@ -111,8 +111,8 @@ export function StoriesScreen({ navigation, route }: Props) {
     return (
       <TouchableOpacity style={styles.storyCard} activeOpacity={0.85}
         onPress={() => navigation.navigate("storyDetail", { storyId: s.story_id })}>
-        {s.photos[0]
-          ? <Image source={{ uri: s.photos[0].url }} style={styles.photo} resizeMode="cover" />
+        {s.primary_photo
+          ? <Image source={{ uri: s.primary_photo }} style={styles.photo} resizeMode="cover" />
           : <View style={styles.photo} />}
         <View style={[styles.authorRow, large && styles.authorRowLarge]}>
           <Avatar initials={initials(s.author.name)} tinted size={46} />
