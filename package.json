@@ -15,7 +15,7 @@
   },
   "jest": {
     "preset": "jest-expo",
-    "testPathIgnorePatterns": ["/node_modules/", "<rootDir>/src/__tests__/v3Scope.ts"]
+    "testPathIgnorePatterns": ["/node_modules/", "<rootDir>/src/__tests__/v3Scope.ts", "<rootDir>/src/__tests__/storyFixtures.ts"]
   },
   "dependencies": {
     "@babel/runtime": "^7.29.7",

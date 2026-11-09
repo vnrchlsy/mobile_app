@@ -13,12 +13,14 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 
+import type { Story } from "../community";
+import { story } from "./storyFixtures";
 import {
   allStories, beginMore, finishMore, moreUrl, pageNext, pagingAfterRefresh, pagingFrom, shouldLoadMore, StoryPaging, storiesViewState,
 } from "../storyFeed";
 
-const row = (id: string) => ({ story_id: id, caption: id });
-type Row = { story_id: string; caption: string };
+const row = (id: string) => story(id);
+type Row = Story;
 const from = (data: any, gen: number) => pagingFrom<Row>(data, gen);
 const page = (ids: string[], next: string | null = null) => ({ results: ids.map(row), next });
 
@@ -47,7 +49,7 @@ describe("pagingFrom", () => {
 });
 
 describe("shouldLoadMore", () => {
-  const base: StoryPaging<ReturnType<typeof row>> = { extra: [], next: "c1", loading: false, failed: false, gen: 1 };
+  const base: StoryPaging<Row> = { extra: [], next: "c1", loading: false, failed: false, gen: 1 };
   test("yes when there is a cursor and nothing is in flight", () => expect(shouldLoadMore(base)).toBe(true));
   test("not while a page is in flight (a second scroll event asks for nothing)", () =>
     expect(shouldLoadMore({ ...base, loading: true })).toBe(false));
@@ -97,6 +99,8 @@ describe("finishMore", () => {
     ["results not an array", { results: "x", next: null }],
     ["a row without a story_id", { results: [{ caption: "x" }], next: null }],
     ["a row that is not an object", { results: [5], next: null }],
+    ["a story with no author (the contract, not just an id)", { results: [{ story_id: "c", photos: [], reaction_count: 0, my_reaction: false }], next: null }],
+    ["the same story twice in the page", { results: [story("c"), story("c")], next: null }],
   ])("a malformed page (%s) is a failed page: nothing is appended", (_n, data) => {
     const p = finishMore(start(), 1, true, data, first);
     expect(p).toMatchObject({ failed: true, loading: false, next: "c1", extra: [] });

@@ -15,7 +15,7 @@ import { setIntent } from "../guestIntent";
 import { ScreenBackdrop } from "../components/ScreenBackground";
 import { Avatar, Card, PressScale, ScreenHeader } from "../components/ui";
 import { loadState } from "../net";
-import { storyTypeChip, StoryType } from "../community";
+import { parseStory, Story, storyDate, storyLinkAction, storyTypeChip } from "../community";
 import { RootStackParamList } from "../navigation/types";
 import { useLargeText } from "../useLargeText";
 import { colors, pill, radii, spacing, typography } from "../theme";
@@ -26,13 +26,6 @@ const CHIP: Record<"ok" | "teal" | "muted", { bg: string; fg: string }> = {
   muted: { bg: colors.greyPill, fg: colors.muted }
 };
 
-type Story = {
-  story_id: string; author: { name: string; city: string }; story_type: StoryType;
-  caption: string; reaction_count: number; my_reaction: boolean;
-  photos: { url: string; is_primary: boolean }[]; status: string;
-  /** Moderation walk W1 · this story is the viewer's own: Report and Block are not offered. Absent from an older server. */
-  mine?: boolean;
-};
 type Props = NativeStackScreenProps<RootStackParamList, "storyDetail">;
 
 function initials(name: string) {
@@ -57,8 +50,11 @@ export function StoryDetailScreen({ navigation, route }: Props) {
   const load = useCallback(() => {
     setRes(null);
     api.get(`/stories/${storyId}`).then((r) => {
-      setRes({ ok: r.ok, status: r.status });
-      if (r.ok) setStory(r.data);
+      // Stories review step 5 · the answer is checked against the contract. A 200 that is not a story is a server fault (502): an error with a
+      // retry, never a blank or half-drawn story.
+      const checked = r.ok ? parseStory(r.data) : null;
+      setRes({ ok: r.ok && !!checked, status: r.ok && !checked ? 502 : r.status });
+      if (checked) setStory(checked);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storyId]);
@@ -119,6 +115,7 @@ export function StoryDetailScreen({ navigation, route }: Props) {
     );
   }
   const chip = storyTypeChip(story.story_type);
+  const link = storyLinkAction(story.link);
   return (
     <View style={styles.screen}>
       <ScreenBackdrop />
@@ -149,6 +146,15 @@ export function StoryDetailScreen({ navigation, route }: Props) {
           </View>
         </View>
         {story.caption ? <Text style={styles.caption}>{story.caption}</Text> : null}
+        {/* ST6 · when it was posted, and (when the viewer may open it) what it is about: through the screens that already gate the adoption or the rescue. */}
+        {storyDate(story.created_at) ? <Text style={styles.date}>Posted {storyDate(story.created_at)}</Text> : null}
+        {link ? (
+          <PressScale onPress={() => (link.route === "listingDetail"
+            ? navigation.navigate("listingDetail", link.params) : navigation.navigate("reportDetail", link.params))} accessibilityRole="button"
+            accessibilityLabel={link.label} testID="btn.storyDetail.link" style={styles.linkBtn}>
+            <Text style={styles.linkLabel}>{link.label} ›</Text>
+          </PressScale>
+        ) : null}
         {story.mine ? null : (
           <PersonActions testID="row.storyDetail.person"
             person={{ name: story.author.name, via: { type: "story", id: storyId } }}
@@ -210,6 +216,9 @@ const styles = StyleSheet.create({
   city: { color: colors.muted, ...typography.meta, marginTop: 2 },
   chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: radii.chip },
   chipText: { ...typography.meta, fontWeight: "700" },
+  date: { marginTop: 10, color: colors.muted, ...typography.meta },
+  linkBtn: { alignSelf: "flex-start", marginTop: 12, minHeight: 44, justifyContent: "center" },
+  linkLabel: { color: colors.teal, ...typography.strong, fontWeight: "700" },
   caption: { marginTop: 18, color: colors.ink, ...typography.body },
   actionRow: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 26 },
   reactBtn: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44, paddingVertical: 8, paddingHorizontal: 22, borderRadius: pill(44), ...pillButton },
