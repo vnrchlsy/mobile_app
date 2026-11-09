@@ -83,8 +83,9 @@ export function allStories<T>(first: T[] | null, p: StoryPaging<T>): T[] {
   return [...(first ?? []), ...p.extra];
 }
 
-export function moreUrl(cursor: string): string {
-  return `/stories?cursor=${encodeURIComponent(cursor)}`;
+/** The next page of `path` (the wall, or "your stories") after `cursor`. */
+export function moreUrl(cursor: string, path: string = "/stories"): string {
+  return `${path}?cursor=${encodeURIComponent(cursor)}`;
 }
 
 /**
