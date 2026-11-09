@@ -329,6 +329,17 @@ export function ProfileScreen({ navigation, route }: Props) {
           <TouchableOpacity
             activeOpacity={0.75}
             style={[styles.accountRow, styles.accountRowDivided]}
+            testID="row.profile.myStories"
+            accessibilityRole="button"
+            accessibilityLabel="Your stories, the ones you shared"
+            onPress={() => navigation.navigate("stories", { mine: true })}
+          >
+            <Text style={styles.accountRowLabel}>Your stories</Text>
+            <Text style={styles.accountRowChevron} allowFontScaling={false}>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.75}
+            style={[styles.accountRow, styles.accountRowDivided]}
             testID="row.profile.impact"
             accessibilityRole="button"
             accessibilityLabel="My impact, rescues, pledges and adoptions"

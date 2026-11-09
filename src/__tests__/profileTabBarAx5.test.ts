@@ -78,7 +78,7 @@ describe("text in fixed shapes does not outgrow them (O6-17)", () => {
   });
   it("the row chevrons do not scale", () => {
     const tags = [...profile.matchAll(/<Text\b[^>]*style=\{styles\.accountRowChevron\}[^>]*>/gs)].map((m) => m[0]);
-    expect(tags.length).toBe(5);
+    expect(tags.length).toBe(6);                                  // 6 since stories review step 6 added the Your stories row
     for (const t of tags) expect(t).toMatch(/allowFontScaling=\{false\}/);
   });
   it("the page title is capped like every other title (R6-F10)", () => {

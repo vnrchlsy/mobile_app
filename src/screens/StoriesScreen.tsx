@@ -21,6 +21,7 @@ import { RootStackParamList } from "../navigation/types";
 import {
   allStories, beginMore, finishMore, moreUrl, pagingAfterRefresh, pagingFrom, shouldLoadMore, StoryPaging, storiesViewState, withStoryContract
 } from "../storyFeed";
+import { storiesPath, storyStatusNote } from "../storyAuthor";
 import { useCachedFeed } from "../useCachedFeed";
 import { TAP_SLOP } from "../touch";
 import { useLargeText } from "../useLargeText";
@@ -41,7 +42,10 @@ function initials(name: string) {
   return name.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?";
 }
 
-export function StoriesScreen({ navigation }: Props) {
+export function StoriesScreen({ navigation, route }: Props) {
+  // Stories review step 6 · the same screen serves "your stories" (GET /me/stories): the person's own, a hidden one marked, none deleted.
+  const mine = route.params?.mine === true;
+  const path = storiesPath(mine);
   // At Dynamic Type AX3 and up the author row (avatar | name | chip) cannot share a line, so it stacks.
   const large = useLargeText();
   // Stories review step 5 · every answer of the wall is checked against the contract: a bad one is a failed load, never a shorter wall.
@@ -61,9 +65,9 @@ export function StoriesScreen({ navigation }: Props) {
   const load = useCallback(() => {
     // US-X1 · this used to be `setStories(r.ok ? r.data.results : [])`, so a failed REFETCH
     // replaced stories the person was reading with an empty list. The hook keeps them.
-    return loadFeed("/stories");
+    return loadFeed(path);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [path]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   // Stories review step 4 (ST5) · the wall pages. The first page is the hook's (cache-first, stale banner); later pages are
@@ -87,10 +91,10 @@ export function StoriesScreen({ navigation }: Props) {
     const gen = paging.gen;
     const cursor = paging.next;
     setPaging(beginMore(paging));
-    const r = await api.get(moreUrl(cursor));
+    const r = await api.get(moreUrl(cursor, path));
     asking.current = false;
     setPaging((p) => finishMore(p, gen, r.ok, r.data, shownRef.current));
-  }, [api, paging]);
+  }, [api, paging, path]);
   const loadMore = useCallback(() => { if (shouldLoadMore(paging)) askMore(false); }, [askMore, paging]);
 
   const [refreshing, setRefreshing] = useState(false);
@@ -122,6 +126,7 @@ export function StoriesScreen({ navigation }: Props) {
         </View>
         {s.caption ? <Text style={styles.caption} numberOfLines={large ? undefined : 2}>{s.caption}</Text> : null}
         {storyDate(s.created_at) ? <Text style={styles.date}>{storyDate(s.created_at)}</Text> : null}
+        {storyStatusNote(s) ? <Text style={styles.statusNote}>{storyStatusNote(s)}</Text> : null}
         <View style={styles.reactRow}>
           <Text style={[styles.heart, s.my_reaction ? styles.heartOn : null]}>♥</Text>
           <Text style={styles.reactCount}>{s.reaction_count}</Text>
@@ -146,20 +151,20 @@ export function StoriesScreen({ navigation }: Props) {
   return (
     <View style={styles.screen}>
       <ScreenHeader
-        title="Stories"
+        title={mine ? "Your stories" : "Stories"}
         onBack={() => navigation.goBack()}
-        right={
+        right={mine ? null : (
           <TouchableOpacity hitSlop={TAP_SLOP} style={styles.share} onPress={() => isGuest ? setWallOpen(true) : navigation.navigate("storyCompose", {})}>
             <Text style={styles.shareLabel}>+ Share</Text>
           </TouchableOpacity>
-        }
+        )}
       />
       {state.kind !== "ready" ? (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <LoadStateView
             state={state}
-            emptyTitle="No stories yet"
-            emptyBody="Be the first to share one."
+            emptyTitle={mine ? "You haven't shared a story yet" : "No stories yet"}
+            emptyBody={mine ? "A photo of how it turned out, and a few words. It will be here." : "Be the first to share one."}
             onRetry={load}
           />
         </ScrollView>
@@ -212,6 +217,7 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: radii.chip },
   chipText: { ...typography.meta, fontWeight: "700" },
   date: { marginTop: 8, color: colors.muted, ...typography.meta },
+  statusNote: { marginTop: 8, color: colors.warning, ...typography.meta, fontWeight: "600" },
   caption: { marginTop: 12, color: colors.ink, ...typography.body },
   reactRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 },
   heart: { fontSize: 20, color: "#C9D3CF" },

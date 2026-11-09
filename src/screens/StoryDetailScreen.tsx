@@ -1,9 +1,10 @@
 // US-T2 · one story. React is optimistic (flip + count locally, reconcile from the response);
 // flag confirms first (it's a report, not a like) then POSTs to the shared moderation pipeline.
+import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
-  Image, ScrollView, StyleSheet, Text, View
+  Alert, Image, ScrollView, StyleSheet, Text, View
 } from "react-native";
 
 import { useAuth } from "../auth/AuthContext";
@@ -17,6 +18,7 @@ import { Avatar, Card, PressScale, ScreenHeader } from "../components/ui";
 import { loadState } from "../net";
 import { parseStory, Story, storyDate, storyLinkAction, storyTypeChip } from "../community";
 import { RootStackParamList } from "../navigation/types";
+import { canDeleteStory, canEditStory, storyDeleteFailure } from "../storyAuthor";
 import { useLargeText } from "../useLargeText";
 import { colors, pill, radii, spacing, typography } from "../theme";
 
@@ -58,7 +60,27 @@ export function StoryDetailScreen({ navigation, route }: Props) {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storyId]);
-  useEffect(load, [load]);
+  // Reloads whenever the screen comes back into focus (an edit made on the compose screen, a report, the listing it linked to). The story already on screen
+  // stays while it does: the loading branch below is only for a story that has not loaded at all.
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  // Stories review step 6 (ST7, SQ1) · an author can delete their own story. It leaves the wall at once; a copy is kept 30 days, then removed for good.
+  const deleting = useRef(false);
+  async function doDelete() {
+    if (deleting.current) return;
+    deleting.current = true;
+    const answer = await api.del(`/stories/${storyId}`);
+    deleting.current = false;
+    if (answer.ok) navigation.goBack();
+    else Alert.alert("Couldn't delete the story", storyDeleteFailure(answer));
+  }
+  function confirmDelete() {
+    Alert.alert("Delete this story?",
+      "It leaves the wall right away. We keep a copy for 30 days in case it was reported, then remove it for good.", [
+        { text: "Keep it", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: doDelete }
+      ]);
+  }
 
   async function toggleReact() {
     if (!story) return;
@@ -178,6 +200,17 @@ export function StoryDetailScreen({ navigation, route }: Props) {
               <Text style={styles.flagLabel}>Report this</Text>
             </PressScale>
           )}
+          {canEditStory(story) ? (
+            <PressScale style={styles.flagBtn} accessibilityRole="button" accessibilityLabel="Edit the caption of this story" testID="btn.storyDetail.edit"
+              onPress={() => navigation.navigate("storyCompose", { edit: { storyId, caption: story.caption, photoUrl: story.primary_photo } })}>
+              <Text style={styles.flagLabel}>Edit caption</Text>
+            </PressScale>
+          ) : null}
+          {canDeleteStory(story) ? (
+            <PressScale style={styles.flagBtn} onPress={confirmDelete} accessibilityRole="button" accessibilityLabel="Delete this story" testID="btn.storyDetail.delete">
+              <Text style={styles.deleteLabel}>Delete</Text>
+            </PressScale>
+          ) : null}
         </View>
       </ScrollView>
       <SignupWall
@@ -226,5 +259,6 @@ const styles = StyleSheet.create({
   heartOn: { color: colors.teal },
   reactLabel: { color: colors.ink, ...typography.subtitle, fontWeight: "700" },
   flagBtn: { minHeight: 44, paddingVertical: 8, paddingHorizontal: 22, justifyContent: "center", borderRadius: pill(44), ...pillButton },
+  deleteLabel: { color: colors.danger, ...typography.subtitle, fontWeight: "700" },
   flagLabel: { color: colors.muted, ...typography.subtitle, fontWeight: "700" }
 });
