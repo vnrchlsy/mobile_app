@@ -170,6 +170,8 @@ export type ListingDetail = {
   poster: ListingPoster;
   /** AD7 · only the poster ever reads a hidden listing; everyone else gets a 404. */
   removed_by_moderation?: boolean;
+  /** Moderation walk W1 · this listing is the viewer's own, so Report and Block are not offered. Absent from an older server. */
+  mine?: boolean;
 };
 /**
  * `updated_at` is null until the stage has moved — all six rows exist from the inquiry's first

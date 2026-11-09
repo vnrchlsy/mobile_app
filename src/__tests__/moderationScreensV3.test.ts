@@ -68,3 +68,20 @@ describe("the report form", () => {
     expect(src).toContain('accessibilityRole="radiogroup"');
   });
 });
+
+describe("an author is not offered Report or Block on their own post (moderation walk W1)", () => {
+  it("the story page hides the person actions and the report button when the story is the viewer's own", () => {
+    const src = read("screens/StoryDetailScreen.tsx");
+    expect(src).toContain("mine?: boolean;");
+    expect(src.split("{story.mine ? null : (").length - 1).toBe(2);                 // the person actions and the report button
+  });
+  it("the listing page hides the report link and the person actions when the listing is the viewer's own", () => {
+    const src = read("screens/ListingDetailScreen.tsx");
+    expect(src).toContain("right={listing && !listing.mine ? (");
+    expect(src).toContain("{listing.mine ? null : (");
+    expect(read("api/types.ts")).toContain("mine?: boolean;");
+  });
+  it("still shows React, which anyone may do to their own story", () => {
+    expect(read("screens/StoryDetailScreen.tsx")).toContain('testID="btn.storyDetail.react"');
+  });
+});

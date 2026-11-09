@@ -48,7 +48,7 @@ export const COMMUNITY_GUIDELINES: readonly TermsSection[] = [
   },
   {
     title: "Questions, and asking us to look again",
-    body: ["Write to us from Contact support. A person reads it."],
+    body: ["Write to us from Settings, then Help & contact. A person reads it."],
   },
 ];
 

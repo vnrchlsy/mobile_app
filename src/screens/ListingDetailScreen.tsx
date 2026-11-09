@@ -150,7 +150,8 @@ export function ListingDetailScreen({ navigation, route }: Props) {
       <ScreenHeader
         title="Adopt"
         onBack={() => navigation.goBack()}
-        right={listing ? (
+        // W1 · not on your own listing: the server would refuse it (own_content), so it is not offered.
+        right={listing && !listing.mine ? (
           <TouchableOpacity
             hitSlop={TAP_SLOP}
             // A guest's report would 401 at /moderation/flags and dead-end on "Couldn't send
@@ -216,12 +217,14 @@ export function ListingDetailScreen({ navigation, route }: Props) {
             {listing.poster.name}{listing.poster.is_shelter ? " · Shelter" : ""}
             {listing.poster.city ? ` · ${listing.poster.city}` : ""}
           </Text>
-          <PersonActions testID="row.listingDetail.person"
-            person={{ name: listing.poster.name, accountId: listing.poster.account_id }}
-            onReport={() => navigation.navigate("reportContent", {
-              targetType: "account", targetId: listing.poster.account_id, subject: listing.poster.name,
-              person: { name: listing.poster.name, accountId: listing.poster.account_id }, leaveContent: true })}
-            onBlocked={() => navigation.goBack()} />
+          {listing.mine ? null : (
+            <PersonActions testID="row.listingDetail.person"
+              person={{ name: listing.poster.name, accountId: listing.poster.account_id }}
+              onReport={() => navigation.navigate("reportContent", {
+                targetType: "account", targetId: listing.poster.account_id, subject: listing.poster.name,
+                person: { name: listing.poster.name, accountId: listing.poster.account_id }, leaveContent: true })}
+              onBlocked={() => navigation.goBack()} />
+          )}
 
           {listing.poster.is_shelter ? (
             // US-Q2 · a 404 (org unapproved or no verified QR yet) is handled on the

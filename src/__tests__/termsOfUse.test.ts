@@ -26,7 +26,7 @@ describe("the guidelines define what may not be posted", () => {
     for (const word of ["harassment", "scam", "cruelty", "misleading", "spam"]) expect(all).toContain(word);
   });
   it("says what happens, how to report and block, and how to ask for a second look", () => {
-    for (const word of ["remove", "suspend", "report", "block", "contact support", "word"]) expect(all).toContain(word);
+    for (const word of ["remove", "suspend", "report", "block", "help & contact", "word"]) expect(all).toContain(word);
   });
   it("has no empty section", () => {
     expect(COMMUNITY_GUIDELINES.length).toBeGreaterThanOrEqual(5);
@@ -56,6 +56,18 @@ describe("the terms version matches the server's", () => {
     const m = /^TERMS_VERSION = "([^"]+)"/m.exec(read("config/settings.py", backend as string));
     expect(m).not.toBeNull();
     expect(TERMS_VERSION).toBe((m as RegExpExecArray)[1]);
+  });
+});
+
+describe("the guidelines point at a way in that exists", () => {
+  it("names a Settings row that is really there and opens the support screen", () => {
+    const { settingsGroups } = require("../settings");
+    const rows = settingsGroups({ shelter: false, privacyUrl: null }).flatMap((g: { rows: unknown[] }) => g.rows) as
+      Array<{ label: string; action: { type: string; name?: string } }>;
+    expect(rows.length).toBeGreaterThan(5);                                       // it read the real list
+    const help = rows.find((r) => r.label === "Help & contact");
+    expect(help?.action).toEqual({ type: "navigate", name: "support" });
+    expect(COMMUNITY_GUIDELINES.flatMap((x) => x.body).join(" ")).toContain("Settings, then Help & contact");
   });
 });
 

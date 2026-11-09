@@ -30,6 +30,8 @@ type Story = {
   story_id: string; author: { name: string; city: string }; story_type: StoryType;
   caption: string; reaction_count: number; my_reaction: boolean;
   photos: { url: string; is_primary: boolean }[]; status: string;
+  /** Moderation walk W1 · this story is the viewer's own: Report and Block are not offered. Absent from an older server. */
+  mine?: boolean;
 };
 type Props = NativeStackScreenProps<RootStackParamList, "storyDetail">;
 
@@ -147,12 +149,14 @@ export function StoryDetailScreen({ navigation, route }: Props) {
           </View>
         </View>
         {story.caption ? <Text style={styles.caption}>{story.caption}</Text> : null}
-        <PersonActions testID="row.storyDetail.person"
-          person={{ name: story.author.name, via: { type: "story", id: storyId } }}
-          onReport={() => navigation.navigate("reportContent", {
-            targetType: "account", via: { type: "story", id: storyId }, subject: story.author.name,
-            person: { name: story.author.name, via: { type: "story", id: storyId } }, leaveContent: true })}
-          onBlocked={() => navigation.goBack()} />
+        {story.mine ? null : (
+          <PersonActions testID="row.storyDetail.person"
+            person={{ name: story.author.name, via: { type: "story", id: storyId } }}
+            onReport={() => navigation.navigate("reportContent", {
+              targetType: "account", via: { type: "story", id: storyId }, subject: story.author.name,
+              person: { name: story.author.name, via: { type: "story", id: storyId } }, leaveContent: true })}
+            onBlocked={() => navigation.goBack()} />
+        )}
         </Card>
 
         <View style={styles.actionRow}>
@@ -162,10 +166,12 @@ export function StoryDetailScreen({ navigation, route }: Props) {
             <Text style={[styles.heart, story.my_reaction ? styles.heartOn : null]}>♥</Text>
             <Text style={styles.reactLabel}>React · {story.reaction_count}</Text>
           </PressScale>
-          <PressScale style={styles.flagBtn} onPress={reportStory} accessibilityRole="button"
-            accessibilityLabel="Report this story" testID="btn.storyDetail.report">
-            <Text style={styles.flagLabel}>Report this</Text>
-          </PressScale>
+          {story.mine ? null : (
+            <PressScale style={styles.flagBtn} onPress={reportStory} accessibilityRole="button"
+              accessibilityLabel="Report this story" testID="btn.storyDetail.report">
+              <Text style={styles.flagLabel}>Report this</Text>
+            </PressScale>
+          )}
         </View>
       </ScrollView>
       <SignupWall
