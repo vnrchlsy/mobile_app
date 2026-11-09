@@ -42,7 +42,7 @@ describe("the story page's controls can be found by a screen reader and by a flo
   const src = read("screens/StoryDetailScreen.tsx");
   it("announces React and Report as buttons, each with a testID", () => {
     for (const id of ["btn.storyDetail.react", "btn.storyDetail.report"]) expect(src).toContain(`testID="${id}"`);
-    expect(src.split('accessibilityRole="button"').length - 1).toBe(3);      // React, Report, and the hidden banner's appeal (step 9)
+    expect(src.split('accessibilityRole="button"').length - 1).toBe(4);      // React, Report, the hidden banner's appeal (step 9), and the link to the adoption or rescue (stories review step 5)
   });
   it("says whether the reaction is on", () => {
     expect(src).toContain("accessibilityState={{ selected: story.my_reaction }}");
@@ -72,7 +72,7 @@ describe("the report form", () => {
 describe("an author is not offered Report or Block on their own post (moderation walk W1)", () => {
   it("the story page hides the person actions and the report button when the story is the viewer's own", () => {
     const src = read("screens/StoryDetailScreen.tsx");
-    expect(src).toContain("mine?: boolean;");
+    expect(read("community.ts")).toMatch(/export type Story = \{[^}]*\bmine: boolean;/);          // `mine` is part of the one story contract now (stories review step 5)
     expect(src.split("{story.mine ? null : (").length - 1).toBe(2);                 // the person actions and the report button
   });
   it("the listing page hides the report link and the person actions when the listing is the viewer's own", () => {

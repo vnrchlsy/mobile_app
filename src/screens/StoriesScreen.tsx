@@ -3,7 +3,7 @@
 // count. Compose from the header; tap a card for its detail.
 import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator, FlatList, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View
 } from "react-native";
@@ -16,10 +16,10 @@ import { LoadStateView } from "../components/LoadStateView";
 import { Avatar, ScreenHeader } from "../components/ui";
 import { StaleBanner } from "../components/StaleBanner";
 import { isOffline } from "../net";
-import { storyTypeChip, StoryType } from "../community";
+import { parseStoryPage, Story, storyDate, storyTypeChip } from "../community";
 import { RootStackParamList } from "../navigation/types";
 import {
-  allStories, beginMore, finishMore, moreUrl, pagingAfterRefresh, pagingFrom, shouldLoadMore, StoryPaging, storiesViewState
+  allStories, beginMore, finishMore, moreUrl, pagingAfterRefresh, pagingFrom, shouldLoadMore, StoryPaging, storiesViewState, withStoryContract
 } from "../storyFeed";
 import { useCachedFeed } from "../useCachedFeed";
 import { TAP_SLOP } from "../touch";
@@ -35,11 +35,6 @@ const CHIP: Record<"ok" | "teal" | "muted", { bg: string; fg: string }> = {
   muted: { bg: colors.greyPill, fg: colors.muted }
 };
 
-export type StoryCard = {
-  story_id: string; author: { name: string; city: string }; story_type: StoryType;
-  caption: string; reaction_count: number; my_reaction: boolean;
-  photos: { url: string; is_primary: boolean }[];
-};
 type Props = NativeStackScreenProps<RootStackParamList, "stories">;
 
 function initials(name: string) {
@@ -49,14 +44,16 @@ function initials(name: string) {
 export function StoriesScreen({ navigation }: Props) {
   // At Dynamic Type AX3 and up the author row (avatar | name | chip) cannot share a line, so it stacks.
   const large = useLargeText();
-  const api = useApi();
+  // Stories review step 5 · every answer of the wall is checked against the contract: a bad one is a failed load, never a shorter wall.
+  const rawApi = useApi();
+  const api = useMemo(() => withStoryContract(rawApi), [rawApi]);
   // Stories review step 7 (ST13) · stories are readable as a guest, so "+ Share" is drawn for one too. Compose then
   // failed at the photo step with "Couldn't add photo". A guest gets the sign-up wall here, as the detail's React does (G16).
   const { tokens } = useAuth();
   const isGuest = tokens === null;
   const [wallOpen, setWallOpen] = useState(false);
   const { rows: stories, res, stale, load: loadFeed, data } =
-    useCachedFeed<StoryCard>(api, (d) => d?.results ?? []);
+    useCachedFeed<Story>(api, (d) => parseStoryPage(d)?.results ?? []);
   // US-O1 · keep the RESULT, not just the rows. Collapsing a failure into `[]` told an
   // offline person "No stories yet — be the first to share one", which is untrue and makes
   // the community look dead.
@@ -71,10 +68,10 @@ export function StoriesScreen({ navigation }: Props) {
 
   // Stories review step 4 (ST5) · the wall pages. The first page is the hook's (cache-first, stale banner); later pages are
   // read from the API by cursor and held in memory only (src/storyFeed.ts has the rules and the races).
-  const [paging, setPaging] = useState<StoryPaging<StoryCard>>(() => pagingFrom({}, 0));
+  const [paging, setPaging] = useState<StoryPaging<Story>>(() => pagingFrom({}, 0));
   const generation = useRef(0);
-  const prevFirst = useRef<StoryCard[] | null>(null);
-  const shownRef = useRef<StoryCard[]>([]);
+  const prevFirst = useRef<Story[] | null>(null);
+  const shownRef = useRef<Story[]>([]);
   shownRef.current = stories ?? [];
   const asking = useRef(false);   // two scroll events in one tick both see loading === false in state
   useEffect(() => {
@@ -105,7 +102,7 @@ export function StoriesScreen({ navigation }: Props) {
 
   const state = storiesViewState(res, stories, stale);
 
-  const renderStory = ({ item: s }: { item: StoryCard }) => {
+  const renderStory = ({ item: s }: { item: Story }) => {
     const chip = storyTypeChip(s.story_type);
     return (
       <TouchableOpacity style={styles.storyCard} activeOpacity={0.85}
@@ -124,6 +121,7 @@ export function StoriesScreen({ navigation }: Props) {
           </View>
         </View>
         {s.caption ? <Text style={styles.caption} numberOfLines={large ? undefined : 2}>{s.caption}</Text> : null}
+        {storyDate(s.created_at) ? <Text style={styles.date}>{storyDate(s.created_at)}</Text> : null}
         <View style={styles.reactRow}>
           <Text style={[styles.heart, s.my_reaction ? styles.heartOn : null]}>♥</Text>
           <Text style={styles.reactCount}>{s.reaction_count}</Text>
@@ -213,6 +211,7 @@ const styles = StyleSheet.create({
   city: { color: colors.muted, ...typography.meta, marginTop: 2 },
   chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: radii.chip },
   chipText: { ...typography.meta, fontWeight: "700" },
+  date: { marginTop: 8, color: colors.muted, ...typography.meta },
   caption: { marginTop: 12, color: colors.ink, ...typography.body },
   reactRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 },
   heart: { fontSize: 20, color: "#C9D3CF" },

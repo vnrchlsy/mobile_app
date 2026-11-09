@@ -494,6 +494,101 @@ export function storyTypeChip(type: StoryType): { label: string; tone: StoryTone
   }
 }
 
+// Stories review step 5 (ST6, ST16) · a story, as the server promises it (backend StorySerializer; backend's test_stories_contract.py compares
+// these five types' keys with it). One type for the wall, the detail and Home, and `parseStory` / `parseStoryPage` check an answer against it, so
+// the screens never read `any`. `created_at`, `link` and `mine` are what an older server did not send: `parseStory` fills them in (null, null, false).
+export type StoryAuthor = { name: string; city: string };
+export type StoryPhoto = { url: string; is_primary: boolean };
+/** The adoption or rescue a story is about, offered only when the viewer may open it. `id` is what its screen opens: a listing's id, or a REPORT's. */
+export type StoryLink = { type: "adoption" | "rescue"; id: string };
+export type Story = {
+  story_id: string; author: StoryAuthor; story_type: StoryType; caption: string; status: string;
+  photos: StoryPhoto[]; primary_photo: string | null; reaction_count: number; my_reaction: boolean; mine: boolean;
+  created_at: string | null; link: StoryLink | null;
+};
+export type StoryPage = { results: Story[]; next: string | null };
+
+const STORY_TYPES: readonly string[] = ["adoption", "rescue", "general"];
+
+function parseStoryPhoto(v: unknown): StoryPhoto | null {
+  if (!isObject(v) || typeof v.url !== "string" || !v.url) return null;
+  return { url: v.url, is_primary: v.is_primary === true };
+}
+
+function parseStoryLink(v: unknown): StoryLink | null {
+  // Decoration: a link the app cannot read costs the button, not the story.
+  if (!isObject(v) || (v.type !== "adoption" && v.type !== "rescue") || typeof v.id !== "string" || !v.id) return null;
+  return { type: v.type, id: v.id };
+}
+
+/**
+ * One story, checked against the contract, or null when it is not one.
+ *
+ * ⚠️ Identity is never guessed: a story that cannot say which it is, who wrote it, what its photos are or how many people reacted is null. What
+ * is only decoration (the type chip, the date, the link, `mine`) falls back quietly, so a mixed deploy or a new field costs a line, not the wall.
+ * Unknown fields are ignored and not copied.
+ */
+export function parseStory(v: unknown): Story | null {
+  if (!isObject(v)) return null;
+  if (typeof v.story_id !== "string" || !v.story_id) return null;
+  if (!isObject(v.author) || typeof v.author.name !== "string") return null;
+  if (!Array.isArray(v.photos) || !isCount(v.reaction_count) || typeof v.my_reaction !== "boolean") return null;
+  const photos: StoryPhoto[] = [];
+  for (const raw of v.photos) {
+    const p = parseStoryPhoto(raw);
+    if (!p) return null;
+    photos.push(p);
+  }
+  const date = typeof v.created_at === "string" && !Number.isNaN(new Date(v.created_at).getTime()) ? v.created_at : null;
+  return {
+    story_id: v.story_id,
+    author: { name: v.author.name, city: text(v.author.city) },
+    story_type: STORY_TYPES.includes(v.story_type as string) ? (v.story_type as StoryType) : "general",
+    caption: text(v.caption),
+    status: typeof v.status === "string" && v.status ? v.status : "published",
+    photos,
+    primary_photo: typeof v.primary_photo === "string" ? v.primary_photo : (photos[0]?.url ?? null),
+    reaction_count: v.reaction_count,
+    my_reaction: v.my_reaction,
+    mine: v.mine === true,
+    created_at: date,
+    link: parseStoryLink(v.link),
+  };
+}
+
+/**
+ * A page of the wall, or null when it is not one. ⚠️ ONE BAD STORY MAKES THE WHOLE PAGE NULL, ON PURPOSE (as `parseImpact` does): dropping it would
+ * draw a wall that looks complete and is not; null shows an error with a retry. A story twice in one page would draw one card twice, so that is null too.
+ */
+export function parseStoryPage(v: unknown): StoryPage | null {
+  if (!isObject(v) || !Array.isArray(v.results)) return null;
+  const results: Story[] = [];
+  const seen = new Set<string>();
+  for (const raw of v.results) {
+    const s = parseStory(raw);
+    if (!s || seen.has(s.story_id)) return null;
+    seen.add(s.story_id);
+    results.push(s);
+  }
+  return { results, next: typeof v.next === "string" && v.next.length > 0 ? v.next : null };
+}
+
+/** The date a story was posted, in words, or null (an older server sends none, and `new Date("garbage")` is Invalid Date, not an error). */
+export function storyDate(iso: string | null | undefined): string | null {
+  return earnedDate(iso ?? null);
+}
+
+/** What the "see what it is about" button does: where it goes through the screens that already gate the adoption or the rescue (D-S6-4). */
+export function storyLinkAction(link: StoryLink | null):
+  | { label: string; route: "listingDetail"; params: { listingId: string } }
+  | { label: string; route: "reportDetail"; params: { reportId: string } }
+  | null {
+  if (!link) return null;
+  return link.type === "adoption"
+    ? { label: "See the adoption listing", route: "listingDetail", params: { listingId: link.id } }
+    : { label: "See the rescue", route: "reportDetail", params: { reportId: link.id } };
+}
+
 // US-L3 · turn the §11 per-signal sub-scores (each 0..1) into human reasons — the UI shows WHY
 // two reports matched, never a raw percentage (that was the whole point of transparent scoring).
 export type MatchSignals = { geo: number; time: number; breed: number; color: number; size_sex: number };

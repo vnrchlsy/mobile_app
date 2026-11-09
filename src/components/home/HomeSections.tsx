@@ -20,6 +20,7 @@ import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } 
 import { LinearGradient } from "expo-linear-gradient";
 
 import { Listing } from "../../api/types";
+import type { Story } from "../../community";
 import { colors, elevation, maxFontScale, radii, spacing, typography } from "../../theme";
 import { gradients, heroDirection } from "../../theme/v3";
 import { TAP_SLOP } from "../../touch";
@@ -32,8 +33,8 @@ const paw = require("../../../assets/paw-white.png") as ImageSourcePropType;
 
 /** The shape both Homes read from GET /reports/map. */
 export type MapReport = { report_id: string; species: string; condition: string; city: string | null };
-/** The shape both Homes read from GET /stories — StoriesScreen's card, by structure. */
-export type StoryRowData = { story_id: string; caption: string; author: { name: string; city?: string | null } };
+/** What a Home story row needs of a story: a slice of the contract's `Story` (src/community.ts), so the two cannot drift. */
+export type StoryRowData = Pick<Story, "story_id" | "caption" | "author">;
 
 /** Spacing between Home's sections: the first `SectionHeader` sits closer to what precedes it. */
 export const sectionSpacing = StyleSheet.create({

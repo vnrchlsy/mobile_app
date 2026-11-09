@@ -14,7 +14,8 @@ import { useApi } from "../api/useApi";
 import { LoadStateView } from "../components/LoadStateView";
 import { Card, PressScale, SectionHeader } from "../components/ui";
 import { EmptyNote, HomeHeader, ListingRow, MapReport, ReportStrayCard, ShelterHelpRow, StoryRow, StrayRow, sectionSpacing } from "../components/home/HomeSections";
-import type { StoryCard } from "./StoriesScreen";
+import { parseStoryPage, Story } from "../community";
+import { withStoryContract } from "../storyFeed";
 import { loadState } from "../net";
 import { Listing, Me, MyReport, RescueCaseSummary } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
@@ -108,7 +109,7 @@ export function HomeScreen({ navigation, route }: Props) {
   // US-T2 · the stories row used to be a bare link with nothing under it, while both of its
   // sibling sections showed content. It now asks, so it can say "No stories yet" when that is
   // true — which a link row can never do.
-  const [stories, setStories] = useState<StoryCard[]>([]);
+  const [stories, setStories] = useState<Story[]>([]);
   const [storiesRes, setStoriesRes] = useState<{ ok: boolean; status: number } | null>(null);
 
   // F8 (shelter home test plan) · named so focus AND the offline panel's "Try again" run it. A shelter that opened the
@@ -222,10 +223,11 @@ export function HomeScreen({ navigation, route }: Props) {
   }, [city, isReady]);
 
   const loadStories = useCallback(() => {
-    return api.get("/stories").then((r) => {
+    // Stories review step 5 · read through the same contract check as the wall: a 200 that is not a page is a failed load (the two shown are kept).
+    return withStoryContract(api).get("/stories").then((r) => {
       setStoriesRes((prev) => keepGoodRes(prev, r));
-      // Two, matching the rescue strip. `results`, like StoriesScreen reads.
-      if (r.ok) setStories((r.data?.results ?? []).slice(0, 2));
+      // Two, matching the rescue strip.
+      if (r.ok) setStories((parseStoryPage(r.data)?.results ?? []).slice(0, 2));
       return r.ok;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- api identity is stable

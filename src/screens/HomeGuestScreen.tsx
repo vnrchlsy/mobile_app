@@ -20,6 +20,8 @@ import { useApi } from "../api/useApi";
 import { LoadStateView } from "../components/LoadStateView";
 import { loadState } from "../net";
 import { Listing } from "../api/types";
+import { parseStoryPage } from "../community";
+import { withStoryContract } from "../storyFeed";
 import { ProfileIcon } from "../components/AppIcons";
 import { SignupWall, SignupWallAction } from "../components/SignupWall";
 import { setIntent } from "../guestIntent";
@@ -78,9 +80,9 @@ export function HomeGuestScreen({ navigation }: Props) {
       if (r.ok) setHelpers((r.data?.results ?? []).slice(0, 3));
       return r.ok;
     });
-    const storiesP = api.get("/stories").then((r) => {
+    const storiesP = withStoryContract(api).get("/stories").then((r) => {     // stories review step 5 · checked like the wall
       setStoriesRes((prev) => keepGoodRes(prev, r));
-      if (r.ok) setStories((r.data?.results ?? []).slice(0, 2));
+      if (r.ok) setStories((parseStoryPage(r.data)?.results ?? []).slice(0, 2));
       return r.ok;
     });
     const rescuesP = api.get(`/reports/map?city=${GUEST_CITY}&status=reported`).then((r) => {
