@@ -136,6 +136,13 @@ describe("the screens", () => {
     expect(compose).not.toMatch(/res\.status === 422\s*\)\s*setError/);
   });
 
+  test("compose: picking a photo again clears the last post error (walked: two stacked messages for two attempts)", () => {
+    const addPhoto = /async function addPhoto\(\) \{([\s\S]*?)\n  \}/.exec(compose);
+    expect(addPhoto).not.toBeNull();
+    expect((addPhoto as RegExpExecArray)[1]).toContain("setError(null)");
+    expect((addPhoto as RegExpExecArray)[1]).toContain("setPhotoError(null)");
+  });
+
   test("compose: the caption error is shown on the caption field", () => {
     expect(compose).toMatch(/<Field[\s\S]*?error=\{captionError\b/);
   });
