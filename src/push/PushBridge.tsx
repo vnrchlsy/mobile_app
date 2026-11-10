@@ -18,6 +18,7 @@ import { useApi } from "../api/useApi";
 import { useAuth } from "../auth/AuthContext";
 import { notificationTarget } from "../notifications";
 import { registerPushToken } from "../push";
+import { saveRegisteredPushToken } from "./pushTokenStore";
 import { openOwnerTab, ownerTabKeyForRoute } from "../appTabs";
 import { openShelterTab, shelterTabKeyForRoute } from "../shelterTabs";
 
@@ -70,7 +71,12 @@ export function PushBridge({ navRef }: { navRef: any }) {
         isDevice: Device.isDevice,
       },
       Platform.OS,
-    );
+    ).then((result) => {
+      // NP2 · keep the server's id and the token so sign-out can drop exactly this device.
+      if (result.status === "registered" && result.tokenId) {
+        void saveRegisteredPushToken({ tokenId: result.tokenId, token: result.token });
+      }
+    });
   }, [tokens, api]);
 
   // Reset the guard on sign-out so the next person to sign in on this device registers
