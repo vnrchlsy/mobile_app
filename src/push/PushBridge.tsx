@@ -78,7 +78,7 @@ export function PushBridge({ navRef }: { navRef: any }) {
     if (plan !== "route" || !p) return;
     pending.current = null;
     // NP8 / NQ3 · a tapped push is read: mark ITS row, whether or not it has a destination.
-    if (p.notificationId) void apiRef.current.post(`/me/notifications/${p.notificationId}/read`);
+    if (p.notificationId) void apiRef.current.post(`/me/notifications/${p.notificationId}/read`, { via: "push" });
     if (p.target) openTarget(navRef, p.target);
   });
 
