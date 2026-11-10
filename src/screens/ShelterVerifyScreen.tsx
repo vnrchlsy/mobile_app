@@ -18,6 +18,7 @@ import { authColors } from "./AuthFormKit";
 import { TAP_SLOP } from "../touch";
 import { colors, elevation, maxFontScale, radii, spacing, typography } from "../theme";
 import { Avatar, Button, Field, ScreenHeader } from "../components/ui";
+import { requestPushPrompt } from "../pushPrompt";
 import { enterShelterShell } from "../shelterTabs";
 
 const MIN_PHOTOS = 3;
@@ -114,6 +115,7 @@ export function ShelterVerifyScreen({ navigation, route }: Props) {
       }
       if (res.ok) {
         enterShelterShell(navigation);
+        requestPushPrompt("shelter_setup");   // NQ6 · they just sent documents for review
         return;
       }
       setError(res.data?.error?.message ?? "Couldn't submit for review. Try again.");

@@ -20,10 +20,12 @@ import { TAP_SLOP } from "../touch";
 import { colors, maxFontScale, spacing, typography } from "../theme";
 import { Button, ScreenHeader } from "../components/ui";
 import { openOwnerTab } from "../appTabs";
+import { requestPushPrompt } from "../pushPrompt";
 
 type Props = NativeStackScreenProps<RootStackParamList, "kawanggawaRequested">;
 
 export function KawangGawaRequestedScreen({ navigation }: Props) {
+  useEffect(() => { requestPushPrompt("shift"); }, []);   // NQ6
   useEffect(() => navigation.addListener("beforeRemove", (e) => {
     if (e.data.action.type === "GO_BACK") {
       e.preventDefault();
