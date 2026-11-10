@@ -153,20 +153,23 @@ export function notificationTarget(n: { type: string; data: Record<string, any> 
 }
 
 /**
- * Notifications review NP4 / NQ3 · what to tell the server when the bell has just SHOWN `list`: `{ up_to }` is the
- * newest `created_at` on screen, so a notification that arrived after the list was read stays unread. `null` when
- * nothing shown is unread (no request), or when no row has a usable timestamp (never fall back to mark-all). The
- * original string is sent, not a re-formatted Date, so the microseconds survive.
+ * Notifications review NP4 / NP5 / NQ3 · what to tell the server when the bell has just SHOWN `page`: `up_to` is the newest
+ * `created_at` on that page and `since` the oldest, so a notification that arrived after the list was read stays unread, and
+ * (the list now pages) so do older rows on pages not yet loaded. `null` when nothing on the page is unread (no request), or
+ * when no row has a usable timestamp (never fall back to mark-all). The original strings are sent, not re-formatted Dates, so
+ * the microseconds survive.
  */
-export function markReadBody(list: { read: boolean; created_at: string }[]): { up_to: string } | null {
-  if (!list.some((n) => !n.read)) return null;
-  let best: { ms: number; raw: string } | null = null;
-  for (const n of list) {
+export function markReadBody(page: { read: boolean; created_at: string }[]): { up_to: string; since: string } | null {
+  if (!page.some((n) => !n.read)) return null;
+  let newest: { ms: number; raw: string } | null = null;
+  let oldest: { ms: number; raw: string } | null = null;
+  for (const n of page) {
     const ms = Date.parse(n.created_at);
     if (Number.isNaN(ms)) continue;
-    if (!best || ms > best.ms) best = { ms, raw: n.created_at };
+    if (!newest || ms > newest.ms) newest = { ms, raw: n.created_at };
+    if (!oldest || ms < oldest.ms) oldest = { ms, raw: n.created_at };
   }
-  return best ? { up_to: best.raw } : null;
+  return newest && oldest ? { up_to: newest.raw, since: oldest.raw } : null;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
