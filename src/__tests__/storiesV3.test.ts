@@ -9,7 +9,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 
 import { initials } from "../initials";
-import { storyCardLabel, storyChipTone } from "../storyFeed";
+import { homeStoryTitle, storyCardLabel, storyChipTone } from "../storyFeed";
 import { V3_EXCLUDED, V3_SCOPE } from "./v3Scope";
 import { story } from "./storyFixtures";
 
@@ -99,10 +99,16 @@ describe("the wall", () => {
 describe("compose", () => {
   const src = read("screens/StoryComposeScreen.tsx");
   const scrollEnd = src.indexOf("</ScrollView>");
-  it("pins the Post / Save button below the scroll, so a long caption never pushes it off screen", () => {
+  it("pins the Post / Save button below the scroll at normal text sizes, so a long caption never pushes it off screen", () => {
     expect(scrollEnd).toBeGreaterThan(0);
-    expect(src.indexOf("<Button", scrollEnd)).toBeGreaterThan(scrollEnd);
-    expect(src.slice(0, scrollEnd).includes("<Button")).toBe(false);
+    expect(src).toContain("const postButton = (");
+    expect(src).toMatch(/\{!large \? \(\s*<View style=\{styles\.footer\}>\s*\{postButton\}/);
+    expect(src.indexOf("{postButton}", scrollEnd)).toBeGreaterThan(scrollEnd);
+  });
+  it("lets the button follow the form at large text (AX3 and up), where a pinned one took a quarter of the screen and left the caption a sliver", () => {
+    expect(src).toContain("useLargeText()");
+    expect(src).toMatch(/\{large \? postButton : null\}/);
+    expect(src.slice(0, scrollEnd).includes("{large ? postButton : null}")).toBe(true);
   });
   it("lets the keyboard cover the pinned button rather than squeeze the caption (walked: lifting it left the field a sliver), and drag dismisses the keyboard", () => {
     expect(src.includes("KeyboardAvoidingView")).toBe(false);
@@ -154,5 +160,21 @@ describe("the story screens share one StoryTypeChip and one initials", () => {
   });
   it("the wall has no unused style left (ST17)", () => {
     expect(wall.includes("  empty: {")).toBe(false);
+  });
+});
+
+
+// ---- found walking AX5 (2026-11-10) · a story with no caption on Home ---------------------------------------------------------------------------
+describe("homeStoryTitle: what Home's story row says when there are no words", () => {
+  it("is the caption when there is one", () => {
+    expect(homeStoryTitle("  Home at last  ")).toBe("Home at last");
+  });
+  it("says it is a photo when the caption is empty or only space, so the row is never a blank gap above the author", () => {
+    expect(homeStoryTitle("")).toBe("Shared a photo");
+    expect(homeStoryTitle("   \n ")).toBe("Shared a photo");
+  });
+  it("the Home row uses it", () => {
+    const src = read("components/home/HomeSections.tsx");
+    expect(src).toContain("homeStoryTitle(story.caption)");
   });
 });
