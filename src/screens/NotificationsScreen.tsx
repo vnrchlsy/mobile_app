@@ -104,10 +104,11 @@ export function NotificationsScreen({ navigation }: Props) {
   }
 
   function onPress(n: MeNotification) {
-    // NQ3 · a tapped row is read even if it was added after this screen marked what it showed.
-    if (!n.read && !tappedRef.current.has(n.notification_id)) {
+    // NQ3 · a tapped row is read even if it was added after this screen marked what it showed. Step 11 · and a tap is an OPEN, so it
+    // is reported for a row that was already read too (once per row per viewing); `via` is where it came from.
+    if (!tappedRef.current.has(n.notification_id)) {
       tappedRef.current.add(n.notification_id);
-      api.post(`/me/notifications/${n.notification_id}/read`);
+      api.post(`/me/notifications/${n.notification_id}/read`, { via: "bell" });
     }
     const target = notificationTarget(n);
     if (!target) return; // unrecognized type, or missing the data it needs — no destination

@@ -57,16 +57,17 @@ describe("wiring (source scan)", () => {
     expect(src).not.toMatch(/api\.post\("\/me\/notifications\/read"\);/);
   });
 
-  it("a tapped row marks itself read, once", () => {
+  it("a tapped row marks itself read, once, and says it came from the bell (step 11: a tap is an open, read row or not)", () => {
     const src = read("screens", "NotificationsScreen.tsx");
-    expect(src).toMatch(/\/me\/notifications\/\$\{n\.notification_id\}\/read/);
+    expect(src).toMatch(/\/me\/notifications\/\$\{n\.notification_id\}\/read`, \{ via: "bell" \}/);
     expect(src).toMatch(/tappedRef/);
+    expect(src).not.toMatch(/if \(!n\.read && !tappedRef/);          // an already-read row is still an open
   });
 
   it("a tapped push marks its own row read, once the app can act on the tap (signed in; see pushTap.test.ts)", () => {
     const src = read("push", "PushBridge.tsx");
     expect(src).toMatch(/pushNotificationId\(data\)/);
-    expect(src).toMatch(/\/me\/notifications\/\$\{p\.notificationId\}\/read/);
+    expect(src).toMatch(/\/me\/notifications\/\$\{p\.notificationId\}\/read`, \{ via: "push" \}/);
     expect(src.indexOf("tapPlan(")).toBeLessThan(src.indexOf("/me/notifications/${p.notificationId}/read"));
   });
 });
