@@ -17,6 +17,7 @@ import {
   MAX_CAPTION, MAX_PHOTOS, THUMB_SIZE, THUMB_X_OFFSET, THUMB_X_SIZE, THUMB_X_SLOP, acquire, canAddPhoto, captionCount, hasUnsavedStory, photoPickOutcome, photosBody, storyPostFailure, withCover, withoutPhoto, withPhoto
 } from "../storyCompose";
 import { hasUnsavedEdit, storyEditFailure } from "../storyAuthor";
+import { useLargeText } from "../useLargeText";
 
 type Props = NativeStackScreenProps<RootStackParamList, "storyCompose">;
 
@@ -101,7 +102,12 @@ export function StoryComposeScreen({ navigation, route }: Props) {
     else setError(failure.message);
   }
 
+  // At Dynamic Type AX3 and up the pinned Post / Save took about a quarter of the screen and left the caption a sliver (walked), so there it follows the form instead.
+  const large = useLargeText();
   const addable = !edit && canAddPhoto(photoUrls);
+  const postButton = (
+    <Button label={edit ? "Save changes" : "Post story"} onPress={edit ? save : post} loading={busy} style={large ? styles.inlineButton : undefined} />
+  );
   return (
     <View style={styles.screen}>
       <ScreenBackdrop />
@@ -168,12 +174,15 @@ export function StoryComposeScreen({ navigation, route }: Props) {
         </View>
 
         {error ? <Text style={styles.error} accessibilityLiveRegion="polite">{error}</Text> : null}
+        {large ? postButton : null}
       </ScrollView>
       {/* Pinned: a long caption scrolls inside the form and never pushes Post off the screen. Always enabled; errors sit with their field.
           The keyboard covers it while typing, on purpose: lifting it above the keyboard left the caption a sliver of room (walked), so dragging the form or tapping away shows it again. */}
-      <View style={styles.footer}>
-        <Button label={edit ? "Save changes" : "Post story"} onPress={edit ? save : post} loading={busy} />
-      </View>
+      {!large ? (
+        <View style={styles.footer}>
+          {postButton}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -181,6 +190,7 @@ export function StoryComposeScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { paddingHorizontal: spacing.lg, paddingTop: 12, paddingBottom: 24 },
+  inlineButton: { marginTop: 18 },
   footer: { paddingHorizontal: spacing.lg, paddingTop: 10, paddingBottom: 30 },
   h1: { color: colors.ink, ...typography.hero, marginBottom: 14 },
   photoCard: { padding: 8 },

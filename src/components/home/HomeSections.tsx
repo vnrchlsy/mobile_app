@@ -15,6 +15,7 @@
  * one Home exists on the other unless it is genuinely about the account (verification status,
  * the spotlight on your own report, the My-reports trail, the bell).
  */
+import { homeStoryTitle } from "../../storyFeed";
 import { ReactNode } from "react";
 import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -153,7 +154,7 @@ export function StoryRow({ story, onPress }: { story: StoryRowData; onPress: () 
           keeps the same colour across Home, Stories and a story's detail. */}
       <Avatar initials={storyInitials(story.author.name)} tinted size={44} />
       <View style={[styles.copy, large && styles.copyLarge]}>
-        <Text style={styles.name} numberOfLines={large ? 3 : 1}>{story.caption}</Text>
+        <Text style={styles.name} numberOfLines={large ? 3 : 1}>{homeStoryTitle(story.caption)}</Text>
         <Text style={styles.details} numberOfLines={large ? 3 : 1}>
           {story.author.name}{story.author.city ? ` · ${story.author.city}` : ""}
         </Text>

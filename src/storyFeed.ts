@@ -127,3 +127,8 @@ export function storyCardLabel(s: Story): string {
 export function storyChipTone(tone: "ok" | "teal" | "muted"): ChipTone {
   return tone === "ok" ? "success" : tone === "teal" ? "info" : "neutral";
 }
+
+/** Found walking AX5: Home's story row put the caption as its title, so a story with no words (a picture is enough, SQ-compose) left a blank gap above the author line. */
+export function homeStoryTitle(caption: string): string {
+  return caption.trim() || "Shared a photo";
+}
