@@ -24,6 +24,7 @@ import { DeclineSheet } from "../components/applicant/DeclineSheet";
 import { StepSheet } from "../components/applicant/StepSheet";
 import { Avatar, Button, Card, Chip, ScreenHeader } from "../components/ui";
 import { loadState } from "../net";
+import { composeForAdoptionPoster } from "../storyShare";
 import { RootStackParamList } from "../navigation/types";
 import { TAP_SLOP } from "../touch";
 import { colors, radii, spacing, typography } from "../theme";
@@ -104,6 +105,7 @@ export function ApplicantScreen({ navigation, route }: Props) {
   }
 
   const footer: ApplicantFooter = applicantFooter(row);
+  const storyParams = composeForAdoptionPoster(row);
   const header = posterLadderHeader(row);
   const pet = petName(row);
   const name = row.adopter.display_name;
@@ -233,6 +235,14 @@ export function ApplicantScreen({ navigation, route }: Props) {
             ) : (
               <Text style={styles.body}>{footer.doneNote}</Text>
             )}
+            {/* Stories review step 11 (§5.7) · a completed adoption prompts a story for the poster or shelter too, not only the adopter: the same persistent
+                button the adopter has, because an alert is gone the moment it is dismissed. */}
+            {storyParams ? (
+              <TouchableOpacity hitSlop={TAP_SLOP} style={styles.shareStory} activeOpacity={0.8} testID="btn.applicant.shareStory" accessibilityRole="button"
+                onPress={() => navigation.navigate("storyCompose", storyParams)}>
+                <Text style={styles.shareStoryLabel}>Share this adoption's story ›</Text>
+              </TouchableOpacity>
+            ) : null}
           </Card>
         ) : null}
         {notice || footer.note ? (
@@ -295,6 +305,8 @@ const styles = StyleSheet.create({
   doneSuccess: { backgroundColor: colors.successBg },
   doneNeutral: { backgroundColor: colors.greyPill },
   doneRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  shareStory: { alignSelf: "flex-start", marginTop: 12, minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderRadius: radii.chip, backgroundColor: colors.successBg },
+  shareStoryLabel: { color: colors.success, ...typography.strong, fontWeight: "700" },
   doneSuccessText: { flex: 1, color: colors.success, fontWeight: "700" },
   stepsHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
   stepsHeadLarge: { flexWrap: "wrap", rowGap: 8 },

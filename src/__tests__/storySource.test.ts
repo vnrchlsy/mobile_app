@@ -14,7 +14,7 @@ const read = (...p: string[]) => readFileSync(join(__dirname, "..", ...p), "utf-
 
 describe("story sources", () => {
   test("the closed list is the one the server knows", () => {
-    expect([...STORY_SOURCES].sort()).toEqual(["adoption_cta", "feed"]);
+    expect([...STORY_SOURCES].sort()).toEqual(["adoption_cta", "feed", "poster_prompt", "rescue_prompt"]);
   });
 
   test("the types carry it", () => {

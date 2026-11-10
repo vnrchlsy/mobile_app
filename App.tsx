@@ -11,6 +11,7 @@ import { OfflineBanner } from "./src/components/OfflineBanner";
 import { ConnectivityProvider } from "./src/net/ConnectivityProvider";
 import { OutboxProvider } from "./src/outbox/OutboxProvider";
 import { initErrorReporting } from "./src/observability";
+import { LinkBridge } from "./src/navigation/LinkBridge";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { PushBridge } from "./src/push/PushBridge";
 import type { RootStackParamList } from "./src/navigation/types";
@@ -53,6 +54,8 @@ export default function App() {
           {/* US-E4 · registers this install's push token and routes a tapped
               notification through the type whitelist. Renders nothing. */}
           <PushBridge navRef={navRef} />
+          {/* Stories review step 11 · a shared story link opens the story. */}
+          <LinkBridge navRef={navRef} />
           {/* Plan Task 14b · the opt-in biometric lock; above every screen, inert for a guest. */}
           <AppLockGate>
             <RootNavigator />
