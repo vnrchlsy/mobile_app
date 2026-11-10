@@ -13,6 +13,11 @@ import { Apiish, LoadState, loadState } from "./net";
 
 export type FeedPage = { rows: MeNotification[]; next: string | null };
 
+/** One notification as the server's `NotificationSerializer` declares it, or null when it is not one (identity is strict: id, type, read, a date). */
+export function parseNotification(r: unknown): MeNotification | null {
+  return isRow(r) ? r : null;
+}
+
 function isRow(r: any): r is MeNotification {
   return !!r && typeof r === "object"
     && typeof r.notification_id === "string" && r.notification_id !== ""

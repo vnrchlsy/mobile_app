@@ -35,6 +35,7 @@ import { useLargeText } from "../useLargeText";
 import { colors, elevation, radii, spacing, typography } from "../theme";
 import { enterShelterShell } from "../shelterTabs";
 import { openOwnerTab } from "../appTabs";
+import { setAppBadge } from "../push/badge";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 
@@ -153,7 +154,7 @@ export function HomeScreen({ navigation, route }: Props) {
   const loadHomeData = useCallback(() => {
     return Promise.all([
       api.get("/me/notifications/unread-count").then((r) => {
-        if (r.ok) setHasUnread((r.data?.unread ?? 0) > 0);
+        if (r.ok) { setHasUnread((r.data?.unread ?? 0) > 0); void setAppBadge(r.data?.unread); }   // NP22 · keep the icon true
         return r.ok;
       }),
       api.get("/me/rescues").then((r) => {

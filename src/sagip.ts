@@ -109,16 +109,8 @@ export function offerStatusChip(status: OfferListStatus): { label: string; tone:
   }
 }
 
-export function relTime(iso: string, nowMs: number = Date.now()): string {
-  const mins = Math.max(0, Math.floor((nowMs - new Date(iso).getTime()) / 60000));
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins} min ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
+import { relTime } from "./dates";
+export { relTime };
 
 // ── Home's spotlight (US-X1 redesign, 2026-09-09) ────────────────────────────────────
 // Home used to carry a list of four links to the caller's own Sagip screens. A list is the
