@@ -1,9 +1,11 @@
 // US-S3 entry · report-sent confirmation. Reference: screens/user/screen-report-stray-sent.png.
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useEffect } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { CheckIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
+import { requestPushPrompt } from "../pushPrompt";
 import { queuedReportLine } from "../sagip";
 import { TAP_SLOP } from "../touch";
 import { colors, elevation, maxFontScale, radii, spacing, squircle, typography } from "../theme";
@@ -20,6 +22,8 @@ const NEXT = [
 
 export function ReportSentScreen({ navigation, route }: Props) {
   const { reportId, title, city, queued, queuedReason } = route.params;
+  // NQ6 · a report is the clearest reason to want a notification: ask (once, with an explanation) now.
+  useEffect(() => { requestPushPrompt("report"); }, []);
   return (
     <View style={styles.screen} testID="screen.reportSent">
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>

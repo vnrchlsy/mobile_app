@@ -17,6 +17,7 @@ import { RootStackParamList, ShelterDoc } from "../navigation/types";
 import { authColors } from "./AuthFormKit";
 import { colors, elevation, maxFontScale, radii, spacing, typography } from "../theme";
 import { Avatar, Button, Field, ScreenHeader } from "../components/ui";
+import { requestPushPrompt } from "../pushPrompt";
 import { enterShelterShell } from "../shelterTabs";
 
 const PRC_RE = /^\d{6,8}$/;
@@ -127,6 +128,7 @@ export function ShelterVerifyNgoScreen({ navigation, route }: Props) {
       }
       if (res.ok) {
         enterShelterShell(navigation);
+        requestPushPrompt("shelter_setup");   // NQ6 · they just sent documents for review
         return;
       }
       setError(res.data?.error?.message ?? "Couldn't submit for review. Try again.");

@@ -1,10 +1,12 @@
 // US-O1 · confirmation after sending an offer. Reference: screens/user/screen-rescue-offer-sent.png.
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useEffect } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { OfferType } from "../api/types";
 import { CheckIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
+import { requestPushPrompt } from "../pushPrompt";
 import { OFFER_TYPE_LABEL } from "../sagip";
 import { TAP_SLOP } from "../touch";
 import { colors, maxFontScale, spacing, squircle, typography } from "../theme";
@@ -17,6 +19,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "rescueOfferSent">;
 export function RescueOfferSentScreen({ navigation, route }: Props) {
   const { reportId, offerType } = route.params;
   const label = OFFER_TYPE_LABEL[offerType as OfferType] ?? offerType;
+  useEffect(() => { requestPushPrompt("offer"); }, []);   // NQ6
 
   return (
     <View style={styles.screen}>

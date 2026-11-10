@@ -42,6 +42,11 @@ const AUTH_SCREENS: string[] = [
   "waiver",
 ];
 
+/** Step 8 · is the focused leaf screen part of the sign-in / sign-up / recovery flow (which is about to reset the stack)? */
+export function isAuthFlowRoute(leaf: string | undefined): boolean {
+  return !!leaf && AUTH_SCREENS.includes(leaf);
+}
+
 export type SessionEnd = "stay" | "welcome" | "guestVolunteer";
 
 /**

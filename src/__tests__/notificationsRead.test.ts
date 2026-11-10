@@ -63,10 +63,10 @@ describe("wiring (source scan)", () => {
     expect(src).toMatch(/tappedRef/);
   });
 
-  it("a tapped push marks its own row read, before the destination check, only when signed in", () => {
+  it("a tapped push marks its own row read, once the app can act on the tap (signed in; see pushTap.test.ts)", () => {
     const src = read("push", "PushBridge.tsx");
-    expect(src.indexOf("pushNotificationId(data)")).toBeGreaterThan(-1);
-    expect(src.indexOf("pushNotificationId(data)")).toBeLessThan(src.indexOf("const target = notificationTarget"));
-    expect(src).toMatch(/signedIn\.current/);
+    expect(src).toMatch(/pushNotificationId\(data\)/);
+    expect(src).toMatch(/\/me\/notifications\/\$\{p\.notificationId\}\/read/);
+    expect(src.indexOf("tapPlan(")).toBeLessThan(src.indexOf("/me/notifications/${p.notificationId}/read"));
   });
 });

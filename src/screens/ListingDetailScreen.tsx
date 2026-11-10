@@ -26,6 +26,7 @@ import { TAP_SLOP } from "../touch";
 import { useLargeText } from "../useLargeText";
 import { colors, maxFontScale, radii, spacing, typography } from "../theme";
 import { listingTitle } from "../shelterAnimals";
+import { requestPushPrompt } from "../pushPrompt";
 
 
 type Props = NativeStackScreenProps<RootStackParamList, "listingDetail">;
@@ -95,12 +96,14 @@ export function ListingDetailScreen({ navigation, route }: Props) {
       setInquired(true);
       // AQ1/AQ2 · say what really happens next; a non-member hears about the badge now.
       const copy = inquirySentCopy(listing?.poster.name ?? "The poster", res.data?.verified_member);
+      // NQ6 · ask about notifications once the person has dismissed this alert (a system alert and a modal cannot be up together).
+      const ask = (go?: () => void) => () => { go?.(); requestPushPrompt("inquiry"); };
       const buttons: Array<{ text: string; onPress?: () => void }> = [
-        { text: "OK" },
-        { text: "See my inquiries", onPress: () => navigation.navigate("myInquiries") }
+        { text: "OK", onPress: ask() },
+        { text: "See my inquiries", onPress: ask(() => navigation.navigate("myInquiries")) }
       ];
       if (res.data?.verified_member === false) {
-        buttons.push({ text: "Get verified", onPress: () => navigation.navigate("memberUpgrade") });
+        buttons.push({ text: "Get verified", onPress: ask(() => navigation.navigate("memberUpgrade")) });
       }
       Alert.alert(copy.title, copy.body, buttons);
       return;

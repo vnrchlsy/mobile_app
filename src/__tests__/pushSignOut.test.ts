@@ -67,7 +67,9 @@ test("no session: no request, nothing read", async () => {
   expect(load).not.toHaveBeenCalled();
 });
 
-test("PushBridge saves the registration it was given", () => {
-  const src = require("fs").readFileSync(require("path").join(__dirname, "..", "push", "PushBridge.tsx"), "utf8");
-  expect(src).toMatch(/saveRegisteredPushToken\(/);
+test("the registration is stored where both the silent and the explained paths go through", () => {
+  const read = (...p: string[]) => require("fs").readFileSync(require("path").join(__dirname, "..", ...p), "utf8");
+  expect(read("push", "registerDevice.ts")).toMatch(/saveRegisteredPushToken\(/);
+  expect(read("push", "PushBridge.tsx")).toMatch(/registerAndStore\(/);
+  expect(read("push", "PushPromptHost.tsx")).toMatch(/registerAndStore\(/);
 });

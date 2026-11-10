@@ -15,6 +15,7 @@ import { ScreenBackdrop } from "../components/ScreenBackground";
 import { SignupWall } from "../components/SignupWall";
 import { setIntent } from "../guestIntent";
 import { RootStackParamList } from "../navigation/types";
+import { requestPushPrompt } from "../pushPrompt";
 import { TAP_SLOP } from "../touch";
 import { colors, dangerOnSurface, maxFontScale, pill, spacing, squircle, typography } from "../theme";
 import { Button, Card, Field, ScreenHeader } from "../components/ui";
@@ -84,6 +85,7 @@ export function DonatePledgeScreen({ navigation, route }: Props) {
     setBusy(false);
     if (res.ok) {
       setDone(true);
+      requestPushPrompt("pledge");   // NQ6
       return;
     }
     const copy = pledgeErrorCopy(res.status, res.data?.error?.code);
