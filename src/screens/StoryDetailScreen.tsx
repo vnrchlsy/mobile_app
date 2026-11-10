@@ -14,9 +14,11 @@ import { LoadStateView } from "../components/LoadStateView";
 import { SignupWall } from "../components/SignupWall";
 import { setIntent } from "../guestIntent";
 import { ScreenBackdrop } from "../components/ScreenBackground";
+import { StoryTypeChip } from "../components/StoryTypeChip";
+import { initials } from "../initials";
 import { Avatar, Card, PressScale, ScreenHeader } from "../components/ui";
 import { loadState } from "../net";
-import { parseStory, Story, storyDate, storyLinkAction, storyTypeChip } from "../community";
+import { parseStory, Story, storyDate, storyLinkAction } from "../community";
 import { RootStackParamList } from "../navigation/types";
 import { canDeleteStory, canEditStory, storyDeleteFailure } from "../storyAuthor";
 import { ReactCtl, settleReact, startReact, tapReact } from "../storyReact";
@@ -24,17 +26,7 @@ import { canShareStory, storyShareContent } from "../storyShare";
 import { useLargeText } from "../useLargeText";
 import { colors, pill, radii, spacing, typography } from "../theme";
 
-const CHIP: Record<"ok" | "teal" | "muted", { bg: string; fg: string }> = {
-  ok: { bg: colors.successBg, fg: colors.success },
-  teal: { bg: colors.soft, fg: colors.teal },
-  muted: { bg: colors.greyPill, fg: colors.muted }
-};
-
 type Props = NativeStackScreenProps<RootStackParamList, "storyDetail">;
-
-function initials(name: string) {
-  return name.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?";
-}
 
 export function StoryDetailScreen({ navigation, route }: Props) {
   // At Dynamic Type AX3 and up the author row (avatar | name | chip) cannot share a line, so it stacks.
@@ -168,7 +160,6 @@ export function StoryDetailScreen({ navigation, route }: Props) {
       </View>
     );
   }
-  const chip = storyTypeChip(story.story_type);
   const link = storyLinkAction(story.link);
   return (
     <View style={styles.screen}>
@@ -206,9 +197,7 @@ export function StoryDetailScreen({ navigation, route }: Props) {
             <Text style={styles.authorName}>{story.author.name}</Text>
             {story.author.city ? <Text style={styles.city}>{story.author.city}</Text> : null}
           </View>
-          <View style={[styles.chip, { backgroundColor: CHIP[chip.tone].bg }]}>
-            <Text style={[styles.chipText, { color: CHIP[chip.tone].fg }]}>{chip.label}</Text>
-          </View>
+          <StoryTypeChip type={story.story_type} />
         </View>
         {story.caption ? <Text style={styles.caption}>{story.caption}</Text> : null}
         {/* ST6 · when it was posted, and (when the viewer may open it) what it is about: through the screens that already gate the adoption or the rescue. */}
@@ -296,8 +285,6 @@ const styles = StyleSheet.create({
   authorCopyLarge: { flex: 0, alignSelf: "stretch", flexGrow: 0, flexBasis: "auto" },
   authorName: { color: colors.ink, ...typography.section },
   city: { color: colors.muted, ...typography.meta, marginTop: 2 },
-  chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: radii.chip },
-  chipText: { ...typography.meta, fontWeight: "700" },
   photoCount: { position: "absolute", right: 12, bottom: 12, color: colors.white, backgroundColor: "rgba(0,0,0,0.55)", ...typography.meta, fontWeight: "700", paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.chip, overflow: "hidden" },
   date: { marginTop: 10, color: colors.muted, ...typography.meta },
   linkBtn: { alignSelf: "flex-start", marginTop: 12, minHeight: 44, justifyContent: "center" },
