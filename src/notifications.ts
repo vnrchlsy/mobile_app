@@ -151,3 +151,28 @@ export function notificationTarget(n: { type: string; data: Record<string, any> 
   // must not, because anything it opened would hint at what was decided. It is a deliberate no-op tap.
   return null; // unknown type, or a report-linked type missing its report_id — no-op tap
 }
+
+/**
+ * Notifications review NP4 / NQ3 · what to tell the server when the bell has just SHOWN `list`: `{ up_to }` is the
+ * newest `created_at` on screen, so a notification that arrived after the list was read stays unread. `null` when
+ * nothing shown is unread (no request), or when no row has a usable timestamp (never fall back to mark-all). The
+ * original string is sent, not a re-formatted Date, so the microseconds survive.
+ */
+export function markReadBody(list: { read: boolean; created_at: string }[]): { up_to: string } | null {
+  if (!list.some((n) => !n.read)) return null;
+  let best: { ms: number; raw: string } | null = null;
+  for (const n of list) {
+    const ms = Date.parse(n.created_at);
+    if (Number.isNaN(ms)) continue;
+    if (!best || ms > best.ms) best = { ms, raw: n.created_at };
+  }
+  return best ? { up_to: best.raw } : null;
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** NP8 · the id a push carries for its own row, or null when absent or not a UUID (it goes into a URL path). */
+export function pushNotificationId(data: unknown): string | null {
+  const id = (data as { notification_id?: unknown } | null | undefined)?.notification_id;
+  return typeof id === "string" && UUID.test(id) ? id : null;
+}

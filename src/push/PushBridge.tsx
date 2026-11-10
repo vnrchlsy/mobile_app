@@ -16,7 +16,7 @@ import { Platform } from "react-native";
 
 import { useApi } from "../api/useApi";
 import { useAuth } from "../auth/AuthContext";
-import { notificationTarget } from "../notifications";
+import { notificationTarget, pushNotificationId } from "../notifications";
 import { registerPushToken } from "../push";
 import { saveRegisteredPushToken } from "./pushTokenStore";
 import { openOwnerTab, ownerTabKeyForRoute } from "../appTabs";
@@ -42,6 +42,11 @@ export function PushBridge({ navRef }: { navRef: any }) {
   const api = useApi();
   const { tokens } = useAuth();
   const registered = useRef(false);
+  // The tap listener below lives for the whole app, so it reads the session and api through refs (NP8).
+  const signedIn = useRef(false);
+  signedIn.current = !!tokens;
+  const apiRef = useRef(api);
+  apiRef.current = api;
 
   // Register once per signed-in session. Re-running on every render would re-POST the same
   // token; re-running on sign-in is correct, because the backend upserts and RE-HOMES the
@@ -90,6 +95,9 @@ export function PushBridge({ navRef }: { navRef: any }) {
     function go(response: Notifications.NotificationResponse) {
       const content = response?.notification?.request?.content;
       const data = (content?.data ?? {}) as Record<string, any>;
+      // NP8 / NQ3 · a tapped push is read: mark ITS row, whether or not it has a destination.
+      const notificationId = pushNotificationId(data);
+      if (notificationId && signedIn.current) void apiRef.current.post(`/me/notifications/${notificationId}/read`);
       // The backend puts the notification `type` in the payload; without it there is no
       // destination, and guessing one from a URL is exactly what this avoids.
       const target = notificationTarget({ type: String(data.type ?? ""), data });
