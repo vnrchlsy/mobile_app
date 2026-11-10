@@ -15,7 +15,7 @@ import { ScreenBackdrop } from "../components/ScreenBackground";
 import { Button, Card, Chip, Field, PressScale, ScreenHeader } from "../components/ui";
 import { TAP_SLOP } from "../touch";
 import {
-  MAX_CAPTION, MAX_PHOTOS, canAddPhoto, captionCount, hasUnsavedStory, photoPickOutcome, photosBody, storyPostFailure, withCover, withoutPhoto, withPhoto
+  MAX_CAPTION, MAX_PHOTOS, acquire, canAddPhoto, captionCount, hasUnsavedStory, photoPickOutcome, photosBody, storyPostFailure, withCover, withoutPhoto, withPhoto
 } from "../storyCompose";
 import { hasUnsavedEdit, storyEditFailure } from "../storyAuthor";
 
@@ -66,8 +66,7 @@ export function StoryComposeScreen({ navigation, route }: Props) {
   }
 
   async function save() {
-    if (!edit || posting.current) return;
-    posting.current = true;
+    if (!edit || !acquire(posting)) return;
     setBusy(true);
     setError(null);
     setCaptionError(null);
@@ -82,9 +81,8 @@ export function StoryComposeScreen({ navigation, route }: Props) {
   }
 
   async function post() {
-    if (posting.current) return;
     if (photoUrls.length === 0) { setPhotoError("A story needs at least one photo."); return; }
-    posting.current = true;
+    if (!acquire(posting)) return;
     setBusy(true);
     setError(null);
     setPhotoError(null);

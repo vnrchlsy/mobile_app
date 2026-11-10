@@ -14,7 +14,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 
-import { hasUnsavedStory, photoPickOutcome, storyPostFailure } from "../storyCompose";
+import { acquire, hasUnsavedStory, photoPickOutcome, storyPostFailure } from "../storyCompose";
 
 const read = (...p: string[]) => readFileSync(join(__dirname, "..", ...p), "utf-8");
 const err = (status: number, code: string, message = "", extra: object = {}) =>
@@ -159,7 +159,9 @@ describe("the screens", () => {
 
   test("compose: a second tap while posting is ignored by a ref, not only by state", () => {
     expect(compose).toMatch(/const posting = useRef\(false\)/);
-    expect(compose).toMatch(/if \(posting\.current\) return/);
+    expect(compose).toMatch(/if \(!acquire\(posting\)\) return/);
+    expect(compose).toMatch(/if \(!edit \|\| !acquire\(posting\)\) return/);
+    expect(compose.includes("posting.current = true")).toBe(false);      // taking it is `acquire`'s one synchronous step, not a read and a later write
   });
 
   test("feed: a guest's + Share opens the wall with the share_story intent", () => {
@@ -173,5 +175,39 @@ describe("the screens", () => {
     expect(read("guestIntent.ts")).toContain('"share_story"');
     expect(read("components", "SignupWall.tsx")).toContain('case "share_story"');
     expect(read("screens", "HomeScreen.tsx")).toContain('case "share_story"');
+  });
+});
+
+
+// ---- stories test plan U16 · two taps in the SAME frame ---------------------------------------------------------------------------------
+describe("acquire: the one-at-a-time latch behind Post and Save", () => {
+  test("the first call takes it and the second, in the same tick, does not", () => {
+    const latch = { current: false };
+    expect([acquire(latch), acquire(latch), acquire(latch)]).toEqual([true, false, false]);
+  });
+
+  test("after the holder lets go, the next call takes it again", () => {
+    const latch = { current: false };
+    acquire(latch);
+    latch.current = false;
+    expect(acquire(latch)).toBe(true);
+  });
+
+  test("two presses started in one tick send ONE request, however long it takes", async () => {
+    const latch = { current: false };
+    const send = jest.fn(() => new Promise<void>((resolve) => setTimeout(resolve, 10)));
+    async function press() {
+      if (!acquire(latch)) return "ignored";
+      try { await send(); return "sent"; } finally { latch.current = false; }
+    }
+    jest.useFakeTimers();
+    try {
+      const both = Promise.all([press(), press(), press()]);
+      await jest.advanceTimersByTimeAsync(10);
+      expect(await both).toEqual(["sent", "ignored", "ignored"]);
+      expect(send).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

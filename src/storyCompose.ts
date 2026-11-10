@@ -108,3 +108,15 @@ export function captionCount(caption: string): string | null {
   const n = [...caption].length;
   return n > MAX_CAPTION - 300 ? `${n.toLocaleString("en-US")} / ${MAX_CAPTION.toLocaleString("en-US")}` : null;
 }
+
+
+/**
+ * Stories test plan U16 · take the one-at-a-time latch behind Post and Save. True for the caller that got it, false for any other call while it is held (the holder lets go
+ * by writing `latch.current = false`). A `useRef`, not state, because two taps in one frame both read the same state; and taking it is this one synchronous
+ * step, so there is no gap between "is it free?" and "it is mine" for a second tap to slip through.
+ */
+export function acquire(latch: { current: boolean }): boolean {
+  if (latch.current) return false;
+  latch.current = true;
+  return true;
+}

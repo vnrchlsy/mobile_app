@@ -54,6 +54,35 @@ export type UploadPurpose =
   // A person's own avatar, shown to others on stories and comments.
   | "profile_photo";
 
+/**
+ * Stories test plan I1 · how long the multipart POST to storage may take before the upload gives up. The presign call already has the API client's 20 s limit; this
+ * POST is a RAW fetch (a different host, no bearer token) and had none, so a storage endpoint that accepted the connection and then stalled left "Adding…" on screen
+ * for good. A photo is bigger than any JSON body, so the limit is longer than the client's.
+ */
+export const STORAGE_TIMEOUT_MS = 60000;
+
+/**
+ * The POST to storage, under a limit. A timeout is status 0, which `uploadImage` already says as "offline" (it cannot tell a dead connection from a stalled one, and
+ * the advice is the same: try again with a connection). It aborts the request, and does not trust the fetch to honour the abort: the race is what guarantees it settles.
+ */
+export async function postToStorage(
+  fetchFn: (url: string, init: { method: string; body: FormData; signal?: AbortSignal }) => Promise<{ ok: boolean; status: number }>,
+  url: string, form: FormData, timeoutMs: number = STORAGE_TIMEOUT_MS,
+): Promise<{ ok: boolean; status: number }> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timedOut = new Promise<{ ok: boolean; status: number }>((resolve) => {
+    timer = setTimeout(() => { controller.abort(); resolve({ ok: false, status: 0 }); }, timeoutMs);
+  });
+  try {
+    const sent = fetchFn(url, { method: "POST", body: form, signal: controller.signal })
+      .then((res) => ({ ok: res.ok, status: res.status }), () => ({ ok: false, status: 0 }));
+    return await Promise.race([sent, timedOut]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 export type UploadDeps = {
   /** Strip EXIF + downscale. Returns the processed file's uri. */
   process: (uri: string, resize: { width: number } | { height: number } | null) => Promise<string>;
