@@ -40,7 +40,10 @@ const IDS = {
 };
 
 maybe("every registered notification type has a destination or says why not", () => {
-  const types = [...readFileSync(file as string, "utf8").matchAll(/NotificationType\("([a-z_]+)"/g)].map((m) => m[1]);
+  // ⚠️ `describe.skip` still RUNS this body (to collect the tests), so it must not read a file that is not there: with no sibling
+  // backend (CI) the old `readFileSync(file as string)` threw at collection and failed the suite instead of skipping it. That kept this
+  // repo's CI red from #369 on.
+  const types = file ? [...readFileSync(file, "utf8").matchAll(/NotificationType\("([a-z_]+)"/g)].map((m) => m[1]) : [];
 
   it("found the registry (a scan that finds nothing proves nothing)", () => {
     expect(types.length).toBeGreaterThan(40);
