@@ -30,6 +30,8 @@ export type NotificationTarget =
   // Poster-push fallbacks when the push lacks an inquiry_id: shelter → their Requests tab,
   // individual → the listing. Spec 2026-10-06 §1.
   | { screen: "shelterRequests" }
+  // Notifications review NP7 · the shelter's donation QR decision opens its Donate tab, where the QR lives.
+  | { screen: "shelterDonate" }
   | { screen: "applicant"; inquiryId: string }
   | { screen: "inquiry"; inquiryId: string }
   | { screen: "memberUpgrade" }
@@ -72,7 +74,8 @@ const POSTER_INQUIRY_TYPES = new Set(["inquiry_received", "inquiry_withdrawn", "
 // SCHEDULE_TYPES/HISTORY_TYPES split — the two destinations became one screen with two
 // sections, so the routing no longer needs to guess which section a type belongs under.
 const MY_SHIFTS_TYPES = new Set([
-  "shift_confirmed", "shift_reminder", "signup_declined", "shift_cancelled_by_shelter"
+  "shift_confirmed", "shift_reminder", "signup_declined", "shift_cancelled_by_shelter",
+  "signup_cancelled_by_shelter"   // NP7 · registered (kupkop://shifts) but had no route, so its tap did nothing
 ]);
 // US-V9 · signup_requested is the SHELTER's own notification (a volunteer requested one of
 // their shifts) — routes to the activity timeline's Pending section for that shift, same
@@ -109,6 +112,7 @@ export function notificationTarget(n: { type: string; data: Record<string, any> 
   if ((n.type === "story_removed" || n.type === "story_restored") && n.data?.story_id) {
     return { screen: "storyDetail", storyId: n.data.story_id };
   }
+  if (n.type === "donation_qr_decided") return { screen: "shelterDonate" };   // NP7
   if (n.type === "adoption_badge_needed") return { screen: "memberUpgrade" };
   if (ADOPTER_INQUIRY_TYPES.has(n.type)) {
     return n.data?.inquiry_id ? { screen: "inquiry", inquiryId: n.data.inquiry_id } : { screen: "myInquiries" };

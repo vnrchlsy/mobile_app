@@ -227,3 +227,20 @@ describe("a push's data is all strings (backend#89)", () => {
     }
   });
 });
+
+describe("NP7 · the two registered types that used to go nowhere", () => {
+  it("opens the shelter's Donate tab for a donation QR decision, from the bell and from a push", () => {
+    expect(notificationTarget({ type: "donation_qr_decided", data: { donation_qr_id: "q1", provider: "gcash", decision: "verified" } }))
+      .toEqual({ screen: "shelterDonate" });
+    expect(notificationTarget({ type: "donation_qr_decided", data: null })).toEqual({ screen: "shelterDonate" });
+    const src = require("fs").readFileSync(require("path").join(__dirname, "..", "screens", "NotificationsScreen.tsx"), "utf8");
+    expect(src).toMatch(/case "shelterDonate":\s*openShelterTab\(navigation, "donate"\)/);
+    const { shelterTabKeyForRoute } = require("../shelterTabs");
+    expect(shelterTabKeyForRoute("shelterDonate")).toBe("donate");   // the push path enters the tab the same way
+  });
+
+  it("opens the volunteer's shifts when the shelter cancels their signup", () => {
+    expect(notificationTarget({ type: "signup_cancelled_by_shelter", data: { shift_id: "s1", signup_id: "g1" } }))
+      .toEqual({ screen: "kawanggawa", tab: "mine" });
+  });
+});
