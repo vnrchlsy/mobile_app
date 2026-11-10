@@ -30,7 +30,7 @@ export type RegisterDeps = {
 };
 
 export type RegisterResult =
-  | { status: "registered"; tokenId: string }
+  | { status: "registered"; tokenId: string; token: string }
   | { status: "denied" }
   | { status: "unsupported"; reason: string }
   | { status: "failed"; reason: string };
@@ -81,7 +81,7 @@ export async function registerPushToken(
 
   const res = await deps.post("/me/device-tokens", { fcm_token: token, platform });
   if (!res.ok) return { status: "failed", reason: res.status === 0 ? "offline" : "server" };
-  return { status: "registered", tokenId: res.data?.token_id };
+  return { status: "registered", tokenId: res.data?.token_id, token };
 }
 
 /**

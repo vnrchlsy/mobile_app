@@ -1,4 +1,7 @@
 import { createApi } from "../api/client";
+import {
+  clearRegisteredPushToken, loadRegisteredPushToken, RegisteredPushToken,
+} from "../push/pushTokenStore";
 
 type Tokens = { access: string; refresh: string } | null;
 
@@ -30,18 +33,36 @@ export const LOGOUT_REVOKE_TIMEOUT_MS = 3000;
 export function revokeRefreshToken(
   tokens: NonNullable<Tokens>,
   timeoutMs: number = LOGOUT_REVOKE_TIMEOUT_MS,
+  pushToken: string | null = null,
 ): Promise<void> {
   const api = createApi(() => tokens, async () => {});
   let timer: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<void>((resolve) => { timer = setTimeout(resolve, timeoutMs); });
   // createApi never rejects (US-C1: network failure → status 0), but a `.catch` costs nothing
   // and keeps "never blocks the wipe" true even if that contract changes.
-  const attempt = api.post("/auth/logout", { refresh: tokens.refresh }).then(() => undefined, () => undefined);
+  // NP2 · the same call also drops THIS phone's push token (the server deletes it only for the signed-in
+  // account), so a shared phone stops delivering this person's notifications the moment they sign out.
+  const body = pushToken ? { refresh: tokens.refresh, fcm_token: pushToken } : { refresh: tokens.refresh };
+  const attempt = api.post("/auth/logout", body).then(() => undefined, () => undefined);
   return Promise.race([attempt, deadline]).finally(() => { if (timer !== undefined) clearTimeout(timer); });
 }
 
-/** Revoke server-side (bounded, best-effort) when there is a session, then always wipe locally. */
-export async function signOutWithRevoke(tokens: Tokens, wipe: () => Promise<void>): Promise<void> {
-  if (tokens) await revokeRefreshToken(tokens);
+/**
+ * Revoke server-side (bounded, best-effort) when there is a session, then always wipe locally.
+ * The stored push registration is read first, sent with the revoke, and cleared after it. If the revoke
+ * never lands (offline), the stored pair is still cleared; the server then re-homes the token to whoever
+ * signs in next on this phone (the upsert on the unique token), which bounds the leak.
+ */
+export async function signOutWithRevoke(
+  tokens: Tokens,
+  wipe: () => Promise<void>,
+  loadPush: () => Promise<RegisteredPushToken | null> = loadRegisteredPushToken,
+  clearPush: () => Promise<void> = clearRegisteredPushToken,
+): Promise<void> {
+  if (tokens) {
+    const pair = await loadPush().catch(() => null);
+    await revokeRefreshToken(tokens, LOGOUT_REVOKE_TIMEOUT_MS, pair?.token ?? null);
+  }
+  await clearPush().catch(() => undefined);
   await wipe();
 }

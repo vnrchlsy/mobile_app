@@ -40,7 +40,7 @@ describe("registerPushToken", () => {
     const d = deps();
     const result = await registerPushToken(d, "ios");
 
-    expect(result).toEqual({ status: "registered", tokenId: "tok-1" });
+    expect(result).toEqual({ status: "registered", tokenId: "tok-1", token: "ExponentPushToken[abc]" });
     expect(d.post).toHaveBeenCalledWith("/me/device-tokens", {
       fcm_token: "ExponentPushToken[abc]", platform: "ios",
     });
