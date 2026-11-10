@@ -3,44 +3,33 @@
 // report_escalated/verification_* rows correctly, but nothing on mobile ever read them).
 // GET /me/notifications; POST /me/notifications/read {up_to} marks what the screen SHOWED read on open (NP4):
 // a row that arrived after the list was read stays unread.
+//
+// Notifications review step 14 (V1 to V3) · on the V3 surface, as drawn on design/mobile-v3/Notifications.dc.html (approved 2026-11-10): backdrop,
+// one Card per row, one press target and one label per row (src/notificationRows.ts), the type's icon and tone from the shared map
+// (src/notificationIcons.ts), "New" then "Earlier", and information-only rows that are not buttons.
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
-import { ReactElement, useCallback, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useCallback, useRef, useState } from "react";
+import { ActivityIndicator, FlatList, Image, StyleSheet, Text, View } from "react-native";
 
 import { MeNotification } from "../api/types";
 import { useApi } from "../api/useApi";
 import { LoadStateView } from "../components/LoadStateView";
-import { AlertIcon, CheckIcon, ClockIcon, UserBadgeIcon, XIcon } from "../components/AppIcons";
+import { ScreenBackdrop } from "../components/ScreenBackground";
 import { RootStackParamList } from "../navigation/types";
 import {
   allRows, beginMore, finishMore, moreUrl, NotifPaging, notificationsViewState, pagingAfterRefresh, pagingFrom,
   parseNotificationPage, shouldLoadMore
 } from "../notificationFeed";
+import { GLYPH_SOURCE, notificationLook, TONE_COLORS } from "../notificationIcons";
+import { BellItem, bellItems, isInformationOnly, notificationRowLabel, notificationTitle } from "../notificationRows";
 import { markReadBody, notificationTarget } from "../notifications";
 import { relTime } from "../sagip";
-import { colors, elevation, radii, spacing, typography } from "../theme";
-import { ScreenHeader } from "../components/ui";
+import { colors, maxFontScale, pill, radii, spacing, squircle, typography } from "../theme";
+import { Card, PressScale, ScreenHeader } from "../components/ui";
 import { TAP_SLOP } from "../touch";
 import { openOwnerTab } from "../appTabs";
 import { openShelterTab } from "../shelterTabs";
-
-
-// US-V8 · the four volunteer notification types get a dedicated icon + tone, matching the
-// vocabulary already used on the schedule/history cards (green = good news, soft-red = a
-// request didn't go through, teal = a heads-up, amber = something changed on you). Every
-// other type (verification_*, report-linked, stage_advanced) keeps the plain unread-dot
-// treatment it already had — this map only ever adds, never changes existing behavior.
-// US-V9 · signup_requested (the shelter's own "a volunteer wants your shift" notification)
-// joins the same map — teal heads-up tone, same as shift_reminder, since it's an FYI that
-// needs the shelter's attention rather than good/bad news about something already decided.
-const VOLUNTEER_ICON: Record<string, { bg: string; fg: string; Icon: (p: { color: string; size?: number }) => ReactElement }> = {
-  shift_confirmed: { bg: colors.successBg, fg: colors.success, Icon: CheckIcon },
-  signup_declined: { bg: colors.dangerBg, fg: colors.danger, Icon: XIcon },
-  shift_reminder: { bg: colors.soft, fg: colors.teal, Icon: ClockIcon },
-  shift_cancelled_by_shelter: { bg: colors.warningBg, fg: colors.warningStrong, Icon: AlertIcon },
-  signup_requested: { bg: colors.soft, fg: colors.teal, Icon: UserBadgeIcon }
-};
 
 type Props = NativeStackScreenProps<RootStackParamList, "notifications">;
 
@@ -191,20 +180,69 @@ export function NotificationsScreen({ navigation }: Props) {
   ) : paging.failed ? (
     <View style={styles.more}>
       <Text style={styles.moreText}>Couldn't load more notifications.</Text>
-      <TouchableOpacity onPress={() => loadMore(true)} hitSlop={TAP_SLOP} accessibilityRole="button"
+      <PressScale hitSlop={TAP_SLOP} style={styles.moreRetry} onPress={() => loadMore(true)} accessibilityRole="button"
         accessibilityLabel="Try loading more notifications again" testID="btn.notifications.moreRetry">
-        <Text style={styles.moreRetry}>Try again</Text>
-      </TouchableOpacity>
+        <Text style={styles.moreRetryLabel}>Try again</Text>
+      </PressScale>
     </View>
   ) : null;
 
+  function renderItem({ item }: { item: BellItem }) {
+    if (item.kind === "header") {
+      return <Text style={styles.group} accessibilityRole="header">{item.name}</Text>;
+    }
+    if (item.kind === "caughtUp") {
+      return (
+        <View style={styles.caughtUp} accessible accessibilityLabel="You're all caught up" testID="state.notifications.caughtUp">
+          <Text style={styles.caughtUpLabel}>You're all caught up</Text>
+        </View>
+      );
+    }
+    const n = item.n;
+    const look = notificationLook(n.type);
+    const tone = TONE_COLORS[look.tone];
+    const unread = !n.read;
+    const info = isInformationOnly(n);
+    const label = notificationRowLabel(n);
+    const content = (
+      <Card style={styles.row}>
+        <View style={[styles.tile, { backgroundColor: tone.bg }]} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+          <Image source={GLYPH_SOURCE[look.glyph]} tintColor={tone.fg} resizeMode="contain" style={styles.glyph} />
+        </View>
+        <View style={styles.copy}>
+          <Text style={[styles.title, !unread && styles.titleRead]} maxFontSizeMultiplier={maxFontScale.title}>{notificationTitle(n)}</Text>
+          {n.body ? <Text style={[styles.body, !unread && styles.bodyRead]}>{n.body}</Text> : null}
+          <Text style={styles.time}>{relTime(n.created_at)}</Text>
+        </View>
+        <View style={styles.side} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+          {unread ? <View style={styles.dot} /> : <View />}
+          {info ? <View /> : <View style={styles.chevron} />}
+        </View>
+      </Card>
+    );
+    // A row with nowhere to go is not a button: no pressed state, no button role, and it still goes read when the bell shows it.
+    return info ? (
+      <View accessible accessibilityRole="text" accessibilityLabel={label} style={styles.rowGap} testID={`row.notifications.${n.notification_id}`}>
+        {content}
+      </View>
+    ) : (
+      <PressScale accessibilityRole="button" accessibilityLabel={label} style={styles.rowGap} onPress={() => onPress(n)}
+        testID={`row.notifications.${n.notification_id}`}>
+        {content}
+      </PressScale>
+    );
+  }
+
+  const viewState = notificationsViewState(res, items);
+
   return (
     <View style={styles.screen}>
+      <ScreenBackdrop />
       <ScreenHeader title="Notifications" onBack={() => navigation.goBack()} />
-      {notificationsViewState(res, items).kind !== "ready" ? (
+      {viewState.kind !== "ready" ? (
         <View style={styles.content}>
           <LoadStateView
-            state={notificationsViewState(res, items)}
+            state={viewState}
             emptyTitle="Nothing yet"
             emptyBody="This is where updates on your reports and offers show up."
             onRetry={load}
@@ -212,8 +250,10 @@ export function NotificationsScreen({ navigation }: Props) {
         </View>
       ) : (
         <FlatList
-          data={items}
-          keyExtractor={(n) => n.notification_id}
+          testID="list.notifications"
+          data={bellItems(items)}
+          keyExtractor={(i) => i.key}
+          renderItem={renderItem}
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
           onEndReached={() => loadMore()}
@@ -221,52 +261,33 @@ export function NotificationsScreen({ navigation }: Props) {
           onRefresh={load}
           refreshing={false}
           ListFooterComponent={footer}
-          renderItem={({ item: n }) => {
-            const target = notificationTarget(n);
-            const kind = VOLUNTEER_ICON[n.type];
-            return (
-              <TouchableOpacity
-                style={[styles.card, !n.read && styles.cardUnread]}
-                activeOpacity={target ? 0.85 : 1}
-                onPress={() => onPress(n)}
-              >
-                {kind ? (
-                  <View style={[styles.cardIcon, { backgroundColor: kind.bg }]}>
-                    <kind.Icon color={kind.fg} size={22} />
-                  </View>
-                ) : !n.read ? (
-                  <View style={styles.dot} />
-                ) : null}
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{n.title || "Update"}</Text>
-                  {n.body ? <Text style={styles.cardBody}>{n.body}</Text> : null}
-                  <Text style={styles.cardTime}>{relTime(n.created_at)}</Text>
-                </View>
-              </TouchableOpacity>
-            );
-          }}
         />
       )}
     </View>
   );
 }
 
-const card = {
-  backgroundColor: colors.white, ...elevation.soft
-};
-
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.page },
-  content: { paddingHorizontal: spacing.lg, paddingTop: 16, paddingBottom: 60 },
-  card: { flexDirection: "row", alignItems: "flex-start", gap: 10, padding: 18, borderRadius: radii.field, marginBottom: 12, ...card },
-  cardUnread: { backgroundColor: colors.soft },
-  dot: { marginTop: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.teal },
-  cardIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  cardTitle: { color: colors.ink, ...typography.subtitle, fontWeight: "800" },
-  cardBody: { marginTop: 4, color: colors.muted, ...typography.meta, lineHeight: 20 },
-  cardTime: { marginTop: 8, color: "#9a988f", ...typography.meta, fontWeight: "600" },
-  more: { paddingVertical: 20, alignItems: "center", gap: 8 },
-  moreText: { color: colors.muted, ...typography.meta },
-  moreRetry: { color: colors.teal, ...typography.meta, fontWeight: "700", paddingVertical: 8, paddingHorizontal: 12 },
-  empty: { marginTop: 40, color: colors.muted, ...typography.body, textAlign: "center" }
+  screen: { flex: 1 },
+  content: { paddingHorizontal: spacing.lg, paddingTop: 4, paddingBottom: 60 },
+  group: { marginTop: 22, marginBottom: 2, marginLeft: 4, color: colors.muted, ...typography.meta, fontWeight: "800", letterSpacing: 0.6, textTransform: "uppercase" },
+  caughtUp: { marginTop: 14, paddingVertical: 14, paddingHorizontal: 16, borderRadius: radii.card, backgroundColor: colors.soft },
+  caughtUpLabel: { color: colors.ink, ...typography.strong, fontWeight: "800" },
+  rowGap: { marginTop: 10 },
+  row: { flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 14, borderRadius: radii.card },
+  tile: { width: 44, height: 44, borderRadius: squircle(44), alignItems: "center", justifyContent: "center" },
+  glyph: { width: 22, height: 22 },
+  copy: { flex: 1 },
+  title: { color: colors.ink, ...typography.strong, fontWeight: "800", lineHeight: 20 },
+  titleRead: { fontWeight: "700" },
+  body: { marginTop: 3, color: colors.ink, ...typography.meta, fontWeight: "600", lineHeight: 19 },
+  bodyRead: { color: colors.muted },
+  time: { marginTop: 7, color: colors.muted, ...typography.meta, fontWeight: "700" },
+  side: { width: 20, alignSelf: "stretch", alignItems: "center", justifyContent: "space-between" },
+  dot: { width: 9, height: 9, marginTop: 4, borderRadius: pill(9), backgroundColor: colors.teal },
+  chevron: { width: 9, height: 9, marginBottom: 4, borderRightWidth: 2.4, borderBottomWidth: 2.4, borderColor: colors.muted, opacity: 0.5, transform: [{ rotate: "-45deg" }] },
+  more: { marginTop: 10, marginBottom: 12, alignItems: "center", gap: 8 },
+  moreText: { color: colors.muted, ...typography.meta, fontWeight: "700" },
+  moreRetry: { minHeight: 44, paddingHorizontal: 18, justifyContent: "center", borderRadius: pill(44), backgroundColor: colors.white },
+  moreRetryLabel: { color: colors.teal, ...typography.strong, fontWeight: "800" }
 });
