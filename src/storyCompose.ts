@@ -139,3 +139,12 @@ export function removeHitRect(): { left: number; right: number; top: number; bot
     top: top - THUMB_X_SLOP.top, bottom: top + THUMB_X_SIZE + THUMB_X_SLOP.bottom
   };
 }
+
+
+// Found on an iPhone SE: with the keyboard up the big cover preview (176 pt) and its card pushed the caption down until only its first line showed above the keyboard, and
+// every line typed after it was behind it. On a short screen the preview gives way while the keyboard is up (the thumbnails and the label stay); a taller screen already has room.
+export const SHORT_SCREEN = 720;     // points: an iPhone SE is 667, an iPhone 13 mini 812 (which has room)
+
+export function compactPreview(keyboardUp: boolean, windowHeight: number): boolean {
+  return keyboardUp && windowHeight > 0 && windowHeight < SHORT_SCREEN;
+}

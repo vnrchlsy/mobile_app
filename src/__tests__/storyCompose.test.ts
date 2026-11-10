@@ -14,7 +14,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 
-import { THUMB_SIZE, removeHitRect, acquire, hasUnsavedStory, photoPickOutcome, storyPostFailure } from "../storyCompose";
+import { SHORT_SCREEN, compactPreview, THUMB_SIZE, removeHitRect, acquire, hasUnsavedStory, photoPickOutcome, storyPostFailure } from "../storyCompose";
 
 const read = (...p: string[]) => readFileSync(join(__dirname, "..", ...p), "utf-8");
 const err = (status: number, code: string, message = "", extra: object = {}) =>
@@ -231,5 +231,32 @@ describe("the remove (×) hit area on a photo thumbnail", () => {
     const src = readFileSync(join(__dirname, "..", "screens", "StoryComposeScreen.tsx"), "utf8");
     expect(src.length).toBeGreaterThan(500);
     expect(src).toMatch(/hitSlop=\{THUMB_X_SLOP\} style=\{styles\.thumbX\}/);
+  });
+});
+
+
+// ---- found walking an iPhone SE (2026-11-10) · the caption's later lines sat behind the keyboard ---------------------------------------------
+describe("compactPreview: room for the caption when the keyboard is up on a short screen", () => {
+  test("a short screen with the keyboard up gives the big cover preview up (the thumbnails stay), so the caption has room", () => {
+    expect(compactPreview(true, 667)).toBe(true);        // iPhone SE 3rd gen
+    expect(compactPreview(true, SHORT_SCREEN - 1)).toBe(true);
+  });
+  test("a taller screen keeps its preview even with the keyboard up (the caption already fits)", () => {
+    for (const h of [SHORT_SCREEN, 812, 844, 956]) expect(compactPreview(true, h)).toBe(false);
+  });
+  test("with no keyboard the preview is always there, whatever the screen", () => {
+    for (const h of [568, 667, 844]) expect(compactPreview(false, h)).toBe(false);
+  });
+  test("a window height of 0 (not measured yet) never hides anything", () => {
+    expect(compactPreview(true, 0)).toBe(false);
+  });
+  test("the screen follows the keyboard and the window and uses it on the preview", () => {
+    const src = readFileSync(join(__dirname, "..", "screens", "StoryComposeScreen.tsx"), "utf8");
+    expect(src.length).toBeGreaterThan(500);
+    expect(src).toContain("useWindowDimensions()");
+    expect(src).toMatch(/Keyboard\.addListener\("keyboard(Will|Did)Show"/);
+    expect(src).toMatch(/Keyboard\.addListener\("keyboard(Will|Did)Hide"/);
+    expect(src).toContain("compactPreview(keyboardUp, height)");
+    expect(src).toMatch(/!compact \? \(?\s*(<Image|photoUrls\.length)/);
   });
 });
