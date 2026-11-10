@@ -70,7 +70,7 @@ export function hasUnsavedStory(caption: string, photoUrls: string[]): boolean {
 
 // Stories review step 10 (ST18) · which entry point opened compose, sent with a new story so the server can count where posts come from. A closed list
 // (the server maps anything else to "unknown"); add a value here in the same change that adds the entry point that sends it.
-export const STORY_SOURCES = ["feed", "adoption_cta"] as const;
+export const STORY_SOURCES = ["feed", "adoption_cta", "poster_prompt", "rescue_prompt"] as const;
 export type StorySource = (typeof STORY_SOURCES)[number];
 
 // Stories review step 8 (ST8, SQ4) · the server's limits, and the photo list the compose screen keeps. The FIRST photo is the cover (what the wall shows); the

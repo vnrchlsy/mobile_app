@@ -243,7 +243,7 @@ export type RootStackParamList = {
   // US-T2 · success stories: feed, compose (optionally prefilled from an adoption), detail.
   stories: { mine?: boolean } | undefined;     // `mine`: your own stories (stories review step 6)
   // `edit`: change the caption of a story you posted (the photo and the link are what was shared, and stay).
-  storyCompose: { adoptionListingId?: string; source?: StorySource; edit?: { storyId: string; caption: string; photoUrl: string | null } } | undefined;
+  storyCompose: { adoptionListingId?: string; rescueCaseId?: string; source?: StorySource; edit?: { storyId: string; caption: string; photoUrl: string | null } } | undefined;
   storyDetail: { storyId: string };
   // US-L3 · lost & found match surfacing: the reporter's matches + one match's detail.
   reportMatches: { reportId: string };
