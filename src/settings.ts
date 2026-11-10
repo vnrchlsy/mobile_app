@@ -8,7 +8,10 @@ import type { RootStackParamList } from "./navigation/types";
 // changed nothing. The three switches below are the ones that do something.
 export type Settings = {
   marketing_emails: boolean;
+  /** NQ4 · "Everything else": updates on your own reports, adoptions, shifts and pledges, and account notices. */
   push_enabled: boolean;
+  /** NQ4 · "Urgent rescues nearby". Absent from an older server, which has one push switch: the row is then not offered. */
+  push_urgent_enabled?: boolean;
   analytics_consent: boolean;
   analytics_consent_at: string | null;
 };
@@ -78,28 +81,45 @@ export function privacySummary(): string {
  * server-side regardless, so neither is a control the user actually holds. Rendering them
  * as switches would be theatre, and theatre on the privacy screen is a broken promise.
  */
-export function privacyRows(settings: Settings) {
+export type ToggleKey = "push_urgent_enabled" | "push_enabled" | "marketing_emails" | "analytics_consent";
+export type ToggleRowData = { key: ToggleKey; group: "notifications" | "analytics"; label: string; note: string; value: boolean };
+
+export function privacyRows(settings: Settings): { toggles: ToggleRowData[]; facts: { label: string; note: string }[] } {
+  const toggles: ToggleRowData[] = [];
+  // NQ4 · two push switches. Offered only when the server has the second one; against an older server a toggle would do nothing.
+  if (typeof settings.push_urgent_enabled === "boolean") {
+    toggles.push({
+      key: "push_urgent_enabled", group: "notifications",
+      label: "Urgent rescues nearby",
+      note: "Alerts when a stray near you needs help right away.",
+      value: settings.push_urgent_enabled,
+    });
+  }
+  toggles.push(
+    {
+      key: "push_enabled", group: "notifications",
+      // With one switch this was "Push notifications"; with two, saying what is left is clearer than saying what it is not.
+      label: typeof settings.push_urgent_enabled === "boolean" ? "Everything else" : "Push notifications",
+      note: typeof settings.push_urgent_enabled === "boolean"
+        ? "Updates on your reports, adoptions, shifts and pledges, and notices about your account."
+        : "Rescue updates, matches, and requests.",
+      value: settings.push_enabled,
+    },
+    {
+      key: "marketing_emails", group: "notifications",
+      label: "Marketing emails",
+      note: "News and campaigns. Off unless you ask.",
+      value: settings.marketing_emails,
+    },
+    {
+      key: "analytics_consent", group: "analytics",
+      label: "Help improve Kupkop",
+      note: "Anonymous usage only — never your pets, reports, or the people you talk to.",
+      value: settings.analytics_consent,
+    },
+  );
   return {
-    toggles: [
-      {
-        key: "push_enabled" as const,
-        label: "Push notifications",
-        note: "Rescue updates, matches, and requests.",
-        value: settings.push_enabled,
-      },
-      {
-        key: "marketing_emails" as const,
-        label: "Marketing emails",
-        note: "News and campaigns. Off unless you ask.",
-        value: settings.marketing_emails,
-      },
-      {
-        key: "analytics_consent" as const,
-        label: "Help improve Kupkop",
-        note: "Anonymous usage only — never your pets, reports, or the people you talk to.",
-        value: settings.analytics_consent,
-      },
-    ],
+    toggles,
     facts: [
       {
         label: "Your location is city-only",

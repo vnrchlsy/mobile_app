@@ -60,9 +60,34 @@ describe("blockerHeadline", () => {
 });
 
 describe("privacyRows", () => {
-  it("offers exactly the three switches that do something", () => {
-    const keys = privacyRows(settings).toggles.map((t) => t.key);
-    expect(keys).toEqual(["push_enabled", "marketing_emails", "analytics_consent"]);
+  it("offers exactly the switches that do something: two push switches, marketing, analytics (NQ4)", () => {
+    const keys = privacyRows({ ...settings, push_urgent_enabled: true }).toggles.map((t) => t.key);
+    expect(keys).toEqual(["push_urgent_enabled", "push_enabled", "marketing_emails", "analytics_consent"]);
+  });
+
+  it("names the two push switches as decided: 'Urgent rescues nearby' and 'Everything else'", () => {
+    const rows = privacyRows({ ...settings, push_urgent_enabled: false }).toggles;
+    expect(rows.find((t) => t.key === "push_urgent_enabled")).toMatchObject({ label: "Urgent rescues nearby", value: false });
+    expect(rows.find((t) => t.key === "push_enabled")!.label).toBe("Everything else");
+  });
+
+  it("each switch holds its own value", () => {
+    const rows = privacyRows({ ...settings, push_enabled: false, push_urgent_enabled: true }).toggles;
+    expect(rows.find((t) => t.key === "push_enabled")!.value).toBe(false);
+    expect(rows.find((t) => t.key === "push_urgent_enabled")!.value).toBe(true);
+  });
+
+  it("against an older server with one push switch, offers only that one and keeps its old wording", () => {
+    const rows = privacyRows(settings).toggles;      // no push_urgent_enabled
+    expect(rows.map((t) => t.key)).toEqual(["push_enabled", "marketing_emails", "analytics_consent"]);
+    expect(rows[0].label).toBe("Push notifications");
+  });
+
+  it("groups the rows, so the screen never depends on their position", () => {
+    const rows = privacyRows({ ...settings, push_urgent_enabled: true }).toggles;
+    expect(rows.filter((t) => t.group === "notifications").map((t) => t.key))
+      .toEqual(["push_urgent_enabled", "push_enabled", "marketing_emails"]);
+    expect(rows.filter((t) => t.group === "analytics").map((t) => t.key)).toEqual(["analytics_consent"]);
   });
 
   it("never renders masked contact or approximate location as toggles", () => {
@@ -132,4 +157,17 @@ test("P1 · the export screen asks for the export time limit and uses the helper
   const src = require("fs").readFileSync("src/screens/ExportDataScreen.tsx", "utf8");
   expect(src).toContain('api.get("/me/export", { timeoutMs: EXPORT_TIMEOUT_MS, headers })');
   expect(src).toContain("exportErrorMessage(res)");
+});
+
+describe("the privacy screen reads rows by group (NQ4, source scan)", () => {
+  const src = require("fs").readFileSync(require("path").join(__dirname, "..", "screens", "SettingsPrivacyScreen.tsx"), "utf8");
+  it("does not index the toggles by position", () => {
+    expect(src).not.toMatch(/toggles\.slice\(/);
+    expect(src).not.toMatch(/toggles\[\d\]/);
+    expect(src).toMatch(/t\.group === "notifications"/);
+    expect(src).toMatch(/t\.group === "analytics"/);
+  });
+  it("sends the key the row names, so a flip of 'Urgent rescues nearby' patches push_urgent_enabled", () => {
+    expect(src).toMatch(/api\.patch\("\/me\/settings", \{ \[key\]: next \}\)/);
+  });
 });
