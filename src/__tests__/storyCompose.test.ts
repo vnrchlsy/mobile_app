@@ -14,7 +14,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 
-import { acquire, hasUnsavedStory, photoPickOutcome, storyPostFailure } from "../storyCompose";
+import { THUMB_SIZE, removeHitRect, acquire, hasUnsavedStory, photoPickOutcome, storyPostFailure } from "../storyCompose";
 
 const read = (...p: string[]) => readFileSync(join(__dirname, "..", ...p), "utf-8");
 const err = (status: number, code: string, message = "", extra: object = {}) =>
@@ -209,5 +209,27 @@ describe("acquire: the one-at-a-time latch behind Post and Save", () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+
+// ---- found walking the cover swap (2026-11-10) · the remove button's hit area must not cover the photo it sits on ---------------------------------
+describe("the remove (×) hit area on a photo thumbnail", () => {
+  const rect = removeHitRect();
+  const inside = (x: number, y: number) => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+  test("the middle of the thumbnail is NOT in it: a tap there makes the photo the cover (the shared slop put it inside, and a tap removed the photo)", () => {
+    expect(inside(THUMB_SIZE / 2, THUMB_SIZE / 2)).toBe(false);
+  });
+  test("the lower half and the left half of the thumbnail are not in it either", () => {
+    for (const [x, y] of [[8, 30], [8, 40], [20, 40], [THUMB_SIZE / 2, THUMB_SIZE - 6]]) expect(inside(x, y)).toBe(false);
+  });
+  test("the cross itself, and the corner it sits on, are", () => {
+    expect(inside(THUMB_SIZE + 5, -5)).toBe(true);
+    expect(inside(THUMB_SIZE - 2, 2)).toBe(true);
+  });
+  test("the screen uses it, not the shared slop, on that button", () => {
+    const src = readFileSync(join(__dirname, "..", "screens", "StoryComposeScreen.tsx"), "utf8");
+    expect(src.length).toBeGreaterThan(500);
+    expect(src).toMatch(/hitSlop=\{THUMB_X_SLOP\} style=\{styles\.thumbX\}/);
   });
 });
