@@ -80,7 +80,9 @@ export function SettingsPrivacyScreen({ navigation }: Props) {
   }
 
   const rows = privacyRows(settings);
-  const toggles = rows.toggles;
+  // By group, not by position: the notification rows are two or three depending on the server.
+  const notificationToggles = rows.toggles.filter((t) => t.group === "notifications");
+  const analyticsToggles = rows.toggles.filter((t) => t.group === "analytics");
 
   return (
     <View style={styles.screen} testID="screen.settingsPrivacy">
@@ -90,14 +92,16 @@ export function SettingsPrivacyScreen({ navigation }: Props) {
 
         <Text style={styles.groupTitle}>NOTIFICATIONS</Text>
         <View style={styles.card}>
-          {toggles.slice(0, 2).map((row, i) => (
-            <ToggleRow key={row.key} row={row} divided={i === 0} onChange={(v) => toggle(row.key, v)} />
+          {notificationToggles.map((row, i) => (
+            <ToggleRow key={row.key} row={row} divided={i < notificationToggles.length - 1} onChange={(v) => toggle(row.key, v)} />
           ))}
         </View>
 
         <Text style={styles.groupTitle}>ANALYTICS</Text>
         <View style={styles.card}>
-          <ToggleRow row={toggles[2]} divided={false} onChange={(v) => toggle(toggles[2].key, v)} />
+          {analyticsToggles.map((row) => (
+            <ToggleRow key={row.key} row={row} divided={false} onChange={(v) => toggle(row.key, v)} />
+          ))}
         </View>
         {/* The right to WITHDRAW is half of what consent means under RA 10173, and it
             belongs on the screen rather than in a policy nobody opens. */}
