@@ -179,22 +179,25 @@ export function NotificationsScreen({ navigation }: Props) {
     <ActivityIndicator style={styles.more} color={colors.teal} testID="state.notifications.loadingMore" />
   ) : paging.failed ? (
     <View style={styles.more}>
-      <Text style={styles.moreText}>Couldn't load more notifications.</Text>
+      <Text style={styles.moreText} maxFontSizeMultiplier={maxFontScale.title}>Couldn't load more notifications.</Text>
       <PressScale hitSlop={TAP_SLOP} style={styles.moreRetry} onPress={() => loadMore(true)} accessibilityRole="button"
         accessibilityLabel="Try loading more notifications again" testID="btn.notifications.moreRetry">
-        <Text style={styles.moreRetryLabel}>Try again</Text>
+        <Text style={styles.moreRetryLabel} maxFontSizeMultiplier={maxFontScale.title}>Try again</Text>
       </PressScale>
     </View>
   ) : null;
 
   function renderItem({ item }: { item: BellItem }) {
     if (item.kind === "header") {
-      return <Text style={styles.group} accessibilityRole="header">{item.name}</Text>;
+      return <Text style={styles.group} accessibilityRole="header" maxFontSizeMultiplier={maxFontScale.title}>{item.name}</Text>;
     }
     if (item.kind === "caughtUp") {
       return (
         <View style={styles.caughtUp} accessible accessibilityLabel="You're all caught up" testID="state.notifications.caughtUp">
-          <Text style={styles.caughtUpLabel}>You're all caught up</Text>
+          <View style={styles.caughtUpTile} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+            <Image source={GLYPH_SOURCE.check} tintColor={colors.teal} resizeMode="contain" style={styles.caughtUpGlyph} />
+          </View>
+          <Text style={styles.caughtUpLabel} maxFontSizeMultiplier={maxFontScale.title}>You're all caught up</Text>
         </View>
       );
     }
@@ -211,8 +214,8 @@ export function NotificationsScreen({ navigation }: Props) {
         </View>
         <View style={styles.copy}>
           <Text style={[styles.title, !unread && styles.titleRead]} maxFontSizeMultiplier={maxFontScale.title}>{notificationTitle(n)}</Text>
-          {n.body ? <Text style={[styles.body, !unread && styles.bodyRead]}>{n.body}</Text> : null}
-          <Text style={styles.time}>{relTime(n.created_at)}</Text>
+          {n.body ? <Text style={[styles.body, !unread && styles.bodyRead]} maxFontSizeMultiplier={maxFontScale.title}>{n.body}</Text> : null}
+          <Text style={styles.time} maxFontSizeMultiplier={maxFontScale.title}>{relTime(n.created_at)}</Text>
         </View>
         <View style={styles.side} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
           {unread ? <View style={styles.dot} /> : <View />}
@@ -271,8 +274,10 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { paddingHorizontal: spacing.lg, paddingTop: 4, paddingBottom: 60 },
   group: { marginTop: 22, marginBottom: 2, marginLeft: 4, color: colors.muted, ...typography.meta, fontWeight: "800", letterSpacing: 0.6, textTransform: "uppercase" },
-  caughtUp: { marginTop: 14, paddingVertical: 14, paddingHorizontal: 16, borderRadius: radii.card, backgroundColor: colors.soft },
-  caughtUpLabel: { color: colors.ink, ...typography.strong, fontWeight: "800" },
+  caughtUp: { marginTop: 14, paddingVertical: 14, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", gap: 12, borderRadius: radii.card, backgroundColor: colors.soft },
+  caughtUpTile: { width: 36, height: 36, borderRadius: squircle(36), alignItems: "center", justifyContent: "center", backgroundColor: colors.white },
+  caughtUpGlyph: { width: 18, height: 18 },
+  caughtUpLabel: { flex: 1, color: colors.ink, ...typography.strong, fontWeight: "800" },
   rowGap: { marginTop: 10 },
   row: { flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 14, borderRadius: radii.card },
   tile: { width: 44, height: 44, borderRadius: squircle(44), alignItems: "center", justifyContent: "center" },

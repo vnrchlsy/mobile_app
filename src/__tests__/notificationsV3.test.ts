@@ -77,6 +77,21 @@ describe("the list", () => {
   });
 });
 
+describe("large text (found walking it on the simulator at AX5)", () => {
+  it("caps EVERY text in the screen, so the body can never outgrow its own title", () => {
+    // Only the title was capped at first: at AX5 the body ran at full scale and was taller than the headline above it.
+    const texts = screen.match(/<Text\b[^>]*>/g) ?? [];
+    expect(texts.length).toBeGreaterThan(5);
+    const uncapped = texts.filter((t) => !/maxFontSizeMultiplier=\{maxFontScale\.title\}/.test(t));
+    expect(uncapped).toEqual([]);
+  });
+
+  it("draws the caught-up notice's check tile, as the artboard does", () => {
+    expect(screen).toMatch(/GLYPH_SOURCE\.check/);
+    expect(screen).toMatch(/styles\.caughtUpTile/);
+  });
+});
+
 describe("the glyph assets exist", () => {
   it("ships one PNG per glyph the map names", () => {
     const { existsSync } = require("fs");
