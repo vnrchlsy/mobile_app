@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
-import { MAX_EDGE, filePart, resizeTarget, uploadErrorMessage, uploadImage } from "../upload";
+import { MAX_EDGE, STORAGE_TIMEOUT_MS, filePart, postToStorage, resizeTarget, uploadErrorMessage, uploadImage } from "../upload";
+import { REQUEST_TIMEOUT_MS, createApi } from "../api/client";
 
 const PRESIGN = {
   upload_url: "https://bucket.s3.example.com/",
@@ -152,5 +153,90 @@ describe("the file part is a React Native file descriptor, not a fetched blob (R
     expect(up).toContain('form.append("file", filePart(processedUri) as any)');
     expect(up).not.toMatch(/deps\.toBlob|toBlob:|await fetch\(/);
     expect(wire).not.toMatch(/toBlob|await fetch\(uri\)/);
+  });
+});
+
+
+// ---- stories test plan I1 · a storage or presign endpoint that hangs ------------------------------------------------------------------
+describe("a hung upload never leaves the screen waiting", () => {
+  const hang = (_url: any, init?: any) => new Promise<Response>((_res, rej) => {
+    init?.signal?.addEventListener("abort", () => rej(new Error("aborted")));      // a fetch that honours abort; some never answer at all
+  });
+
+  it("the presign call is the API client's: it times out as status 0 and the upload says the connection is the problem", async () => {
+    jest.useFakeTimers();
+    try {
+      global.fetch = jest.fn(hang) as any;
+      const api = createApi(() => null, async () => {});
+      const run = uploadImage(deps({ post: (path: string, body: unknown) => api.post(path, body as any) }), "story_photo", image);
+      await jest.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
+      const out = await run;
+      expect(out).toMatchObject({ ok: false, reason: "offline" });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("the storage POST gives up after STORAGE_TIMEOUT_MS as status 0, even from a fetch that never answers and ignores abort", async () => {
+    jest.useFakeTimers();
+    try {
+      const never = jest.fn(() => new Promise<Response>(() => {}));
+      const run = postToStorage(never as any, "https://bucket.s3.example.com/", new FormData());
+      await jest.advanceTimersByTimeAsync(STORAGE_TIMEOUT_MS);
+      await expect(run).resolves.toEqual({ ok: false, status: 0 });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("a hung storage POST aborts its request, so the socket is released", async () => {
+    jest.useFakeTimers();
+    try {
+      let signal: AbortSignal | undefined;
+      const f = jest.fn((_u: any, init: any) => { signal = init.signal; return hang(_u, init); });
+      const run = postToStorage(f as any, "https://bucket.s3.example.com/", new FormData());
+      await jest.advanceTimersByTimeAsync(STORAGE_TIMEOUT_MS);
+      await run;
+      expect(signal?.aborted).toBe(true);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("a hung storage POST inside uploadImage is the same message as being offline, and nothing is returned as uploaded", async () => {
+    jest.useFakeTimers();
+    try {
+      const never = jest.fn(() => new Promise<Response>(() => {}));
+      const run = uploadImage(deps({ putToStorage: (url: string, form: FormData) => postToStorage(never as any, url, form) }), "story_photo", image);
+      await jest.advanceTimersByTimeAsync(STORAGE_TIMEOUT_MS);
+      const out = await run;
+      expect(out).toMatchObject({ ok: false, reason: "offline" });
+      expect(uploadErrorMessage((out as any).reason)).toMatch(/offline/i);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("a fast answer is passed through and its timer is cleared", async () => {
+    jest.useFakeTimers();
+    try {
+      const f = jest.fn().mockResolvedValue({ ok: true, status: 204 });
+      await expect(postToStorage(f as any, "https://bucket.s3.example.com/", new FormData())).resolves.toEqual({ ok: true, status: 204 });
+      expect(jest.getTimerCount()).toBe(0);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("a rejected fetch (offline, DNS) is status 0, as before", async () => {
+    const f = jest.fn().mockRejectedValue(new Error("Network request failed"));
+    await expect(postToStorage(f as any, "https://bucket.s3.example.com/", new FormData())).resolves.toEqual({ ok: false, status: 0 });
+  });
+
+  it("the adapter uses it, so the screen's 'Adding…' cannot outlive the limit", () => {
+    const src = readFileSync(join(__dirname, "..", "media", "pickAndUpload.ts"), "utf8");
+    expect(src.length).toBeGreaterThan(500);
+    expect(src).toContain("postToStorage(fetch,");
+    expect(src.includes("await fetch(url, { method")).toBe(false);
   });
 });

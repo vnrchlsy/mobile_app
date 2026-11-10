@@ -13,9 +13,8 @@ import { RootStackParamList } from "../navigation/types";
 import { colors, maxFontScale, radii, spacing, squircle, typography } from "../theme";
 import { ScreenBackdrop } from "../components/ScreenBackground";
 import { Button, Card, Chip, Field, PressScale, ScreenHeader } from "../components/ui";
-import { TAP_SLOP } from "../touch";
 import {
-  MAX_CAPTION, MAX_PHOTOS, canAddPhoto, captionCount, hasUnsavedStory, photoPickOutcome, photosBody, storyPostFailure, withCover, withoutPhoto, withPhoto
+  MAX_CAPTION, MAX_PHOTOS, THUMB_SIZE, THUMB_X_OFFSET, THUMB_X_SIZE, THUMB_X_SLOP, acquire, canAddPhoto, captionCount, hasUnsavedStory, photoPickOutcome, photosBody, storyPostFailure, withCover, withoutPhoto, withPhoto
 } from "../storyCompose";
 import { hasUnsavedEdit, storyEditFailure } from "../storyAuthor";
 
@@ -66,8 +65,7 @@ export function StoryComposeScreen({ navigation, route }: Props) {
   }
 
   async function save() {
-    if (!edit || posting.current) return;
-    posting.current = true;
+    if (!edit || !acquire(posting)) return;
     setBusy(true);
     setError(null);
     setCaptionError(null);
@@ -82,9 +80,8 @@ export function StoryComposeScreen({ navigation, route }: Props) {
   }
 
   async function post() {
-    if (posting.current) return;
     if (photoUrls.length === 0) { setPhotoError("A story needs at least one photo."); return; }
-    posting.current = true;
+    if (!acquire(posting)) return;
     setBusy(true);
     setError(null);
     setPhotoError(null);
@@ -135,7 +132,7 @@ export function StoryComposeScreen({ navigation, route }: Props) {
                     <Image source={{ uri: url }} style={[styles.thumb, i === 0 ? styles.thumbCover : null]} resizeMode="cover" />
                     {i === 0 ? <Text style={styles.coverTag}>Cover</Text> : null}
                   </PressScale>
-                  <PressScale hitSlop={TAP_SLOP} style={styles.thumbX} onPress={() => setPhotoUrls(withoutPhoto(photoUrls, i))} accessibilityRole="button"
+                  <PressScale hitSlop={THUMB_X_SLOP} style={styles.thumbX} onPress={() => setPhotoUrls(withoutPhoto(photoUrls, i))} accessibilityRole="button"
                     accessibilityLabel={`Remove photo ${i + 1}`} testID={`btn.storyCompose.removePhoto.${i}`}>
                     <Text style={styles.thumbXLabel}>×</Text>
                   </PressScale>
@@ -193,11 +190,11 @@ const styles = StyleSheet.create({
   previewEmpty: { backgroundColor: colors.soft },
   photoLabel: { marginTop: 11, paddingHorizontal: 10, minHeight: 20, color: colors.muted, ...typography.meta, fontWeight: "700" },
   thumbRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 8, paddingTop: 6, paddingBottom: 6 },
-  thumbWrap: { width: 46 },
-  thumb: { width: 46, height: 46, borderRadius: squircle(46), backgroundColor: colors.placeholder, borderWidth: 2, borderColor: "transparent" },
+  thumbWrap: { width: THUMB_SIZE },
+  thumb: { width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: squircle(THUMB_SIZE), backgroundColor: colors.placeholder, borderWidth: 2, borderColor: "transparent" },
   thumbCover: { borderColor: colors.teal },
   coverTag: { position: "absolute", left: 3, right: 3, bottom: 3, textAlign: "center", color: colors.white, backgroundColor: colors.ink, ...typography.label, fontWeight: "800", borderRadius: radii.chip, overflow: "hidden" },
-  thumbX: { position: "absolute", right: -7, top: -7, width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: colors.ink },
+  thumbX: { position: "absolute", right: THUMB_X_OFFSET, top: THUMB_X_OFFSET, width: THUMB_X_SIZE, height: THUMB_X_SIZE, borderRadius: THUMB_X_SIZE / 2, alignItems: "center", justifyContent: "center", backgroundColor: colors.ink },
   thumbXLabel: { color: colors.white, fontWeight: "800", lineHeight: 18 },
   addSlot: { width: 46, height: 46, borderRadius: squircle(46), alignItems: "center", justifyContent: "center", backgroundColor: colors.soft },
   addSlotLabel: { color: colors.teal, ...typography.hero, lineHeight: 28 },

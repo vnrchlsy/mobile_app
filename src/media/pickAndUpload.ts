@@ -6,7 +6,7 @@
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 
-import { PickedImage, UploadPurpose, UploadResult, uploadImage } from "../upload";
+import { PickedImage, UploadPurpose, UploadResult, postToStorage, uploadImage } from "../upload";
 
 type Api = { post: (p: string, b?: any) => Promise<{ ok: boolean; status: number; data: any }> };
 
@@ -57,14 +57,7 @@ export async function pickAndUpload(
       post: (path, body) => api.post(path, body),
       // A raw fetch, deliberately NOT the API client: this goes to S3, a different host with
       // no bearer token, and sending our JWT to a storage endpoint would leak it.
-      putToStorage: async (url, form) => {
-        try {
-          const res = await fetch(url, { method: "POST", body: form });
-          return { ok: res.ok, status: res.status };
-        } catch {
-          return { ok: false, status: 0 };
-        }
-      },
+      putToStorage: (url, form) => postToStorage(fetch, url, form),
     },
     purpose,
     image,

@@ -108,3 +108,34 @@ export function captionCount(caption: string): string | null {
   const n = [...caption].length;
   return n > MAX_CAPTION - 300 ? `${n.toLocaleString("en-US")} / ${MAX_CAPTION.toLocaleString("en-US")}` : null;
 }
+
+
+/**
+ * Stories test plan U16 · take the one-at-a-time latch behind Post and Save. True for the caller that got it, false for any other call while it is held (the holder lets go
+ * by writing `latch.current = false`). A `useRef`, not state, because two taps in one frame both read the same state; and taking it is this one synchronous
+ * step, so there is no gap between "is it free?" and "it is mine" for a second tap to slip through.
+ */
+export function acquire(latch: { current: boolean }): boolean {
+  if (latch.current) return false;
+  latch.current = true;
+  return true;
+}
+
+
+// Found walking the cover swap: the photo thumbnails are 46 pt and the remove cross is a 24 pt disc over their top-right corner. With the shared TAP_SLOP (12 above and below, 8 each
+// side) the cross's touch area reached the thumbnail's middle, and the cross is the later sibling, so it won: tapping a photo to make it the cover REMOVED it. The cross gets slop only
+// where there is no photo under it (above and to the right), and `removeHitRect` states the area so a test can hold the middle of the photo outside it.
+export const THUMB_SIZE = 46;
+export const THUMB_X_SIZE = 24;
+export const THUMB_X_OFFSET = -7;                       // the disc sits this far past the thumbnail's top and right edges
+export const THUMB_X_SLOP = { top: 10, right: 10, bottom: 0, left: 0 } as const;
+
+/** The cross's touch area, in the thumbnail's own coordinates (0,0 is its top-left corner). */
+export function removeHitRect(): { left: number; right: number; top: number; bottom: number } {
+  const right = THUMB_SIZE - THUMB_X_OFFSET;            // the disc's right edge
+  const top = THUMB_X_OFFSET;
+  return {
+    left: right - THUMB_X_SIZE - THUMB_X_SLOP.left, right: right + THUMB_X_SLOP.right,
+    top: top - THUMB_X_SLOP.top, bottom: top + THUMB_X_SIZE + THUMB_X_SLOP.bottom
+  };
+}
