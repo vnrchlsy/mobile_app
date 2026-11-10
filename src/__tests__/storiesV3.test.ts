@@ -8,6 +8,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 
+import { initials } from "../initials";
 import { storyCardLabel, storyChipTone } from "../storyFeed";
 import { V3_EXCLUDED, V3_SCOPE } from "./v3Scope";
 import { story } from "./storyFixtures";
@@ -83,10 +84,10 @@ describe("the wall", () => {
     expect(src).toContain("accessibilityLabel={storyCardLabel(s)}");
     expect(src).toContain('testID={`btn.stories.card.${s.story_id}`}');
   });
-  it("draws the heart as a count, not a control, and the chip through the shared Chip", () => {
-    expect(src).toContain("<Chip");
-    expect(src).toContain("storyChipTone(");
+  it("draws the heart as a count, not a control, and the chip through the one StoryTypeChip", () => {
+    expect(src).toContain("<StoryTypeChip");
     expect(src.includes("const CHIP")).toBe(false);
+    expect(src.includes("storyTypeChip(")).toBe(false);
     expect(src).toContain('accessibilityElementsHidden');
   });
   it("keeps + Share off Your stories and keeps the guest wall", () => {
@@ -117,5 +118,41 @@ describe("compose", () => {
     expect(src).toContain('testID="btn.storyCompose.addPhoto"');
     expect(src).toContain('testID="btn.storyCompose.addPhotoSlot"');
     expect(src).toMatch(/opacity: edit \? 0\.6 : 1|edit && styles\.dim/);
+  });
+});
+
+// ---- step 13 (ST17, V5, V6) · the shared bits ---------------------------------------------------------------------------------
+describe("initials: the one helper (ST17)", () => {
+  it("takes the first letter of the first two words, upper-cased", () => {
+    expect(initials("Ana Reyes")).toBe("AR");
+    expect(initials("ana maria dela cruz")).toBe("AM");
+    expect(initials("  jun  ")).toBe("J");
+  });
+  it("says ? for nothing, so an avatar is never empty", () => {
+    expect(initials("")).toBe("?");
+    expect(initials("   ")).toBe("?");
+  });
+});
+
+describe("the story screens share one StoryTypeChip and one initials", () => {
+  const wall = read("screens/StoriesScreen.tsx");
+  const detail = read("screens/StoryDetailScreen.tsx");
+  const chip = read("components/StoryTypeChip.tsx");
+  it("neither screen draws its own chip or its own initials", () => {
+    for (const src of [wall, detail]) {
+      expect(src).toContain("<StoryTypeChip");
+      expect(src).toContain('from "../initials"');
+      expect(src.includes("function initials")).toBe(false);
+      expect(src.includes("const CHIP")).toBe(false);
+      expect(src.includes("chipText")).toBe(false);
+    }
+  });
+  it("the component is the type's label on the shared Chip tone", () => {
+    expect(chip).toContain("storyTypeChip(");
+    expect(chip).toContain("storyChipTone(");
+    expect(chip).toContain("<Chip");
+  });
+  it("the wall has no unused style left (ST17)", () => {
+    expect(wall.includes("  empty: {")).toBe(false);
   });
 });

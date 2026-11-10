@@ -106,7 +106,7 @@ export function notificationTarget(n: { type: string; data: Record<string, any> 
   if (n.type === "listing_removed" && n.data?.listing_id) {
     return { screen: "posterListing", listingId: n.data.listing_id };
   }
-  if (n.type === "story_removed" && n.data?.story_id) {
+  if ((n.type === "story_removed" || n.type === "story_restored") && n.data?.story_id) {
     return { screen: "storyDetail", storyId: n.data.story_id };
   }
   if (n.type === "adoption_badge_needed") return { screen: "memberUpgrade" };

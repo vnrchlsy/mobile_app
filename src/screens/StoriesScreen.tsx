@@ -14,13 +14,15 @@ import { SignupWall } from "../components/SignupWall";
 import { setIntent } from "../guestIntent";
 import { LoadStateView } from "../components/LoadStateView";
 import { ScreenBackdrop } from "../components/ScreenBackground";
-import { Avatar, Card, Chip, PressScale, ScreenHeader } from "../components/ui";
+import { StoryTypeChip } from "../components/StoryTypeChip";
+import { Avatar, Card, PressScale, ScreenHeader } from "../components/ui";
+import { initials } from "../initials";
 import { StaleBanner } from "../components/StaleBanner";
 import { isOffline } from "../net";
-import { parseStoryPage, Story, storyDate, storyTypeChip } from "../community";
+import { parseStoryPage, Story, storyDate } from "../community";
 import { RootStackParamList } from "../navigation/types";
 import {
-  allStories, beginMore, finishMore, moreUrl, pagingAfterRefresh, pagingFrom, shouldLoadMore, StoryPaging, storiesViewState, storyCardLabel, storyChipTone, withStoryContract
+  allStories, beginMore, finishMore, moreUrl, pagingAfterRefresh, pagingFrom, shouldLoadMore, StoryPaging, storiesViewState, storyCardLabel, withStoryContract
 } from "../storyFeed";
 import { storiesPath, storyStatusNote } from "../storyAuthor";
 import { useCachedFeed } from "../useCachedFeed";
@@ -29,10 +31,6 @@ import { useLargeText } from "../useLargeText";
 import { colors, pill, radii, spacing, typography } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "stories">;
-
-function initials(name: string) {
-  return name.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?";
-}
 
 export function StoriesScreen({ navigation, route }: Props) {
   // Stories review step 6 · the same screen serves "your stories" (GET /me/stories): the person's own, a hidden one marked, none deleted.
@@ -99,7 +97,6 @@ export function StoriesScreen({ navigation, route }: Props) {
   const state = storiesViewState(res, stories, stale);
 
   const renderStory = ({ item: s }: { item: Story }) => {
-    const chip = storyTypeChip(s.story_type);
     return (
       // V4 · the whole card is ONE button with ONE label; the heart is a count, not a control (reacting stays on the story).
       <PressScale style={styles.cardPress} accessibilityRole="button" accessibilityLabel={storyCardLabel(s)}
@@ -115,7 +112,7 @@ export function StoriesScreen({ navigation, route }: Props) {
               <Text style={styles.authorName}>{s.author.name}</Text>
               {s.author.city ? <Text style={styles.city}>{s.author.city}</Text> : null}
             </View>
-            <Chip label={chip.label} tone={storyChipTone(chip.tone)} />
+            <StoryTypeChip type={s.story_type} />
           </View>
           {s.caption ? <Text style={styles.caption} numberOfLines={large ? undefined : 2}>{s.caption}</Text> : null}
           {storyDate(s.created_at) ? <Text style={styles.date}>{storyDate(s.created_at)}</Text> : null}
@@ -200,7 +197,6 @@ const styles = StyleSheet.create({
   moreText: { color: colors.muted, ...typography.meta },
   moreRetry: { minHeight: 44, paddingHorizontal: 18, justifyContent: "center", borderRadius: pill(44), borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white },
   moreRetryLabel: { color: colors.teal, ...typography.strong, fontWeight: "700" },
-  empty: { marginTop: 40, color: colors.muted, ...typography.subtitle, textAlign: "center" },
   cardPress: { marginBottom: 16 },
   storyCard: { padding: 8, paddingBottom: 14 },
   photo: { height: 168, borderRadius: radii.card, backgroundColor: colors.placeholder },

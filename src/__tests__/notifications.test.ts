@@ -46,6 +46,9 @@ describe("notificationTarget", () => {
   it("routes a story takedown to the story, which the author can still open, marked hidden (step 9)", () => {
     expect(notificationTarget({ type: "story_removed", data: { story_id: "s1" } })).toEqual({ screen: "storyDetail", storyId: "s1" });
     expect(notificationTarget({ type: "story_removed", data: {} })).toBeNull();
+    // Stories review step 14 · a restored story opens the same screen.
+    expect(notificationTarget({ type: "story_restored", data: { story_id: "s1" } })).toEqual({ screen: "storyDetail", storyId: "s1" });
+    expect(notificationTarget({ type: "story_restored", data: {} })).toBeNull();
   });
 
   it("routes a moderation takedown to the poster's own view of the listing (AD7)", () => {
