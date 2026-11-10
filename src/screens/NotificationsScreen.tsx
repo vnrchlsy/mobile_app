@@ -114,6 +114,9 @@ export function NotificationsScreen({ navigation }: Props) {
       case "shelterRequests":
         openShelterTab(navigation, "requests");
         return;
+      case "shelterDonate":
+        openShelterTab(navigation, "donate");
+        return;
       case "applicant":
         navigation.navigate("applicant", { inquiryId: target.inquiryId });
         return;
