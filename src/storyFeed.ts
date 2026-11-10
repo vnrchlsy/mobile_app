@@ -11,6 +11,7 @@
 //  - A reload of the first page starts a new generation, and an answer from before it is dropped whole.
 //  - A row already shown is not shown twice: a story can move between a page's request and its answer.
 import { parseStoryPage, Story } from "./community";
+import type { ChipTone } from "./components/ui";
 import { Apiish, LoadState } from "./net";
 import { feedState } from "./useCachedFeed";
 
@@ -112,4 +113,17 @@ export function withStoryContract<R extends { ok: boolean; status: number; data:
       return r.ok && !parseStoryPage(r.data) ? { ...r, ok: false, status: 502 } : r;
     },
   };
+}
+
+/** Stories review step 12 (V4) · what a screen reader says for one wall card, which is ONE button: who, what kind, where, how many reactions. */
+export function storyCardLabel(s: Story): string {
+  const kind = s.story_type === "adoption" ? "adoption story" : s.story_type === "rescue" ? "rescue story" : "story";
+  const n = s.reaction_count;
+  const reactions = n === 0 ? "no reactions yet" : n === 1 ? "1 reaction" : `${n} reactions`;
+  return [`${s.author.name}'s ${kind}`, s.author.city, reactions, s.my_reaction ? "you reacted" : ""].filter(Boolean).join(", ");
+}
+
+/** Stories review step 12 (V5/V6) · the type chip's tone, said in the shared status vocabulary (Chip.tsx) instead of a local colour map. */
+export function storyChipTone(tone: "ok" | "teal" | "muted"): ChipTone {
+  return tone === "ok" ? "success" : tone === "teal" ? "info" : "neutral";
 }

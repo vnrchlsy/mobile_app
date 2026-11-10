@@ -132,6 +132,8 @@ describe("surface, re-derived", () => {
       "ShelterVolunteerEditScreen",
       "ShelterVolunteerScreen",
       "SigninScreen",
+      "StoriesScreen",
+      "StoryComposeScreen",
       "StoryDetailScreen",
       "TermsScreen",
       "TwoStepScreen",

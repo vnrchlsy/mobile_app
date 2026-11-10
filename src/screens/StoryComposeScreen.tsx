@@ -4,14 +4,15 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useRef, useState } from "react";
 import {
-  Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View
+  Alert, Image, ScrollView, StyleSheet, Text, View
 } from "react-native";
 
 import { useApi } from "../api/useApi";
 import { pickAndUpload } from "../media/pickAndUpload";
 import { RootStackParamList } from "../navigation/types";
-import { colors, maxFontScale, pill, radii, spacing, squircle, typography } from "../theme";
-import { Button, Field, ScreenHeader } from "../components/ui";
+import { colors, maxFontScale, radii, spacing, squircle, typography } from "../theme";
+import { ScreenBackdrop } from "../components/ScreenBackground";
+import { Button, Card, Chip, Field, PressScale, ScreenHeader } from "../components/ui";
 import { TAP_SLOP } from "../touch";
 import {
   MAX_CAPTION, MAX_PHOTOS, canAddPhoto, captionCount, hasUnsavedStory, photoPickOutcome, photosBody, storyPostFailure, withCover, withoutPhoto, withPhoto
@@ -103,59 +104,55 @@ export function StoryComposeScreen({ navigation, route }: Props) {
     else setError(failure.message);
   }
 
+  const addable = !edit && canAddPhoto(photoUrls);
   return (
     <View style={styles.screen}>
+      <ScreenBackdrop />
       <ScreenHeader title={edit ? "Edit your story" : "Share a story"} onBack={() => navigation.goBack()} />
-      <ScrollView keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.h1} maxFontSizeMultiplier={maxFontScale.title}>{edit ? "Change what you wrote" : "A photo makes the story"}</Text>
-        <TouchableOpacity style={[styles.photoTile, photoUrls.length ? styles.photoTileSet : null]} testID="btn.storyCompose.addPhoto"
-          onPress={edit || !canAddPhoto(photoUrls) ? undefined : addPhoto} activeOpacity={edit || !canAddPhoto(photoUrls) ? 1 : 0.85}>
-          {/* ST13 · the cover, so the person is not posting blind. */}
-          {photoUrls.length ? <Image source={{ uri: photoUrls[0] }} style={styles.preview} resizeMode="cover" accessibilityLabel="Your cover photo" /> : null}
-          <Text style={styles.photoLabel}>
-            {edit ? "The photos stay as you shared them"
-              : uploading ? "Adding…"
-              : photoUrls.length === 0 ? "Add a photo · required"
-              : canAddPhoto(photoUrls) ? `${photoUrls.length} of ${MAX_PHOTOS} photos · tap to add another`
-              : `${MAX_PHOTOS} of ${MAX_PHOTOS} photos`}
-          </Text>
-        </TouchableOpacity>
-        {/* Step 8 · every photo, the first is the cover. Tap one to make it the cover; the cross removes it. */}
-        {!edit && photoUrls.length > 1 ? (
-          <View style={styles.thumbRow}>
-            {photoUrls.map((url, i) => (
-              <View key={url} style={styles.thumbWrap}>
-                <TouchableOpacity activeOpacity={0.85} onPress={() => setPhotoUrls(withCover(photoUrls, i))} accessibilityRole="button"
-                  accessibilityLabel={i === 0 ? `Photo ${i + 1} of ${photoUrls.length}, the cover` : `Make photo ${i + 1} of ${photoUrls.length} the cover`}>
-                  <Image source={{ uri: url }} style={[styles.thumb, i === 0 ? styles.thumbCover : null]} resizeMode="cover" />
-                  {i === 0 ? <Text style={styles.coverTag}>Cover</Text> : null}
-                </TouchableOpacity>
-                <TouchableOpacity hitSlop={TAP_SLOP} style={styles.thumbX} onPress={() => setPhotoUrls(withoutPhoto(photoUrls, i))} accessibilityRole="button"
-                  accessibilityLabel={`Remove photo ${i + 1}`} testID={`btn.storyCompose.removePhoto.${i}`}>
-                  <Text style={styles.thumbXLabel}>×</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        ) : null}
-        {!edit && photoUrls.length === 1 ? (
-          <TouchableOpacity hitSlop={TAP_SLOP} style={styles.removeOnly} onPress={() => setPhotoUrls([])} accessibilityRole="button"
-            accessibilityLabel="Remove the photo" testID="btn.storyCompose.removePhoto.0">
-            <Text style={styles.removeOnlyLabel}>Remove photo</Text>
-          </TouchableOpacity>
-        ) : null}
+        <Card style={styles.photoCard}>
+          <PressScale style={[styles.photoTile, edit && styles.dim]} testID="btn.storyCompose.addPhoto" accessibilityRole="button"
+            accessibilityLabel={photoUrls.length ? "Add another photo" : "Add a photo"}
+            onPress={addable ? addPhoto : undefined}>
+            {/* ST13 · the cover, so the person is not posting blind. */}
+            {photoUrls.length ? <Image source={{ uri: photoUrls[0] }} style={styles.preview} resizeMode="cover" accessibilityLabel="Your cover photo" /> : <View style={[styles.preview, styles.previewEmpty]} />}
+            <Text style={styles.photoLabel}>
+              {edit ? "The photos stay as you shared them"
+                : uploading ? "Adding…"
+                : photoUrls.length === 0 ? "Add a photo · required"
+                : canAddPhoto(photoUrls) ? `${photoUrls.length} of ${MAX_PHOTOS} photos · tap to add another`
+                : `${MAX_PHOTOS} of ${MAX_PHOTOS} photos`}
+            </Text>
+          </PressScale>
+          {/* Step 8 · every photo, the first is the cover. Tap one to make it the cover; the cross removes it; the + slot adds. */}
+          {!edit && photoUrls.length > 0 ? (
+            <View style={styles.thumbRow}>
+              {photoUrls.map((url, i) => (
+                <View key={url} style={styles.thumbWrap}>
+                  <PressScale onPress={() => setPhotoUrls(withCover(photoUrls, i))} accessibilityRole="button"
+                    accessibilityLabel={i === 0 ? `Photo ${i + 1} of ${photoUrls.length}, the cover` : `Make photo ${i + 1} of ${photoUrls.length} the cover`}>
+                    <Image source={{ uri: url }} style={[styles.thumb, i === 0 ? styles.thumbCover : null]} resizeMode="cover" />
+                    {i === 0 ? <Text style={styles.coverTag}>Cover</Text> : null}
+                  </PressScale>
+                  <PressScale hitSlop={TAP_SLOP} style={styles.thumbX} onPress={() => setPhotoUrls(withoutPhoto(photoUrls, i))} accessibilityRole="button"
+                    accessibilityLabel={`Remove photo ${i + 1}`} testID={`btn.storyCompose.removePhoto.${i}`}>
+                    <Text style={styles.thumbXLabel}>×</Text>
+                  </PressScale>
+                </View>
+              ))}
+              {addable ? (
+                <PressScale style={styles.addSlot} onPress={addPhoto} accessibilityRole="button" accessibilityLabel="Add another photo" testID="btn.storyCompose.addPhotoSlot">
+                  <Text style={styles.addSlotLabel}>+</Text>
+                </PressScale>
+              ) : null}
+            </View>
+          ) : null}
+        </Card>
         {photoError ? <Text style={styles.error} accessibilityLiveRegion="polite">{photoError}</Text> : null}
 
-        {prefillListing ? (
-          <View style={styles.linkedPill}>
-            <Text style={styles.linkedText}>Tagged as an Adoption story</Text>
-          </View>
-        ) : null}
-        {prefillCase ? (
-          <View style={styles.linkedPill}>
-            <Text style={styles.linkedText}>Tagged as a Rescue story</Text>
-          </View>
-        ) : null}
+        {prefillListing ? <Chip label="Tagged as an Adoption story" tone="success" dot={false} style={styles.linkedPill} /> : null}
+        {prefillCase ? <Chip label="Tagged as a Rescue story" tone="success" dot={false} style={styles.linkedPill} /> : null}
 
         <Field
           label="Caption"
@@ -167,36 +164,46 @@ export function StoryComposeScreen({ navigation, route }: Props) {
           placeholder="Tell people what happened — how you met, how it's going now."
         />
 
-        {captionCount(caption) ? <Text style={styles.count} accessibilityLiveRegion="polite">{captionCount(caption)}</Text> : null}
+        {/* SQ8 · what is shown with the story; the counter shares the line once it is near the limit. */}
+        <View style={styles.metaRow}>
+          <Text style={styles.cityLine}>Shown with your city</Text>
+          {captionCount(caption) ? <Text style={styles.count} accessibilityLiveRegion="polite">{captionCount(caption)}</Text> : null}
+        </View>
 
         {error ? <Text style={styles.error} accessibilityLiveRegion="polite">{error}</Text> : null}
-
-        <Button label={edit ? "Save changes" : "Post story"} onPress={edit ? save : post} loading={busy} style={styles.primaryBtn} />
       </ScrollView>
+      {/* Pinned: a long caption scrolls inside the form and never pushes Post off the screen. Always enabled; errors sit with their field.
+          The keyboard covers it while typing, on purpose: lifting it above the keyboard left the caption a sliver of room (walked), so dragging the form or tapping away shows it again. */}
+      <View style={styles.footer}>
+        <Button label={edit ? "Save changes" : "Post story"} onPress={edit ? save : post} loading={busy} />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.page },
-  content: { paddingHorizontal: spacing.lg, paddingTop: 12, paddingBottom: 60 },
+  screen: { flex: 1 },
+  content: { paddingHorizontal: spacing.lg, paddingTop: 12, paddingBottom: 24 },
+  footer: { paddingHorizontal: spacing.lg, paddingTop: 10, paddingBottom: 30 },
   h1: { color: colors.ink, ...typography.hero, marginBottom: 14 },
-  photoTile: { minHeight: 150, paddingVertical: 16, paddingHorizontal: 12, borderRadius: radii.field, borderWidth: 2, borderColor: colors.border, borderStyle: "dashed", alignItems: "center", justifyContent: "center", backgroundColor: colors.white },
-  photoTileSet: { borderStyle: "solid", borderColor: colors.teal, backgroundColor: colors.soft },
-  preview: { alignSelf: "stretch", height: 180, borderRadius: radii.field, marginBottom: 12, backgroundColor: colors.placeholder },
-  thumbRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 },
-  thumbWrap: { width: 72 },
-  thumb: { width: 72, height: 72, borderRadius: squircle(72), backgroundColor: colors.placeholder, borderWidth: 2, borderColor: "transparent" },
+  photoCard: { padding: 8 },
+  photoTile: { paddingBottom: 6 },
+  dim: { opacity: 0.6 },
+  preview: { alignSelf: "stretch", height: 176, borderRadius: radii.card, backgroundColor: colors.placeholder },
+  previewEmpty: { backgroundColor: colors.soft },
+  photoLabel: { marginTop: 11, paddingHorizontal: 10, minHeight: 20, color: colors.muted, ...typography.meta, fontWeight: "700" },
+  thumbRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 8, paddingTop: 6, paddingBottom: 6 },
+  thumbWrap: { width: 46 },
+  thumb: { width: 46, height: 46, borderRadius: squircle(46), backgroundColor: colors.placeholder, borderWidth: 2, borderColor: "transparent" },
   thumbCover: { borderColor: colors.teal },
-  coverTag: { position: "absolute", left: 4, bottom: 4, color: colors.white, backgroundColor: colors.teal, ...typography.meta, fontWeight: "700", paddingHorizontal: 6, borderRadius: radii.chip, overflow: "hidden" },
-  thumbX: { position: "absolute", right: -6, top: -6, width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: colors.ink },
+  coverTag: { position: "absolute", left: 3, right: 3, bottom: 3, textAlign: "center", color: colors.white, backgroundColor: colors.ink, ...typography.label, fontWeight: "800", borderRadius: radii.chip, overflow: "hidden" },
+  thumbX: { position: "absolute", right: -7, top: -7, width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: colors.ink },
   thumbXLabel: { color: colors.white, fontWeight: "800", lineHeight: 18 },
-  removeOnly: { alignSelf: "flex-start", marginTop: 8, minHeight: 44, justifyContent: "center" },
-  removeOnlyLabel: { color: colors.muted, ...typography.meta, fontWeight: "700", textDecorationLine: "underline" },
-  count: { marginTop: 6, textAlign: "right", color: colors.muted, ...typography.meta },
-  photoLabel: { color: colors.teal, ...typography.subtitle, fontWeight: "700" },
-  linkedPill: { alignSelf: "flex-start", marginTop: 16, minHeight: 32, paddingVertical: 6, paddingHorizontal: 14, justifyContent: "center", borderRadius: pill(32), backgroundColor: "#EAF3DE" },
-  linkedText: { color: "#27500A", ...typography.meta, fontWeight: "700" },
-  error: { marginTop: 10, color: colors.danger, ...typography.meta, fontWeight: "600" },
-  primaryBtn: { marginTop: 28 }
+  addSlot: { width: 46, height: 46, borderRadius: squircle(46), alignItems: "center", justifyContent: "center", backgroundColor: colors.soft },
+  addSlotLabel: { color: colors.teal, ...typography.hero, lineHeight: 28 },
+  metaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 8, marginHorizontal: 6 },
+  cityLine: { flex: 1, color: colors.muted, ...typography.meta, fontWeight: "700" },
+  count: { color: colors.warning, ...typography.meta, fontWeight: "800" },
+  linkedPill: { alignSelf: "flex-start", marginTop: 14, marginBottom: 2 },
+  error: { marginTop: 10, color: colors.danger, ...typography.meta, fontWeight: "600" }
 });

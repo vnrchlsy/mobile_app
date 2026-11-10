@@ -94,8 +94,7 @@ const HEX_HOLDOUTS: Record<string, number> = {
   "NotificationsScreen.tsx": 1, "OtpLockedScreen.tsx": 5, "OtpScreen.tsx": 9, "PasswordChangedScreen.tsx": 5,
   "ProfileScreen.tsx": 6, "ResetOtpScreen.tsx": 5, "ResetPasswordScreen.tsx": 4, "ShelterPhoneVerifyScreen.tsx": 3,
   "ShelterSetupScreen.tsx": 2, "ShelterTierScreen.tsx": 1, "ShelterVerifyNgoScreen.tsx": 11,
-  "ShelterVerifyScreen.tsx": 8, "SignupScreen.tsx": 2, "SignupSuccessScreen.tsx": 7, "StoriesScreen.tsx": 1,
-  "StoryComposeScreen.tsx": 2, "StoryDetailScreen.tsx": 3, "VerifyDocumentsScreen.tsx": 5,
+  "ShelterVerifyScreen.tsx": 8, "SignupScreen.tsx": 2, "SignupSuccessScreen.tsx": 7, "StoryDetailScreen.tsx": 3, "VerifyDocumentsScreen.tsx": 5,
   "VerifyPhoneScreen.tsx": 3, "VerifyResubmitScreen.tsx": 4
 };
 
