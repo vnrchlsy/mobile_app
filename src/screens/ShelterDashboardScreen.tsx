@@ -23,6 +23,7 @@ import { TAP_SLOP } from "../touch";
 import { useLargeText } from "../useLargeText";
 import { colors, maxFontScale, radii, spacing, typography } from "../theme";
 import { Button, Card } from "../components/ui";
+import { setAppBadge } from "../push/badge";
 
 type Props = ShelterTabScreenProps<"shelterDashboard">;
 
@@ -95,7 +96,7 @@ export function ShelterDashboardScreen({ navigation }: Props) {
       // clears on return from NotificationsScreen (which marks everything read on open).
       // SH12 · one count, not the whole feed.
       api.get("/me/notifications/unread-count").then(only((r) => {
-        if (r.ok) setHasUnread((r.data?.unread ?? 0) > 0);
+        if (r.ok) { setHasUnread((r.data?.unread ?? 0) > 0); void setAppBadge(r.data?.unread); }   // NP22 · keep the icon true
       }));
       return primary;
       // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on focus only

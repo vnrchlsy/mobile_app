@@ -5,6 +5,7 @@ import { clearStepUpCache } from "../stepUpCache";
 import { type AccountType, clearAccountType, loadAccountType, saveAccountType } from "./accountTypeStore";
 import { clearAppLockPreference } from "./appLockStore";
 import { signOutWithRevoke } from "./logout";
+import { clearAppBadge } from "../push/badge";
 import { createContext, useContext, useEffect, useState } from "react";
 
 type Tokens = { access: string; refresh: string } | null;
@@ -78,6 +79,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await clearAppLockPreference();
       // N5 · a remembered step-up proof is as personal as the app-lock preference: gone on any session end.
       clearStepUpCache();
+      // NP22 · the icon's unread number belongs to the account that just left.
+      void clearAppBadge();
     }
   }
 

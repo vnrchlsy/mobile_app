@@ -24,11 +24,12 @@ import {
 import { GLYPH_SOURCE, notificationLook, TONE_COLORS } from "../notificationIcons";
 import { BellItem, bellItems, isInformationOnly, notificationRowLabel, notificationTitle } from "../notificationRows";
 import { markReadBody, notificationTarget } from "../notifications";
-import { relTime } from "../sagip";
+import { relTime } from "../dates";
 import { colors, maxFontScale, pill, radii, spacing, squircle, typography } from "../theme";
 import { Card, PressScale, ScreenHeader } from "../components/ui";
 import { TAP_SLOP } from "../touch";
 import { openOwnerTab } from "../appTabs";
+import { setAppBadge } from "../push/badge";
 import { openShelterTab } from "../shelterTabs";
 
 type Props = NativeStackScreenProps<RootStackParamList, "notifications">;
@@ -52,7 +53,12 @@ export function NotificationsScreen({ navigation }: Props) {
   // unread for the rest of THIS viewing: reopening the screen later is what actually clears them.
   function markShown(page: MeNotification[]) {
     const body = markReadBody(page);
-    if (body) api.post("/me/notifications/read", body);
+    if (body) {
+      // NP22 · and once the server has it, the icon's number follows: what is still unread (maybe on pages not loaded), not zero.
+      api.post("/me/notifications/read", body).then(() => api.get("/me/notifications/unread-count")).then((r) => {
+        if (r.ok) void setAppBadge(r.data?.unread);
+      });
+    }
   }
 
   const load = useCallback(() => {

@@ -2,7 +2,7 @@
 // Pure, so the label a screen reader hears, the grouping and the information-only rule are tested without rendering.
 import type { MeNotification } from "./api/types";
 import { notificationTarget } from "./notifications";
-import { relTime } from "./sagip";
+import { relTime } from "./dates";
 
 /** A part of a spoken sentence, ended with exactly one full stop (or the "!" / "?" it already has). */
 function sentence(part: string): string {
