@@ -5,7 +5,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator, FlatList, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View
+  ActivityIndicator, FlatList, Image, ScrollView, StyleSheet, Text, View
 } from "react-native";
 
 import { useApi } from "../api/useApi";
@@ -13,28 +13,20 @@ import { useAuth } from "../auth/AuthContext";
 import { SignupWall } from "../components/SignupWall";
 import { setIntent } from "../guestIntent";
 import { LoadStateView } from "../components/LoadStateView";
-import { Avatar, ScreenHeader } from "../components/ui";
+import { ScreenBackdrop } from "../components/ScreenBackground";
+import { Avatar, Card, Chip, PressScale, ScreenHeader } from "../components/ui";
 import { StaleBanner } from "../components/StaleBanner";
 import { isOffline } from "../net";
 import { parseStoryPage, Story, storyDate, storyTypeChip } from "../community";
 import { RootStackParamList } from "../navigation/types";
 import {
-  allStories, beginMore, finishMore, moreUrl, pagingAfterRefresh, pagingFrom, shouldLoadMore, StoryPaging, storiesViewState, withStoryContract
+  allStories, beginMore, finishMore, moreUrl, pagingAfterRefresh, pagingFrom, shouldLoadMore, StoryPaging, storiesViewState, storyCardLabel, storyChipTone, withStoryContract
 } from "../storyFeed";
 import { storiesPath, storyStatusNote } from "../storyAuthor";
 import { useCachedFeed } from "../useCachedFeed";
 import { TAP_SLOP } from "../touch";
 import { useLargeText } from "../useLargeText";
-import { colors, elevation, pill, radii, spacing, typography } from "../theme";
-
-const card = {
-  backgroundColor: colors.white, ...elevation.soft
-};
-const CHIP: Record<"ok" | "teal" | "muted", { bg: string; fg: string }> = {
-  ok: { bg: colors.successBg, fg: colors.success },
-  teal: { bg: colors.soft, fg: colors.teal },
-  muted: { bg: colors.greyPill, fg: colors.muted }
-};
+import { colors, pill, radii, spacing, typography } from "../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "stories">;
 
@@ -109,29 +101,31 @@ export function StoriesScreen({ navigation, route }: Props) {
   const renderStory = ({ item: s }: { item: Story }) => {
     const chip = storyTypeChip(s.story_type);
     return (
-      <TouchableOpacity style={styles.storyCard} activeOpacity={0.85}
+      // V4 · the whole card is ONE button with ONE label; the heart is a count, not a control (reacting stays on the story).
+      <PressScale style={styles.cardPress} accessibilityRole="button" accessibilityLabel={storyCardLabel(s)}
+        testID={`btn.stories.card.${s.story_id}`}
         onPress={() => navigation.navigate("storyDetail", { storyId: s.story_id })}>
-        {s.primary_photo
-          ? <Image source={{ uri: s.primary_photo }} style={styles.photo} resizeMode="cover" />
-          : <View style={styles.photo} />}
-        <View style={[styles.authorRow, large && styles.authorRowLarge]}>
-          <Avatar initials={initials(s.author.name)} tinted size={46} />
-          <View style={large ? styles.authorCopyLarge : styles.authorCopy}>
-            <Text style={styles.authorName}>{s.author.name}</Text>
-            {s.author.city ? <Text style={styles.city}>{s.author.city}</Text> : null}
+        <Card style={styles.storyCard}>
+          {s.primary_photo
+            ? <Image source={{ uri: s.primary_photo }} style={styles.photo} resizeMode="cover" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
+            : <View style={styles.photo} />}
+          <View style={[styles.authorRow, large && styles.authorRowLarge]}>
+            <Avatar initials={initials(s.author.name)} tinted size={46} />
+            <View style={large ? styles.authorCopyLarge : styles.authorCopy}>
+              <Text style={styles.authorName}>{s.author.name}</Text>
+              {s.author.city ? <Text style={styles.city}>{s.author.city}</Text> : null}
+            </View>
+            <Chip label={chip.label} tone={storyChipTone(chip.tone)} />
           </View>
-          <View style={[styles.chip, { backgroundColor: CHIP[chip.tone].bg }]}>
-            <Text style={[styles.chipText, { color: CHIP[chip.tone].fg }]}>{chip.label}</Text>
+          {s.caption ? <Text style={styles.caption} numberOfLines={large ? undefined : 2}>{s.caption}</Text> : null}
+          {storyDate(s.created_at) ? <Text style={styles.date}>{storyDate(s.created_at)}</Text> : null}
+          {storyStatusNote(s) ? <Text style={styles.statusNote}>{storyStatusNote(s)}</Text> : null}
+          <View style={styles.reactRow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Text style={[styles.heart, s.my_reaction ? styles.heartOn : null]}>♥</Text>
+            <Text style={styles.reactCount}>{s.reaction_count}</Text>
           </View>
-        </View>
-        {s.caption ? <Text style={styles.caption} numberOfLines={large ? undefined : 2}>{s.caption}</Text> : null}
-        {storyDate(s.created_at) ? <Text style={styles.date}>{storyDate(s.created_at)}</Text> : null}
-        {storyStatusNote(s) ? <Text style={styles.statusNote}>{storyStatusNote(s)}</Text> : null}
-        <View style={styles.reactRow}>
-          <Text style={[styles.heart, s.my_reaction ? styles.heartOn : null]}>♥</Text>
-          <Text style={styles.reactCount}>{s.reaction_count}</Text>
-        </View>
-      </TouchableOpacity>
+        </Card>
+      </PressScale>
     );
   };
 
@@ -141,22 +135,24 @@ export function StoriesScreen({ navigation, route }: Props) {
   ) : paging.failed ? (
     <View style={styles.more}>
       <Text style={styles.moreText}>Couldn't load more stories.</Text>
-      <TouchableOpacity hitSlop={TAP_SLOP} style={styles.moreRetry} onPress={() => askMore(true)}
+      <PressScale hitSlop={TAP_SLOP} style={styles.moreRetry} onPress={() => askMore(true)}
         accessibilityRole="button" accessibilityLabel="Try loading more stories again" testID="btn.stories.moreRetry">
         <Text style={styles.moreRetryLabel}>Try again</Text>
-      </TouchableOpacity>
+      </PressScale>
     </View>
   ) : null;
 
   return (
     <View style={styles.screen}>
+      <ScreenBackdrop />
       <ScreenHeader
         title={mine ? "Your stories" : "Stories"}
         onBack={() => navigation.goBack()}
         right={mine ? null : (
-          <TouchableOpacity hitSlop={TAP_SLOP} style={styles.share} onPress={() => isGuest ? setWallOpen(true) : navigation.navigate("storyCompose", { source: "feed" })}>
+          <PressScale hitSlop={TAP_SLOP} style={styles.share} accessibilityRole="button" accessibilityLabel="Share a story" testID="btn.stories.share"
+            onPress={() => isGuest ? setWallOpen(true) : navigation.navigate("storyCompose", { source: "feed" })}>
             <Text style={styles.shareLabel}>+ Share</Text>
-          </TouchableOpacity>
+          </PressScale>
         )}
       />
       {state.kind !== "ready" ? (
@@ -196,7 +192,7 @@ export function StoriesScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.page },
+  screen: { flex: 1 },
   share: { minHeight: 38, paddingVertical: 8, paddingHorizontal: 18, justifyContent: "center", borderRadius: pill(38), backgroundColor: colors.teal },
   shareLabel: { color: colors.white, ...typography.strong, fontWeight: "700" },
   content: { paddingHorizontal: spacing.lg, paddingTop: 12, paddingBottom: 60 },
@@ -205,22 +201,21 @@ const styles = StyleSheet.create({
   moreRetry: { minHeight: 44, paddingHorizontal: 18, justifyContent: "center", borderRadius: pill(44), borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white },
   moreRetryLabel: { color: colors.teal, ...typography.strong, fontWeight: "700" },
   empty: { marginTop: 40, color: colors.muted, ...typography.subtitle, textAlign: "center" },
-  storyCard: { marginBottom: 16, padding: 16, borderRadius: radii.card, ...card },
-  photo: { height: 150, borderRadius: radii.card, backgroundColor: colors.placeholder },
-  authorRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14 },
+  cardPress: { marginBottom: 16 },
+  storyCard: { padding: 8, paddingBottom: 14 },
+  photo: { height: 168, borderRadius: radii.card, backgroundColor: colors.placeholder },
+  authorRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, paddingHorizontal: 10 },
   // large: stacked. The base copy column is `flex: 1`, which survives in a style array and would collapse the text in a column (`flex: 0` is what works, #189).
   authorRowLarge: { flexDirection: "column", alignItems: "flex-start" },
   authorCopy: { flex: 1 },
   authorCopyLarge: { flex: 0, alignSelf: "stretch", flexGrow: 0, flexBasis: "auto" },
   authorName: { color: colors.ink, ...typography.subtitle, fontWeight: "800" },
   city: { color: colors.muted, ...typography.meta, marginTop: 2 },
-  chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: radii.chip },
-  chipText: { ...typography.meta, fontWeight: "700" },
-  date: { marginTop: 8, color: colors.muted, ...typography.meta },
-  statusNote: { marginTop: 8, color: colors.warning, ...typography.meta, fontWeight: "600" },
-  caption: { marginTop: 12, color: colors.ink, ...typography.body },
-  reactRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 },
-  heart: { fontSize: 20, color: "#C9D3CF" },
+  date: { marginTop: 8, paddingHorizontal: 10, color: colors.muted, ...typography.meta },
+  statusNote: { marginTop: 10, marginHorizontal: 10, paddingVertical: 9, paddingHorizontal: 12, borderRadius: radii.chip, overflow: "hidden", backgroundColor: colors.warningBg, color: colors.warningStrong, ...typography.meta, fontWeight: "700" },
+  caption: { marginTop: 10, paddingHorizontal: 10, color: colors.ink, ...typography.body },
+  reactRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, paddingHorizontal: 10 },
+  heart: { fontSize: 20, color: colors.tealIdle },
   heartOn: { color: colors.teal },
   reactCount: { color: colors.muted, ...typography.meta, fontWeight: "700" }
 });

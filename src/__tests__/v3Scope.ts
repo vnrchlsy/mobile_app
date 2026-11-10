@@ -136,6 +136,9 @@ const IMPACT_BADGES = ["ImpactScreen", "BadgeDetailScreen"] as const;
  * rewritten on <ScreenBackdrop> + <Card> + <PressScale>, with the hidden banner on warning tokens. */
 const MODERATION_V3 = ["ReportContentScreen", "StoryDetailScreen", "TermsScreen"] as const;
 
+/** Stories review step 12 (V1 to V4, SQ6) · the wall (also "Your stories") and the compose form, converted to the approved Stories artboard. */
+const STORIES_V3 = ["StoriesScreen", "StoryComposeScreen"] as const;
+
 export const V3_SCOPE: readonly string[] = [
   ...SHELL_ROOTS,
   ...SHELTER_LISTINGS,
@@ -158,7 +161,9 @@ export const V3_SCOPE: readonly string[] = [
   // Impact & badges review step 10 · converted.
   ...IMPACT_BADGES,
   // Content-moderation review step 25 · converted.
-  ...MODERATION_V3
+  ...MODERATION_V3,
+  // Stories review step 12 · converted.
+  ...STORIES_V3
 ];
 
 /** 6 shelter-onboarding screens (spec §3) */
@@ -211,8 +216,6 @@ const OTHER_OWNER_SCREENS = [
   "SettingsScreen",
   "SignupScreen",
   "SignupSuccessScreen",
-  "StoriesScreen",
-  "StoryComposeScreen",
   "SupportScreen",
   "VerifyDocumentsScreen",
   "VerifyPhoneScreen",

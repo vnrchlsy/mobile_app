@@ -54,13 +54,13 @@ test("the detail's React / Flag buttons grow and their row wraps", () => {
   expect(body(detail, "actionRow")).toMatch(/flexWrap\s*:\s*"wrap"/);
 });
 
-test("the compose headline is capped and its tile and pill grow", () => {
+test("the compose headline is capped, the tile has no fixed height, and the tag is the shared Chip that grows", () => {
   expect(compose).toMatch(/styles\.h1\}[^>]*maxFontSizeMultiplier=\{maxFontScale\.title\}/);
-  for (const n of ["photoTile", "linkedPill"]) {
-    const b = body(compose, n) as string;
-    expect(b).not.toBeNull();
-    expect(b).not.toMatch(fixedHeight);
-    expect(b).toMatch(/minHeight\s*:/);
-    expect(b).toMatch(/paddingVertical\s*:/);
-  }
+  // Stories review step 12 · the dashed fixed-height tile and the hand-drawn pill are gone: the tile is a pressable around a 176 pt photo and its label (which wraps),
+  // and the "Tagged as" pill is <Chip>, whose minHeight and wrapping label are the R6-F4 fix.
+  const b = body(compose, "photoTile") as string;
+  expect(b).not.toBeNull();
+  expect(b).not.toMatch(fixedHeight);
+  expect(compose).toContain("<Chip label=");
+  expect(body(compose, "linkedPill")).not.toMatch(fixedHeight);
 });

@@ -135,7 +135,7 @@ describe("the screens", () => {
   });
 
   test("an edit does not offer to change the photo", () => {
-    expect(compose).toMatch(/onPress=\{edit \|\| !canAddPhoto\(photoUrls\) \? undefined : addPhoto\}/);
+    expect(compose).toMatch(/const addable = !edit && canAddPhoto\(photoUrls\);[\s\S]*onPress=\{addable \? addPhoto : undefined\}/);
   });
 
   test("the wall screen serves your stories too: the other path, its own title, and it marks a hidden story", () => {
@@ -146,7 +146,7 @@ describe("the screens", () => {
   });
 
   test("your stories do not offer + Share a second time", () => {
-    expect(feed).toMatch(/mine \? null : \(\s*<TouchableOpacity/);
+    expect(feed).toMatch(/mine \? null : \(\s*<PressScale/);
   });
 
   test("the Profile has a Your stories row that opens the list", () => {

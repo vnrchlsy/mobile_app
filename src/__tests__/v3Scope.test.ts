@@ -27,7 +27,8 @@ describe("v3Scope", () => {
     // 55 -> 57: ImpactScreen and BadgeDetailScreen, moved from V3_EXCLUDED when Impact & badges review step 10 converted them.
     // 57 -> 59: ReportContentScreen and StoryDetailScreen, moved from V3_EXCLUDED when content-moderation review step 25 converted them.
     // 59 -> 60: TermsScreen, content-moderation review step 7a (the community guidelines), born V3.
-    expect(V3_SCOPE.length).toBe(60);
+    // 60 -> 62: StoriesScreen and StoryComposeScreen, moved from V3_EXCLUDED when Stories review step 12 converted them (artboard approved 2026-11-10).
+    expect(V3_SCOPE.length).toBe(62);
   });
 
   it("has no duplicate names in V3_SCOPE", () => {

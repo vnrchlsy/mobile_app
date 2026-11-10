@@ -267,10 +267,11 @@ describe("screens take depth from the theme", () => {
     // KawangGawaCheckinScreen and WaiverScreen — each screen's list-row/hero/facts/notice
     // surface is <Card> now (KawangGawaCancelScreen and KawangGawaRequestedScreen had none
     // to remove). 60 -> 56. Both floors below move down with them.
-    expect(bound.length).toBeGreaterThan(51);
+    // 2026-11-10 — Stories review step 12 removed StoriesScreen's local `const card = { ...elevation.soft }` (its cards are <Card> now). 52 -> 51; both floors move down with it.
+    expect(bound.length).toBeGreaterThan(50);
     // 2026-11-05 — Impact & badges review step 10 removed two more local `const card = { ...elevation.soft }` objects:
     // ImpactScreen's and BadgeDetailScreen's, whose surfaces are <Card> now. 55 -> 53; the floor moves down with them.
-    expect(bound.length + handRolled.length).toBeGreaterThan(51);
+    expect(bound.length + handRolled.length).toBeGreaterThan(50);
   });
 
   it("leaves no hand-rolled shadow that reproduces a step exactly", () => {
