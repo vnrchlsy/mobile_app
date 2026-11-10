@@ -42,7 +42,7 @@ describe("the story page's controls can be found by a screen reader and by a flo
   const src = read("screens/StoryDetailScreen.tsx");
   it("announces React and Report as buttons, each with a testID", () => {
     for (const id of ["btn.storyDetail.react", "btn.storyDetail.report"]) expect(src).toContain(`testID="${id}"`);
-    expect(src.split('accessibilityRole="button"').length - 1).toBe(6);      // React, Report, the hidden banner's appeal (step 9), the link to the adoption or rescue (stories review step 5), and an author's Edit and Delete (step 6)
+    expect(src.split('accessibilityRole="button"').length - 1).toBe(7);      // React, Report, the hidden banner's appeal (step 9), the link to the adoption or rescue (stories review step 5), an author's Edit and Delete (step 6), and Share (step 11)
   });
   it("says whether the reaction is on", () => {
     expect(src).toContain("accessibilityState={{ selected: story.my_reaction }}");

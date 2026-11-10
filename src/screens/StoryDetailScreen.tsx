@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useRef, useState } from "react";
 import {
-  Alert, Image, ScrollView, StyleSheet, Text, View, useWindowDimensions
+  Alert, Image, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions
 } from "react-native";
 
 import { useAuth } from "../auth/AuthContext";
@@ -20,6 +20,7 @@ import { parseStory, Story, storyDate, storyLinkAction, storyTypeChip } from "..
 import { RootStackParamList } from "../navigation/types";
 import { canDeleteStory, canEditStory, storyDeleteFailure } from "../storyAuthor";
 import { ReactCtl, settleReact, startReact, tapReact } from "../storyReact";
+import { canShareStory, storyShareContent } from "../storyShare";
 import { useLargeText } from "../useLargeText";
 import { colors, pill, radii, spacing, typography } from "../theme";
 
@@ -92,6 +93,17 @@ export function StoryDetailScreen({ navigation, route }: Props) {
         { text: "Keep it", style: "cancel" },
         { text: "Delete", style: "destructive", onPress: doDelete }
       ]);
+  }
+
+  // Stories review step 11 (ST19, SQ5) · the phone's share sheet, with the caption and a link that opens the story in the app. Dismissing it is a choice, and a
+  // failure to open it is not worth an alert: the sheet is the OS's, and the person can tap again.
+  async function shareStory() {
+    if (!story) return;
+    try {
+      await Share.share(storyShareContent(story));
+    } catch {
+      // nothing to say
+    }
   }
 
   function showReact(ctl: ReactCtl) {
@@ -231,6 +243,11 @@ export function StoryDetailScreen({ navigation, route }: Props) {
               <Text style={styles.flagLabel}>Report this</Text>
             </PressScale>
           )}
+          {canShareStory(story) ? (
+            <PressScale style={styles.flagBtn} onPress={shareStory} accessibilityRole="button" accessibilityLabel="Share this story" testID="btn.storyDetail.share">
+              <Text style={styles.flagLabel}>Share</Text>
+            </PressScale>
+          ) : null}
           {canEditStory(story) ? (
             <PressScale style={styles.flagBtn} accessibilityRole="button" accessibilityLabel="Edit the caption of this story" testID="btn.storyDetail.edit"
               onPress={() => navigation.navigate("storyCompose", { edit: { storyId, caption: story.caption, photoUrl: story.primary_photo } })}>

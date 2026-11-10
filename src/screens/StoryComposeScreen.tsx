@@ -23,6 +23,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "storyCompose">;
 export function StoryComposeScreen({ navigation, route }: Props) {
   const api = useApi();
   const prefillListing = route.params?.adoptionListingId;
+  const prefillCase = route.params?.rescueCaseId;          // step 11 · opened from a resolved rescue: the story is about that rescue
   const source = route.params?.source;          // step 10 · which entry point opened this (sent with a NEW story only)
   // Stories review step 6 · edit mode: the caption of a story you posted. The photo and the link are what was shared, and stay.
   const edit = route.params?.edit;
@@ -89,6 +90,7 @@ export function StoryComposeScreen({ navigation, route }: Props) {
     setCaptionError(null);
     const body: Record<string, any> = { caption: caption.trim(), photos: photosBody(photoUrls) };
     if (prefillListing) body.adoption_listing_id = prefillListing;
+    if (prefillCase) body.rescue_case_id = prefillCase;
     if (source) body.source = source;
     const res = await api.post("/stories", body);
     posting.current = false;
@@ -147,6 +149,11 @@ export function StoryComposeScreen({ navigation, route }: Props) {
         {prefillListing ? (
           <View style={styles.linkedPill}>
             <Text style={styles.linkedText}>Tagged as an Adoption story</Text>
+          </View>
+        ) : null}
+        {prefillCase ? (
+          <View style={styles.linkedPill}>
+            <Text style={styles.linkedText}>Tagged as a Rescue story</Text>
           </View>
         ) : null}
 

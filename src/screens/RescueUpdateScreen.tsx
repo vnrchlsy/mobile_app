@@ -24,6 +24,8 @@ import {
 } from "../sagip";
 import { useLargeText } from "../useLargeText";
 import { colors, maxFontScale, radii, spacing, typography } from "../theme";
+import { composeForRescue } from "../storyShare";
+import { TAP_SLOP } from "../touch";
 import { ScreenBackdrop } from "../components/ScreenBackground";
 import { Button, Card, Field, ScreenHeader } from "../components/ui";
 import { ContactShareRow } from "../components/sagip/ContactShareRow";
@@ -298,6 +300,13 @@ export function RescueUpdateScreen({ navigation, route }: Props) {
           {state === "resolved" ? (
             <Text style={styles.resolvedNote}>This case is resolved — there's nothing left to update.</Text>
           ) : null}
+          {/* Stories review step 11 (§5.7) · a resolved rescue prompts a story for the person who rescued, with the same persistent button the adopter has. */}
+          {report && state === "resolved" && composeForRescue(report) ? (
+            <TouchableOpacity hitSlop={TAP_SLOP} style={styles.shareStory} activeOpacity={0.8} testID="btn.rescueUpdate.shareStory"
+              accessibilityRole="button" onPress={() => navigation.navigate("storyCompose", composeForRescue(report)!)}>
+              <Text style={styles.shareStoryLabel}>Share this rescue's story ›</Text>
+            </TouchableOpacity>
+          ) : null}
 
           {/* D1 + D8 · the reporter (or that they chose anonymity) and every matched helper.
               PR3-F4 · shown on a resolved case too: the backend keeps consented contact for 7 days
@@ -481,6 +490,8 @@ const styles = StyleSheet.create({
   handoffRowLarge: { flexDirection: "column" },
   handoffBtn: { flex: 1 },
   impactHint: { marginTop: 4, marginBottom: 8, color: colors.muted, ...typography.meta },
+  shareStory: { alignSelf: "flex-start", marginTop: 14, minHeight: 44, justifyContent: "center", paddingHorizontal: 16, borderRadius: radii.chip, backgroundColor: colors.successBg },
+  shareStoryLabel: { color: colors.success, ...typography.strong, fontWeight: "700" },
   resolvedNote: { marginTop: 24, color: colors.muted, ...typography.body },
   releaseLink: { marginTop: 8, minHeight: 44, alignItems: "center", justifyContent: "center" },
   releaseLinkText: { color: colors.muted, ...typography.subtitle, fontWeight: "700", textDecorationLine: "underline" },
