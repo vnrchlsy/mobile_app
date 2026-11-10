@@ -4,7 +4,7 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useRef, useState } from "react";
 import {
-  Alert, Image, ScrollView, StyleSheet, Text, View
+  Alert, Image, Keyboard, ScrollView, StyleSheet, Text, useWindowDimensions, View
 } from "react-native";
 
 import { useApi } from "../api/useApi";
@@ -14,7 +14,7 @@ import { colors, maxFontScale, radii, spacing, squircle, typography } from "../t
 import { ScreenBackdrop } from "../components/ScreenBackground";
 import { Button, Card, Chip, Field, PressScale, ScreenHeader } from "../components/ui";
 import {
-  MAX_CAPTION, MAX_PHOTOS, THUMB_SIZE, THUMB_X_OFFSET, THUMB_X_SIZE, THUMB_X_SLOP, acquire, canAddPhoto, captionCount, hasUnsavedStory, photoPickOutcome, photosBody, storyPostFailure, withCover, withoutPhoto, withPhoto
+  MAX_CAPTION, MAX_PHOTOS, THUMB_SIZE, compactPreview, THUMB_X_OFFSET, THUMB_X_SIZE, THUMB_X_SLOP, acquire, canAddPhoto, captionCount, hasUnsavedStory, photoPickOutcome, photosBody, storyPostFailure, withCover, withoutPhoto, withPhoto
 } from "../storyCompose";
 import { hasUnsavedEdit, storyEditFailure } from "../storyAuthor";
 import { useLargeText } from "../useLargeText";
@@ -52,6 +52,16 @@ export function StoryComposeScreen({ navigation, route }: Props) {
         { text: "Discard", style: "destructive", onPress: () => navigation.dispatch(e.data.action) }
       ]);
   }), [navigation, caption, photoUrls, edit]);
+
+  // On a short screen the cover preview gives way while the keyboard is up, so the caption is not left a line above it (found on an iPhone SE).
+  const { height } = useWindowDimensions();
+  const [keyboardUp, setKeyboardUp] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardWillShow", () => setKeyboardUp(true));
+    const hide = Keyboard.addListener("keyboardWillHide", () => setKeyboardUp(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
+  const compact = compactPreview(keyboardUp, height);
 
   async function addPhoto() {
     if (uploading || !canAddPhoto(photoUrls)) return;
@@ -119,7 +129,7 @@ export function StoryComposeScreen({ navigation, route }: Props) {
             accessibilityLabel={photoUrls.length ? "Add another photo" : "Add a photo"}
             onPress={addable ? addPhoto : undefined}>
             {/* ST13 · the cover, so the person is not posting blind. */}
-            {photoUrls.length ? <Image source={{ uri: photoUrls[0] }} style={styles.preview} resizeMode="cover" accessibilityLabel="Your cover photo" /> : <View style={[styles.preview, styles.previewEmpty]} />}
+            {!compact ? (photoUrls.length ? <Image source={{ uri: photoUrls[0] }} style={styles.preview} resizeMode="cover" accessibilityLabel="Your cover photo" /> : <View style={[styles.preview, styles.previewEmpty]} />) : null}
             <Text style={styles.photoLabel}>
               {edit ? "The photos stay as you shared them"
                 : uploading ? "Adding…"
