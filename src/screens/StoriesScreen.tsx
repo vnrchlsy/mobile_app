@@ -154,7 +154,7 @@ export function StoriesScreen({ navigation, route }: Props) {
         title={mine ? "Your stories" : "Stories"}
         onBack={() => navigation.goBack()}
         right={mine ? null : (
-          <TouchableOpacity hitSlop={TAP_SLOP} style={styles.share} onPress={() => isGuest ? setWallOpen(true) : navigation.navigate("storyCompose", {})}>
+          <TouchableOpacity hitSlop={TAP_SLOP} style={styles.share} onPress={() => isGuest ? setWallOpen(true) : navigation.navigate("storyCompose", { source: "feed" })}>
             <Text style={styles.shareLabel}>+ Share</Text>
           </TouchableOpacity>
         )}

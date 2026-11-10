@@ -134,7 +134,7 @@ export function InquiryList() {
                     style={styles.shareStory}
                     activeOpacity={0.8}
                     onPress={() => navigation.navigate("storyCompose",
-                      { adoptionListingId: iq.listing.listing_id })}
+                      { adoptionListingId: iq.listing.listing_id, source: "adoption_cta" })}
                   >
                     <Text style={styles.shareStoryLabel}>Share your adoption story ›</Text>
                   </TouchableOpacity>
