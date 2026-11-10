@@ -68,7 +68,7 @@ describe("surface, re-derived", () => {
     expect(s.screens.length).toBeGreaterThan(80);
   });
 
-  it("found the sixty-one V3 screens on the backdrop (+ 3 wishlist refactor Task 8: NeedForm, NeedPledges, DonationInstructions; 6 adoption poster loop (Applicant, PosterListing, MyListings, plan 2026-10-06; PetForm, AQ8; PetDetail, PP12; MyPets, step 11) + 7 owner + 2 shell roots + 4 listings/needs + 4 donations + 7 volunteer + 3 verified member + 11 Sagip rescuer (RescueListedScreen deleted by C15) + 1 Task B1 Donate root + 1 Task B2 Animals root + 1 Task B3 Requests root + 6 P5 Task 3 KawangGawa/Waiver + 1 US-W4 Ways to help + 2 Impact & badges review step 10: Impact, BadgeDetail + 2 content-moderation review step 25: ReportContent, StoryDetail + 1 step 7a: Terms)", () => {
+  it("found the sixty-three V3 screens on the backdrop (+ 1 notifications review step 14: Notifications; 2 stories review step 12: Stories, StoryCompose; + 3 wishlist refactor Task 8: NeedForm, NeedPledges, DonationInstructions; 6 adoption poster loop (Applicant, PosterListing, MyListings, plan 2026-10-06; PetForm, AQ8; PetDetail, PP12; MyPets, step 11) + 7 owner + 2 shell roots + 4 listings/needs + 4 donations + 7 volunteer + 3 verified member + 11 Sagip rescuer (RescueListedScreen deleted by C15) + 1 Task B1 Donate root + 1 Task B2 Animals root + 1 Task B3 Requests root + 6 P5 Task 3 KawangGawa/Waiver + 1 US-W4 Ways to help + 2 Impact & badges review step 10: Impact, BadgeDetail + 2 content-moderation review step 25: ReportContent, StoryDetail + 1 step 7a: Terms)", () => {
     expect(s.backdrop.sort()).toEqual([
       "AdoptScreen",
       "ApplicantScreen",
@@ -101,6 +101,7 @@ describe("surface, re-derived", () => {
       "MyRescuesScreen",
       "NeedFormScreen",
       "NeedPledgesScreen",
+      "NotificationsScreen",
       "OrganizationProfileScreen",
       "PetDetailScreen",
       "PetFormScreen",

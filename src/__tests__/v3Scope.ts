@@ -139,6 +139,9 @@ const MODERATION_V3 = ["ReportContentScreen", "StoryDetailScreen", "TermsScreen"
 /** Stories review step 12 (V1 to V4, SQ6) · the wall (also "Your stories") and the compose form, converted to the approved Stories artboard. */
 const STORIES_V3 = ["StoriesScreen", "StoryComposeScreen"] as const;
 
+/** Notifications review step 14 (V1 to V3) · the bell, converted to the approved Notifications artboard (design/mobile-v3/Notifications.dc.html). */
+const NOTIFICATIONS_V3 = ["NotificationsScreen"] as const;
+
 export const V3_SCOPE: readonly string[] = [
   ...SHELL_ROOTS,
   ...SHELTER_LISTINGS,
@@ -163,7 +166,8 @@ export const V3_SCOPE: readonly string[] = [
   // Content-moderation review step 25 · converted.
   ...MODERATION_V3,
   // Stories review step 12 · converted.
-  ...STORIES_V3
+  ...STORIES_V3,
+  ...NOTIFICATIONS_V3
 ];
 
 /** 6 shelter-onboarding screens (spec §3) */
@@ -187,7 +191,7 @@ const OWNER_V3 = [
   "SigninScreen"
 ] as const;
 
-/** Every other owner screen (auth, onboarding, reports, settings, stories, etc.) — 30 names
+/** Every other owner screen (auth, onboarding, reports, settings, stories, etc.) — 29 names (NotificationsScreen moved to NOTIFICATIONS_V3 in the bell review, step 14)
  *  (MyPetsScreen moved to ADOPTION_POSTER when My Pets review step 11 converted it; ImpactScreen and BadgeDetailScreen
  *  moved to IMPACT_BADGES when Impact & badges review step 10 did) */
 const OTHER_OWNER_SCREENS = [
@@ -201,7 +205,6 @@ const OTHER_OWNER_SCREENS = [
   "LocationPickerScreen",
   "MatchDetailScreen",
   "MyReportsScreen",
-  "NotificationsScreen",
   "OtpLockedScreen",
   "OtpScreen",
   "PasswordChangedScreen",

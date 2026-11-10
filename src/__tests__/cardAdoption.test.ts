@@ -81,7 +81,8 @@ describe("V3 screens adopt Card instead of a raw elevation spread", () => {
     // 57 -> 59: ReportContentScreen and StoryDetailScreen, moved from V3_EXCLUDED when content-moderation review step 25 converted them.
     // 59 -> 60: TermsScreen, content-moderation review step 7a (the community guidelines), born V3.
     // 60 -> 62: StoriesScreen and StoryComposeScreen, Stories review step 12.
-    expect(V3_SCOPE.length).toBe(62);
+    // 62 -> 63: NotificationsScreen, notifications review step 14.
+    expect(V3_SCOPE.length).toBe(63);
   });
 
   it("every in-scope screen not in the holdout list no longer spreads ...elevation.*", () => {
