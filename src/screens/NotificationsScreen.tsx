@@ -1,8 +1,8 @@
 // US-X1 · the bell — the notification list that was missing entirely (found during the
 // Sprint 3 story audit: the backend wrote report_claimed/offer_matched/case_reopened/
 // report_escalated/verification_* rows correctly, but nothing on mobile ever read them).
-// GET /me/notifications; POST /me/notifications/read marks everything read on open, per
-// the backend's own docstring ("on opening the bell").
+// GET /me/notifications; POST /me/notifications/read {up_to} marks what the screen SHOWED read on open (NP4):
+// a row that arrived after the list was read stays unread.
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
 import { ReactElement, useCallback, useRef, useState } from "react";
@@ -14,7 +14,7 @@ import { LoadStateView } from "../components/LoadStateView";
 import { loadState } from "../net";
 import { AlertIcon, CheckIcon, ClockIcon, UserBadgeIcon, XIcon } from "../components/AppIcons";
 import { RootStackParamList } from "../navigation/types";
-import { notificationTarget } from "../notifications";
+import { markReadBody, notificationTarget } from "../notifications";
 import { relTime } from "../sagip";
 import { colors, elevation, radii, spacing, typography } from "../theme";
 import { ScreenHeader } from "../components/ui";
@@ -47,6 +47,7 @@ export function NotificationsScreen({ navigation }: Props) {
   // Unread rows keep looking unread for the rest of THIS viewing, even after the
   // mark-read call fires — reopening the screen later is what actually clears them.
   const markedRef = useRef(false);
+  const tappedRef = useRef(new Set<string>());
 
   const load = useCallback(() => {
     markedRef.current = false;
@@ -56,9 +57,10 @@ export function NotificationsScreen({ navigation }: Props) {
       if (r.ok) {
         const list: MeNotification[] = r.data?.notifications ?? [];
         setItems(list);
-        if (!markedRef.current && list.some((n) => !n.read)) {
+        const body = markReadBody(list);
+        if (!markedRef.current && body) {
           markedRef.current = true;
-          api.post("/me/notifications/read");
+          api.post("/me/notifications/read", body);
         }
       }
     });
@@ -67,6 +69,11 @@ export function NotificationsScreen({ navigation }: Props) {
   useFocusEffect(load);
 
   function onPress(n: MeNotification) {
+    // NQ3 · a tapped row is read even if it was added after this screen marked what it showed.
+    if (!n.read && !tappedRef.current.has(n.notification_id)) {
+      tappedRef.current.add(n.notification_id);
+      api.post(`/me/notifications/${n.notification_id}/read`);
+    }
     const target = notificationTarget(n);
     if (!target) return; // unrecognized type, or missing the data it needs — no destination
     // US-N1 · was an if/else that silently sent anything non-reportDetail to
