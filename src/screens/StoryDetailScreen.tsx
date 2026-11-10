@@ -19,6 +19,7 @@ import { loadState } from "../net";
 import { parseStory, Story, storyDate, storyLinkAction, storyTypeChip } from "../community";
 import { RootStackParamList } from "../navigation/types";
 import { canDeleteStory, canEditStory, storyDeleteFailure } from "../storyAuthor";
+import { ReactCtl, settleReact, startReact, tapReact } from "../storyReact";
 import { useLargeText } from "../useLargeText";
 import { colors, pill, radii, spacing, typography } from "../theme";
 
@@ -47,6 +48,9 @@ export function StoryDetailScreen({ navigation, route }: Props) {
   const [wallOpen, setWallOpen] = useState(false);
   const { storyId } = route.params;
   const [story, setStory] = useState<Story | null>(null);
+  // Stories review step 9 · the heart's state machine (src/storyReact.ts) lives in a ref: a tap and an answer are events, and the heart shows what the machine says.
+  const react = useRef<ReactCtl>(startReact(false, 0));
+  const [reactError, setReactError] = useState<string | null>(null);
   // US-R1 · keep the RESULT. The previous line discarded it (`r.ok && setStory(...)`), which
   // left `story` null forever on failure — and the `if (!story)` branch below rendered a
   // spinner, so a story that could never load span indefinitely. §13.3 names that outcome
@@ -60,7 +64,11 @@ export function StoryDetailScreen({ navigation, route }: Props) {
       // retry, never a blank or half-drawn story.
       const checked = r.ok ? parseStory(r.data) : null;
       setRes({ ok: r.ok && !!checked, status: r.ok && !checked ? 502 : r.status });
-      if (checked) setStory(checked);
+      if (checked) {
+        setStory(checked);
+        // A reload (an edit, a refocus) is the server's latest word, unless a reaction is still in flight: that request settles its own state.
+        if (!react.current.inflight) react.current = startReact(checked.my_reaction, checked.reaction_count);
+      }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storyId]);
@@ -86,24 +94,32 @@ export function StoryDetailScreen({ navigation, route }: Props) {
       ]);
   }
 
-  async function toggleReact() {
+  function showReact(ctl: ReactCtl) {
+    setStory((cur) => cur ? { ...cur, my_reaction: ctl.shown.on, reaction_count: ctl.shown.count } : cur);
+  }
+
+  async function sendReact(want: boolean) {
+    const res = want ? await api.post(`/stories/${storyId}/reactions`) : await api.del(`/stories/${storyId}/reactions`);
+    const settled = settleReact(react.current, res);
+    react.current = settled.ctl;
+    showReact(settled.ctl);
+    setReactError(settled.error);
+    if (settled.send !== null) await sendReact(settled.send);
+  }
+
+  function toggleReact() {
     if (!story) return;
     // G16 (from library/dev/test-plan-guest.md Run 3): a guest tap used to fire the
     // POST unauthenticated, get a silent 401 from the AllowAny-only sieve, and revert
     // the heart with no explanation to the user. Now: open the account wall so they
     // know why the tap didn't do what it looked like it did.
     if (isGuest) { setWallOpen(true); return; }
-    const wasOn = story.my_reaction;
-    // optimistic: flip + adjust count now, reconcile from the server's real count.
-    setStory({ ...story, my_reaction: !wasOn, reaction_count: story.reaction_count + (wasOn ? -1 : 1) });
-    const res = wasOn
-      ? await api.del(`/stories/${storyId}/reactions`)
-      : await api.post(`/stories/${storyId}/reactions`);
-    if (res.ok) {
-      setStory((s) => s ? { ...s, my_reaction: !wasOn, reaction_count: res.data.reaction_count } : s);
-    } else {
-      setStory((s) => s ? { ...s, my_reaction: wasOn, reaction_count: story.reaction_count } : s);
-    }
+    setReactError(null);
+    // The heart flips at once; one request is out at a time, quick taps are one wish, and the server's answer (count AND state) decides.
+    const tapped = tapReact(react.current);
+    react.current = tapped.ctl;
+    showReact(tapped.ctl);
+    if (tapped.send !== null) sendReact(tapped.send);
   }
 
   // Review step 7g · "Report this", the same word and the same form as everywhere else (this screen used to say "Flag",
@@ -227,6 +243,7 @@ export function StoryDetailScreen({ navigation, route }: Props) {
             </PressScale>
           ) : null}
         </View>
+        {reactError ? <Text style={styles.reactError} accessibilityLiveRegion="polite" testID="text.storyDetail.reactError">{reactError}</Text> : null}
       </ScrollView>
       <SignupWall
         visible={wallOpen}
@@ -275,6 +292,7 @@ const styles = StyleSheet.create({
   heartOn: { color: colors.teal },
   reactLabel: { color: colors.ink, ...typography.subtitle, fontWeight: "700" },
   flagBtn: { minHeight: 44, paddingVertical: 8, paddingHorizontal: 22, justifyContent: "center", borderRadius: pill(44), ...pillButton },
+  reactError: { marginTop: 12, color: colors.danger, ...typography.meta, fontWeight: "600" },
   deleteLabel: { color: colors.danger, ...typography.subtitle, fontWeight: "700" },
   flagLabel: { color: colors.muted, ...typography.subtitle, fontWeight: "700" }
 });
