@@ -6,6 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppLockGate } from "./src/auth/AppLockGate";
 import { AuthProvider } from "./src/auth/AuthContext";
 import { SessionGuard } from "./src/auth/SessionGuard";
+import { StartupGate } from "./src/auth/StartupGate";
 import { TermsGate } from "./src/auth/TermsGate";
 import { OfflineBanner } from "./src/components/OfflineBanner";
 import { ConnectivityProvider } from "./src/net/ConnectivityProvider";
@@ -36,6 +37,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
+        {/* Launch screen (logo + loading bar) until the saved session is read. Everything
+            below reads tokens on mount, so none of it mounts before that. */}
+        <StartupGate>
         {/* US-O1 · one connectivity source, above the navigator so every screen and the
             report outbox (US-O3) can read it and hook the reconnect transition. */}
         <ConnectivityProvider>
@@ -65,6 +69,7 @@ export default function App() {
         </NavigationContainer>
         </OutboxProvider>
         </ConnectivityProvider>
+        </StartupGate>
       </AuthProvider>
     </SafeAreaProvider>
   );

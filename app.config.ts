@@ -57,7 +57,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   splash: {
     image: "./assets/splash.png",
     resizeMode: "contain",
-    backgroundColor: TEAL,
+    // The logo is teal on white. BootSplash (in-app) uses the same white ground for the hand-off.
+    backgroundColor: "#FFFFFF",
   },
   assetBundlePatterns: ["**/*"],
 
@@ -95,7 +96,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     package: "ph.kupkop.app",
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
-      backgroundColor: TEAL,
+      // The logo is teal line art on white; a teal background would hide it.
+      backgroundColor: "#FFFFFF",
     },
     permissions: ["CAMERA", "READ_MEDIA_IMAGES", "POST_NOTIFICATIONS"],
   },
